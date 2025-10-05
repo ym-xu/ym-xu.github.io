@@ -1,0 +1,9 @@
+<div class="container footer">
+  <div class="left">
+    <small>© {{ now.Format "2006" }} {{ with site.Params.author.name }}{{ . }}{{ else }}{{ site.Title }}{{ end }}</small>
+  </div>
+  <div class="right">
+    <a href="{{ "index.xml" | relURL }}">RSS</a>
+  </div>
+</div>
+

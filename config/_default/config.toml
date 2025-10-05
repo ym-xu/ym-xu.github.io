@@ -1,0 +1,74 @@
+baseURL = "/"
+title = "Yiming Xu"
+languageCode = "en"
+theme = "mu-min"
+[pagination]
+  pagerSize = 10
+enableRobotsTXT = true
+
+[permalinks]
+  posts = "/posts/:year/:month/:slug/"
+  notes = "/notes/:slug/"
+
+[taxonomies]
+  tag = "tags"
+  series = "series"
+
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML", "RSS"]
+
+[markup]
+  [markup.highlight]
+    style = "github"
+    lineNos = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+    ordered = false
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+# Optional: suppress the warning if desired
+ignoreLogs = ['warning-goldmark-raw-html']
+
+[params]
+  description = "A clean and fast content website"
+  showReadingTime = true
+  enableDarkMode = true
+  showToc = true
+  plausibleDomain = ""
+
+[params.author]
+  name = "Yiming Xu"
+
+[params.giscus]
+  repo = ""
+  repo_id = ""
+  category = "General"
+  category_id = ""
+  mapping = "pathname"
+  reactions_enabled = "1"
+  emit_metadata = "0"
+  input_position = "bottom"
+  theme = "light"
+  lang = "en"
+
+[privacy]
+  [privacy.youtube]
+    privacyEnhanced = true
+
+[menu]
+  [[menu.main]]
+    name = "Posts"
+    url = "/posts/"
+    weight = 10
+  [[menu.main]]
+    name = "Notes"
+    url = "/notes/"
+    weight = 20
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 90

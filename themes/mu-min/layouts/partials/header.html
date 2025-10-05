@@ -1,0 +1,16 @@
+<div class="container header">
+  <div class="brand">
+    <a href="{{ "/" | relURL }}">{{ site.Title }}</a>
+  </div>
+  <nav class="nav">
+    {{ with site.Menus.main }}
+      {{ range . }}
+        <a class="nav-item" href="{{ .URL | relURL }}">{{ .Name }}</a>
+      {{ end }}
+    {{ end }}
+    {{ if site.Params.enableDarkMode }}
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    {{ end }}
+  </nav>
+</div>
+

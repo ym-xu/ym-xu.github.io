@@ -1,0 +1,19 @@
+{{ define "main" }}
+  <h1>{{ .Title }}</h1>
+  {{ if .IsHome }}
+    {{/* Home handled by index.html */}}
+  {{ else }}
+    {{ $p := .Paginate (.Pages) }}
+    <ul class="list">
+      {{ range $p.Pages }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
+          {{ with .Params.summary }}<p class="summary">{{ . }}</p>{{ end }}
+        </li>
+      {{ end }}
+    </ul>
+    {{ template "partials/pagination.html" . }}
+  {{ end }}
+{{ end }}
+

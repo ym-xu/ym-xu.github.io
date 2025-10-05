@@ -1,0 +1,35 @@
+{{ define "main" }}
+  <article class="pub-single{{ if or (.Params.case) (eq .Params.layout "case") }} case{{ end }}">
+    <header class="post-header">
+      <h1>{{ .Title }}</h1>
+      {{ $hideMeta := or (.Params.hideMeta) (eq .Params.header "none") }}
+      {{ if not $hideMeta }}
+        <div class="meta">
+          {{ with .Params.authors }}<span>{{ . }}</span>{{ end }}
+          {{ with .Params.venue }} · <span>{{ . }}</span>{{ end }}
+          {{ with .Params.year }} <span>({{ . }})</span>{{ end }}
+        </div>
+      {{ end }}
+    </header>
+
+    {{ $cover := .Resources.GetMatch "cover*" }}
+    {{ $isCase := or (.Params.case) (eq .Params.layout "case") }}
+    {{ $showCover := cond (isset .Params "showCover") .Params.showCover (not $isCase) }}
+    {{ if and $showCover $cover }}
+      <figure class="pub-cover">
+        <img src="{{ $cover.RelPermalink }}" alt="cover for {{ .Title }}" loading="lazy" decoding="async" />
+      </figure>
+    {{ end }}
+
+    {{ with .Params.links }}
+      <div class="pub-links">
+        {{ with .pdf }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">PDF</a>{{ end }}
+        {{ with .code }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Code</a>{{ end }}
+        {{ with .doi }}<a class="pill" href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>{{ end }}
+        {{ with .project }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Project</a>{{ end }}
+      </div>
+    {{ end }}
+
+    <div class="content">{{ .Content }}</div>
+  </article>
+{{ end }}

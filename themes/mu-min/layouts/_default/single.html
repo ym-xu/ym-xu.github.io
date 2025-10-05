@@ -1,0 +1,31 @@
+{{ define "main" }}
+  <article>
+    <header class="post-header">
+      <h1>{{ .Title }}</h1>
+      {{ $showMeta := cond (isset .Params "showMeta") .Params.showMeta true }}
+      {{ if $showMeta }}
+        <div class="meta">
+          <span>{{ .Date.Format "2006-01-02" }}</span>
+          {{ if site.Params.showReadingTime }} · <span>{{ .ReadingTime }} min read</span>{{ end }}
+          {{ with .Params.tags }} · <span>
+            {{ range $i, $t := . }}{{ if $i }}, {{ end }}<a href="{{ (print "/tags/" $t | urlize | relURL) }}">#{{ $t }}</a>{{ end }}
+          </span>{{ end }}
+        </div>
+      {{ end }}
+    </header>
+
+    {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
+    {{ if $showToc }}
+      {{ with .TableOfContents }}
+        <aside class="toc">{{ . }}</aside>
+      {{ end }}
+    {{ end }}
+
+    <div class="content">{{ .Content }}</div>
+
+    <nav class="pager">
+      {{ with .PrevInSection }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+      {{ with .NextInSection }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+    </nav>
+  </article>
+{{ end }}

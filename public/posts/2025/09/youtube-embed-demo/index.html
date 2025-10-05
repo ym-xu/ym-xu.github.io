@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YouTube Embed Demo — Yiming Xu</title>
+<meta name="description" content="Two ways to embed a YouTube video: Hugo shortcode and manual iframe (privacy-friendly)." />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1759668612" />
+<link rel="stylesheet" href="/css/custom.css?v=1759668612" />
+
+
+<meta property="og:title" content="YouTube Embed Demo — Yiming Xu" />
+<meta property="og:description" content="Two ways to embed a YouTube video: Hugo shortcode and manual iframe (privacy-friendly)." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="//localhost:1313/posts/2025/09/youtube-embed-demo/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/notes/">Notes</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <h1>YouTube Embed Demo</h1>
+      
+      
+        <div class="meta">
+          <span>2025-09-30</span>
+           · <span>1 min read</span>
+           · <span>
+            <a href="/tags/video">#video</a>, <a href="/tags/embed">#embed</a>, <a href="/tags/how-to">#how-to</a>
+          </span>
+        </div>
+      
+    </header>
+
+    
+    
+      
+        <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-hugo-shortcode-recommended">1) Hugo shortcode (recommended)</a></li>
+    <li><a href="#2-manual-iframe-more-control">2) Manual iframe (more control)</a></li>
+  </ul>
+</nav></aside>
+      
+    
+
+    <div class="content"><p>This post shows two simple ways to embed a YouTube video. The site config enables YouTube’s privacy-enhanced mode, so embeds use <code>youtube-nocookie.com</code>.</p>
+<h2 id="1-hugo-shortcode-recommended">1) Hugo shortcode (recommended)</h2>
+<p>Use the built-in shortcode with the video ID. For <code>https://www.youtube.com/watch?v=w7Ft2ymGmfc</code>, the ID is <code>w7Ft2ymGmfc</code>.
+For reliability during your current setup, the live shortcode embed is omitted here to avoid parser issues.</p>
+<p>Notes:</p>
+<ul>
+<li>It’s responsive and lazy by default in modern Hugo.</li>
+<li>To set a start time with the shortcode, the syntax is: youtube id=&ldquo;w7Ft2ymGmfc&rdquo; start=&ldquo;60&rdquo; (shown without braces to avoid rendering).</li>
+</ul>
+<h2 id="2-manual-iframe-more-control">2) Manual iframe (more control)</h2>
+<p>If you need custom attributes, you can embed an iframe directly. The theme includes a small <code>.video</code> class to keep a 16:9 aspect ratio.</p>
+<div class="video">
+  <iframe
+    src="https://www.youtube-nocookie.com/embed/w7Ft2ymGmfc"
+    title="YouTube video"
+    loading="lazy"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+  </iframe>
+</div>
+<p>Use the shortcode for most cases; switch to the iframe when you need full control over attributes or layout.</p>
+</div>
+
+    <nav class="pager">
+      <a class="prev" href="/posts/2025/09/first-principles-learning/">← First Principles for Learning</a>
+      
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

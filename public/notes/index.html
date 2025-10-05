@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Notes — Yiming Xu</title>
+<meta name="description" content="A clean and fast content website" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1759668612" />
+<link rel="stylesheet" href="/css/custom.css?v=1759668612" />
+
+
+<meta property="og:title" content="Notes — Yiming Xu" />
+<meta property="og:description" content="A clean and fast content website" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="//localhost:1313/notes/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/notes/">Notes</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <h1>Notes</h1>
+  
+    
+    <ul class="list">
+      
+        <li>
+          <a href="/notes/first-note/">First Note</a>
+          <span class="meta">2025-09-30</span>
+          <p class="summary">A short note example.</p>
+        </li>
+      
+    </ul>
+    
+
+  
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

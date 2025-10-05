@@ -1,0 +1,105 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --link: #0a66c2;
+  --border: #eaeaea;
+}
+[data-theme='dark'] {
+  --bg: #0b0b0b;
+  --fg: #eaeaea;
+  --muted: #9a9a9a;
+  --link: #7ab7ff;
+  --border: #262626;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+/* Prefer LaTeX-like serif: Latin Modern / Computer Modern */
+body { font-family: "Latin Modern Roman", "CMU Serif", "Computer Modern", "TeX Gyre Termes", "STIX Two Text", Times, "Times New Roman", serif; line-height: 1.7; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 760px; margin: 0 auto; padding: 1rem; }
+.header, .footer { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.footer { border-top: 1px solid var(--border); border-bottom: 0; margin-top: 2rem; padding-top: 1rem; }
+.brand a { font-weight: 700; }
+.nav { display: flex; gap: .75rem; align-items: center; }
+#theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--fg); padding: .25rem .5rem; border-radius: 6px; cursor: pointer; }
+h1,h2,h3 { line-height: 1.25; }
+.meta { color: var(--muted); font-size: .9rem; margin-left: .5rem; }
+.summary { color: var(--muted); margin: .25rem 0 0; }
+.toc { border: 1px solid var(--border); padding: .75rem; border-radius: 8px; background: rgba(0,0,0,0.02); margin: 1rem 0; }
+.pager { display: flex; justify-content: space-between; margin: 2rem 0 0; }
+pre { background: #0f172a; color: #e2e8f0; padding: .75rem; border-radius: 8px; overflow: auto; }
+code { font-family: "Latin Modern Mono", "CMU Typewriter Text", "TeX Gyre Cursor", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .95em; }
+.muted { color: var(--muted); }
+
+/* Responsive video embeds */
+.video { aspect-ratio: 16 / 9; width: 100%; }
+.video iframe { width: 100%; height: 100%; border: 0; }
+
+/* Intro block: text left, photo right */
+.intro { display: grid; grid-template-columns: 1fr 240px; gap: 1.25rem; align-items: start; margin: 1rem 0 1.5rem; }
+.intro-text p { margin-top: 0; }
+.intro-media img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); }
+@media (max-width: 720px) { .intro { grid-template-columns: 1fr; } }
+
+/* Publication cards */
+.cards { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+.card { display: block; color: inherit; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.02); transition: transform .12s ease, background .12s ease; }
+.card:hover { transform: translateY(-2px); background: rgba(0,0,0,0.04); text-decoration: none; }
+.card-media { aspect-ratio: 16 / 9; background: #1112; }
+.card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, #e5e7eb, #cbd5e1); }
+.card-body { padding: .75rem .9rem 1rem; }
+.card-title { margin: .2rem 0 .25rem; font-size: 1.05rem; }
+.card-meta { color: var(--muted); font-size: .9rem; }
+.card-summary { margin: .4rem 0 0; color: var(--muted); }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); font-size: .8rem; margin-top: .5rem; margin-right: .35rem; color: var(--muted); }
+.pub-card { grid-column: span 6; }
+@media (max-width: 860px) { .pub-card { grid-column: span 12; } }
+.pub-single .pub-cover { margin: 0 0 1rem; }
+.pub-links { margin: .5rem 0 1rem; }
+
+/* Horizontal cards for About page */
+.cards-hz { grid-template-columns: 1fr; gap: 0.9rem; }
+.cards-hz .pub-card { grid-column: auto; }
+.card.hz { display: flex; gap: 1rem; align-items: stretch; }
+.card.hz .card-media { flex: 0 0 220px; width: 220px; aspect-ratio: 4 / 3; height: auto; }
+.card.hz .card-media img, .card.hz .card-placeholder { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card.hz .card-body { display: flex; flex-direction: column; justify-content: center; }
+@media (max-width: 720px) {
+  .card.hz { flex-direction: column; }
+  .card.hz .card-media { flex: none; width: 100%; aspect-ratio: 16 / 9; }
+}
+
+/* Intro social icons (fallback in theme CSS to avoid cache/order issues) */
+.intro-media { display: flex; flex-direction: column; align-items: flex-end; }
+.intro-media img { margin-bottom: .5rem; }
+.intro-media .intro-social { margin-top: .6rem; display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
+.intro-media .social-link.icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+.intro-media .social-link.icon:hover { color: var(--fg); border-color: var(--link); background: rgba(0,0,0,0.03); }
+.intro-media .social-link.icon svg { display: block; }
+/* Brand colors */
+.intro-media .icon-linkedin { color: #0a66c2; border-color: #0a66c233; }
+.intro-media .icon-linkedin:hover { background: #0a66c21a; border-color: #0a66c2; color: #0a66c2; }
+.intro-media .icon-github { color: #24292f; border-color: #24292f33; }
+.intro-media .icon-github:hover { background: #24292f1a; border-color: #24292f; color: #24292f; }
+.intro-media .icon-scholar { color: #4285f4; border-color: #4285f433; }
+.intro-media .icon-scholar:hover { background: #4285f41a; border-color: #4285f4; color: #4285f4; }
+.intro-media .icon-orcid { color: #A6CE39; border-color: #A6CE3933; }
+.intro-media .icon-orcid:hover { background: #A6CE391a; border-color: #A6CE39; color: #A6CE39; }
+.intro-media .icon-twitter { color: #1d9bf0; border-color: #1d9bf033; }
+.intro-media .icon-twitter:hover { background: #1d9bf01a; border-color: #1d9bf0; color: #1d9bf0; }
+.intro-media .icon-website { color: var(--link); border-color: color-mix(in oklab, var(--link) 30%, transparent); }
+.intro-media .icon-website:hover { background: color-mix(in oklab, var(--link) 12%, transparent); border-color: var(--link); color: var(--link); }
+.intro-media .icon-email { color: var(--link); border-color: color-mix(in oklab, var(--link) 30%, transparent); }
+.intro-media .icon-email:hover { background: color-mix(in oklab, var(--link) 12%, transparent); border-color: var(--link); color: var(--link); }
+
+/* About page typography tuning */
+.about .content { line-height: 1.6; }
+.about .content p { margin: 0 0 0.9rem; }
+.about .content ul, .about .content ol { margin: 0.2rem 0 1rem 1.25rem; padding-left: 1.0rem; }
+.about .content li { margin: 0.15rem 0; }
+.about .content li > p { margin: 0.2rem 0; }
+.about .content li + li { margin-top: 0.15rem; }

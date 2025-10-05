@@ -1,0 +1,29 @@
+{{ define "main" }}
+  <article class="about">
+    <header class="post-header">
+      <h1>{{ .Title }}</h1>
+    </header>
+
+    {{ $showToc := cond (isset .Params "toc") .Params.toc false }}
+    {{ if $showToc }}
+      {{ with .TableOfContents }}
+        <aside class="toc">{{ . }}</aside>
+      {{ end }}
+    {{ end }}
+
+    {{/* Inject publication cards right after the H3 heading "PUBLICATIONS" */}}
+    {{ $html := .Content }}
+    {{ $cards := partial "publication_cards.html" (dict "limit" (or .Params.pubLimit 4)) }}
+    {{ $needle := `<h3 id="publications">PUBLICATIONS</h3>` }}
+    {{ $injected := replace $html $needle (print $needle "\n" $cards) }}
+    {{ if ne $html $injected }}
+      <div class="content">{{ $injected | safeHTML }}</div>
+    {{ else }}
+      <div class="content">{{ .Content }}</div>
+      {{ if or (.Params.pubcards) false }}
+        <h2>Publications</h2>
+        {{ partial "publication_cards.html" (dict "limit" (or .Params.pubLimit 4)) }}
+      {{ end }}
+    {{ end }}
+  </article>
+{{ end }}

@@ -1,0 +1,11 @@
+name = "mu-min"
+license = "MIT"
+licenselink = "https://opensource.org/licenses/MIT"
+description = "Minimal, fast content theme"
+homepage = "https://example.com"
+min_version = "0.110.0"
+
+[author]
+  name = "ym"
+  homepage = "https://example.com"
+

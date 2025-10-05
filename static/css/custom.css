@@ -1,0 +1,77 @@
+/* Local overrides loaded after the theme CSS */
+.palatino-test {}
+/* Global body font → Palatino stack */
+body { font-family: "TeX Gyre Pagella", Palatino, "Palatino Linotype", "Book Antiqua", "URW Palladio L", Georgia, serif; }
+.about .content { line-height: 1.6; }
+.about .content p { margin: 0 0 0.9rem; }
+.about .content ul, .about .content ol { margin: 0.2rem 0 1rem 1.25rem; padding-left: 1.0rem; }
+.about .content li { margin: 0.1rem 0; }
+.about .content li > p { margin: 0.2rem 0; }
+.about .content li + li { margin-top: 0.1rem; }
+
+/* Freeform publication pages (case layout) */
+.pub-single.case .content { --max: 1100px; }
+.pub-single.case .content > * { max-width: var(--max); margin-left: auto; margin-right: auto; }
+.pub-single.case .content .wide { max-width: 1200px; }
+.pub-single.case .content .full-bleed { width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); max-width: none; }
+.pub-single.case .content .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.pub-single.case .content .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.pub-single.case .content .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.pub-single.case .content .col { min-width: 0; }
+.pub-single.case .content .callout { border: 1px solid var(--border); background: rgba(0,0,0,0.03); padding: 1rem; border-radius: 10px; }
+.pub-single.case .content figure { margin: 1rem 0; }
+.pub-single.case .content figure > img { width: 100%; height: auto; display: block; border-radius: 8px; }
+.pub-single.case .content figcaption { color: var(--muted); font-size: .9rem; margin-top: .4rem; text-align: center; }
+@media (max-width: 860px) {
+  .pub-single.case .content .grid-2, .pub-single.case .content .grid-3, .pub-single.case .content .cols-2 { grid-template-columns: 1fr; }
+}
+
+/* Publication cover: constrain size and center (non-case) */
+.pub-single .pub-cover { max-width: 1100px; margin: 0 auto 1rem; }
+.pub-single .pub-cover img { width: 100%; height: auto; display: block; border-radius: 8px; }
+
+/* Social chips under avatar in intro */
+.intro-media .intro-social { margin-top: .6rem; display: flex; flex-wrap: wrap; gap: .4rem; }
+.intro-media .social-link.icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+.intro-media .social-link.icon:hover { color: var(--fg); border-color: var(--link); background: rgba(0,0,0,0.03); }
+.intro-media .social-link.icon svg { display: block; }
+
+/* Position icons below photo, aligned to the right */
+.intro-media { display: flex; flex-direction: column; align-items: flex-end; }
+.intro-media img { margin-bottom: .5rem; }
+.intro-media .intro-social { justify-content: flex-end; }
+
+/* Uniform height for publication cards (About page) */
+@media (min-width: 721px) {
+  .cards-hz .card.hz { height: var(--pub-card-h, 200px); }
+  .card.hz .card-media { height: 100%; aspect-ratio: auto; }
+  /* Use grid in body to avoid overlap and allocate space predictably */
+  .card.hz .card-body { overflow: hidden; display: grid; grid-template-rows: auto auto 1fr auto; row-gap: .25rem; align-content: start; }
+  .card.hz .card-body > * { min-width: 0; }
+  .card.hz .card-title { margin: 0 0 .2rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card.hz .card-meta { line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card.hz .card-summary { line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: .2rem; }
+  .card.hz .card-links { margin-top: .35rem; }
+}
+
+/* Brand colors */
+.intro-media .icon-linkedin { color: #0a66c2; border-color: #0a66c233; }
+.intro-media .icon-linkedin:hover { background: #0a66c21a; border-color: #0a66c2; color: #0a66c2; }
+
+.intro-media .icon-github { color: #24292f; border-color: #24292f33; }
+.intro-media .icon-github:hover { background: #24292f1a; border-color: #24292f; color: #24292f; }
+
+.intro-media .icon-scholar { color: #4285f4; border-color: #4285f433; }
+.intro-media .icon-scholar:hover { background: #4285f41a; border-color: #4285f4; color: #4285f4; }
+
+.intro-media .icon-orcid { color: #A6CE39; border-color: #A6CE3933; }
+.intro-media .icon-orcid:hover { background: #A6CE391a; border-color: #A6CE39; color: #A6CE39; }
+
+.intro-media .icon-twitter { color: #1d9bf0; border-color: #1d9bf033; }
+.intro-media .icon-twitter:hover { background: #1d9bf01a; border-color: #1d9bf0; color: #1d9bf0; }
+
+.intro-media .icon-website { color: var(--link); border-color: color-mix(in oklab, var(--link) 30%, transparent); }
+.intro-media .icon-website:hover { background: color-mix(in oklab, var(--link) 12%, transparent); border-color: var(--link); color: var(--link); }
+
+.intro-media .icon-email { color: var(--link); border-color: color-mix(in oklab, var(--link) 30%, transparent); }
+.intro-media .icon-email:hover { background: color-mix(in oklab, var(--link) 12%, transparent); border-color: var(--link); color: var(--link); }

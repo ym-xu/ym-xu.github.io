@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph — Yiming Xu</title>
+<meta name="description" content="A retrieval QA method that expands passages with KG context to improve recall and answer quality." />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1759669007" />
+<link rel="stylesheet" href="/css/custom.css?v=1759669007" />
+
+
+<meta property="og:title" content="Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph — Yiming Xu" />
+<meta property="og:description" content="A retrieval QA method that expands passages with KG context to improve recall and answer quality." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="//localhost:1313/publications/lrec-coling-2024-kg-qa/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/notes/">Notes</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <article class="pub-single case">
+    <header class="post-header">
+      <h1>Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</h1>
+      
+      
+    </header>
+
+    
+    
+    
+    
+
+    
+      <div class="pub-links">
+        <a class="pill" href="https://aclanthology.org/2024.lrec-main.1225.pdf" target="_blank" rel="noopener">PDF</a>
+        
+        
+        <a class="pill" href="https://aclanthology.org/2024.lrec-main.1225/" target="_blank" rel="noopener">Project</a>
+      </div>
+    
+
+    <div class="content"><section class="wide">
+  <h2>Overview</h2>
+  <p>
+    We propose a retrieval-based QA method that <strong>expands candidate passages</strong> with structured context from a knowledge graph (KG). By injecting entities and relations that connect the question and passages, we improve recall on entity-centric queries while preserving precision.
+  </p>
+</section>
+<figure class="wide">
+  <img src="./cover.jpg" alt="Teaser: KG expansion improves retrieval and QA" />
+  <figcaption>KG-driven passage expansion exposes relevant entities and relations for better retrieval and answer grounding.</figcaption>
+</figure>
+<!-- <div class="cols-1">
+  <div class="col">
+
+    <h3>Method</h3>
+    <p>
+      Given a query and a set of retrieved passages, we match entities in a KG and expand each passage with a small set of <em>salient</em> neighbors (entities/relations) subject to a budget. The expanded text is fed to a reader (or LLM) for answer extraction or generation.
+    </p>
+    <ul>
+      <li>Entity linking → KG lookup → expansion candidate scoring</li>
+      <li>Budgeted selection to avoid noise and verbosity</li>
+      <li>Plug-and-play with standard RAG pipelines</li>
+    </ul>
+  </div>
+  <div class="col">
+    <figure>
+      <img src="./diagram.svg" alt="System diagram of KG expansion within a RAG pipeline" />
+      <figcaption>System diagram</figcaption>
+    </figure>
+  </div>
+</div> -->
+<!-- <div class="callout">
+  <strong>Key takeaway.</strong> KG expansion improves recall for entity-centric questions and yields higher answer quality with modest added cost.
+</div> -->
+<!-- <h3>Results</h3>
+<div class="grid-3">
+  <figure>
+    <img src="./ex1.svg" alt="Example 1" />
+    <figcaption>Qualitative example 1</figcaption>
+  </figure>
+  <figure>
+    <img src="./ex2.svg" alt="Example 2" />
+    <figcaption>Qualitative example 2</figcaption>
+  </figure>
+  <figure>
+    <img src="./ex3.svg" alt="Example 3" />
+    <figcaption>Qualitative example 3</figcaption>
+  </figure>
+</div> -->
+<!-- <h3>Resources</h3>
+<ul>
+  <li><a href="https://aclanthology.org/2024.lrec-main.1225.pdf" target="_blank" rel="noopener">Paper (PDF)</a></li>
+  <li><a href="https://aclanthology.org/2024.lrec-main.1225/" target="_blank" rel="noopener">Anthology page</a></li>
+</ul> -->
+</div>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

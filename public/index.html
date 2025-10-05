@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+	<meta name="generator" content="Hugo 0.150.1"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yiming Xu</title>
+<meta name="description" content="A clean and fast content website" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1759668612" />
+<link rel="stylesheet" href="/css/custom.css?v=1759668612" />
+
+
+<meta property="og:title" content="Yiming Xu" />
+<meta property="og:description" content="A clean and fast content website" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="//localhost:1313/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/notes/">Notes</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <section>
+    <h1>Latest Posts</h1>
+    
+    
+      <ul class="post-list">
+        
+          <li>
+            <a href="/posts/2025/09/youtube-embed-demo/">YouTube Embed Demo</a>
+            <span class="meta">2025-09-30</span>
+            <p class="summary">Two ways to embed a YouTube video: Hugo shortcode and manual iframe (privacy-friendly).</p>
+          </li>
+        
+          <li>
+            <a href="/posts/2025/09/first-principles-learning/">First Principles for Learning</a>
+            <span class="meta">2025-09-30</span>
+            <p class="summary">A practical, evergreen framework to learn faster and remember longer.</p>
+          </li>
+        
+          <li>
+            <a href="/posts/2025/09/hello-world/">Hello World</a>
+            <span class="meta">2025-09-30</span>
+            <p class="summary">A sample post to verify layout, TOC, and metadata.</p>
+          </li>
+        
+      </ul>
+      <p><a href="/posts/">More posts →</a></p>
+    
+  </section>
+
+  <section>
+    <h2>Latest Notes</h2>
+    
+    
+      <ul class="note-list">
+        
+          <li>
+            <a href="/notes/first-note/">First Note</a>
+            <span class="meta">2025-09-30</span>
+            <p class="summary">A short note example.</p>
+          </li>
+        
+      </ul>
+      <p><a href="/notes/">More notes →</a></p>
+    
+  </section>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

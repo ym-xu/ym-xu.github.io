@@ -1,0 +1,15 @@
+{{- $title := cond .IsHome site.Title (print .Title " — " site.Title) -}}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{ $title }}</title>
+<meta name="description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ with site.Params.description }}{{ . }}{{ end }}{{ end }}" />
+<link rel="alternate" type="application/rss+xml" href="{{ "index.xml" | relURL }}" title="{{ site.Title }}" />
+{{ $ver := now.Unix }}
+<link rel="stylesheet" href="{{ "css/styles.css" | relURL }}?v={{ $ver }}" />
+<link rel="stylesheet" href="{{ "css/custom.css" | relURL }}?v={{ $ver }}" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="{{ $title }}" />
+<meta property="og:description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ with site.Params.description }}{{ . }}{{ end }}{{ end }}" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="{{ .Permalink }}" />

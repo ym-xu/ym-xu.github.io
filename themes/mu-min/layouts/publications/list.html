@@ -1,0 +1,35 @@
+{{ define "main" }}
+  <h1>Publications</h1>
+  {{ $p := .Paginate (.Pages.ByDate.Reverse) }}
+  <div class="cards">
+    {{ range $p.Pages }}
+      {{ $cover := .Resources.GetMatch "cover*" }}
+      <a class="card pub-card" href="{{ .RelPermalink }}">
+        <div class="card-media">
+          {{ if $cover }}
+            <img src="{{ $cover.RelPermalink }}" alt="cover for {{ .Title }}" loading="lazy" decoding="async" />
+          {{ else }}
+            <div class="card-placeholder" aria-hidden="true"></div>
+          {{ end }}
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ .Title }}</h3>
+          <div class="card-meta">
+            {{ with .Params.authors }}<span class="authors">{{ . }}</span>{{ end }}
+            {{ with .Params.venue }} · <span class="venue">{{ . }}</span>{{ end }}
+            {{ with .Params.year }} <span class="year">({{ . }})</span>{{ end }}
+          </div>
+          {{ with .Params.summary }}<p class="card-summary">{{ . }}</p>{{ end }}
+          <div class="card-links">
+            {{ with .Params.pdf }}<span class="pill">PDF</span>{{ end }}
+            {{ with .Params.code }}<span class="pill">Code</span>{{ end }}
+            {{ with .Params.doi }}<span class="pill">DOI</span>{{ end }}
+            {{ with .Params.project }}<span class="pill">Project</span>{{ end }}
+          </div>
+        </div>
+      </a>
+    {{ end }}
+  </div>
+  {{ template "partials/pagination.html" . }}
+{{ end }}
+

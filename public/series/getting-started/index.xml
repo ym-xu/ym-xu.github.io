@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Getting-Started on Yiming Xu</title>
+    <link>//localhost:1313/series/getting-started/</link>
+    <description>Recent content in Getting-Started on Yiming Xu</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 30 Sep 2025 12:00:00 +0800</lastBuildDate>
+    <atom:link href="//localhost:1313/series/getting-started/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hello World</title>
+      <link>//localhost:1313/posts/2025/09/hello-world/</link>
+      <pubDate>Tue, 30 Sep 2025 12:00:00 +0800</pubDate>
+      <guid>//localhost:1313/posts/2025/09/hello-world/</guid>
+      <description>A sample post to verify layout, TOC, and metadata.</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,42 @@
+<script>
+// Theme toggle with localStorage
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+{{/* Plausible (optional) */}}
+{{ with site.Params.plausibleDomain }}
+<script defer data-domain="{{ . }}" src="https://plausible.io/js/script.js"></script>
+{{ end }}
+
+{{/* Giscus (optional, only on posts if enabled) */}}
+{{ if and (.IsPage) (.Params.comments) (site.Params.giscus.repo) }}
+<script src="https://giscus.app/client.js"
+        data-repo="{{ site.Params.giscus.repo }}"
+        data-repo-id="{{ site.Params.giscus.repo_id }}"
+        data-category="{{ site.Params.giscus.category }}"
+        data-category-id="{{ site.Params.giscus.category_id }}"
+        data-mapping="{{ site.Params.giscus.mapping }}"
+        data-reactions-enabled="{{ site.Params.giscus.reactions_enabled }}"
+        data-emit-metadata="{{ site.Params.giscus.emit_metadata }}"
+        data-input-position="{{ site.Params.giscus.input_position }}"
+        data-theme="{{ site.Params.giscus.theme }}"
+        data-lang="{{ site.Params.giscus.lang }}"
+        crossorigin="anonymous"
+        async>
+</script>
+{{ end }}
