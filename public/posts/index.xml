@@ -2,31 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Yiming Xu</title>
-    <link>//localhost:1313/posts/</link>
+    <link>http://localhost:1313/posts/</link>
     <description>Recent content in Posts on Yiming Xu</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Tue, 30 Sep 2025 12:20:00 +0800</lastBuildDate>
-    <atom:link href="//localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>YouTube Embed Demo</title>
-      <link>//localhost:1313/posts/2025/09/youtube-embed-demo/</link>
+      <link>http://localhost:1313/posts/2025/09/youtube-embed-demo/</link>
       <pubDate>Tue, 30 Sep 2025 12:20:00 +0800</pubDate>
-      <guid>//localhost:1313/posts/2025/09/youtube-embed-demo/</guid>
+      <guid>http://localhost:1313/posts/2025/09/youtube-embed-demo/</guid>
       <description>Two ways to embed a YouTube video: Hugo shortcode and manual iframe (privacy-friendly).</description>
     </item>
     <item>
       <title>First Principles for Learning</title>
-      <link>//localhost:1313/posts/2025/09/first-principles-learning/</link>
+      <link>http://localhost:1313/posts/2025/09/first-principles-learning/</link>
       <pubDate>Tue, 30 Sep 2025 12:10:00 +0800</pubDate>
-      <guid>//localhost:1313/posts/2025/09/first-principles-learning/</guid>
+      <guid>http://localhost:1313/posts/2025/09/first-principles-learning/</guid>
       <description>A practical, evergreen framework to learn faster and remember longer.</description>
     </item>
     <item>
       <title>Hello World</title>
-      <link>//localhost:1313/posts/2025/09/hello-world/</link>
+      <link>http://localhost:1313/posts/2025/09/hello-world/</link>
       <pubDate>Tue, 30 Sep 2025 12:00:00 +0800</pubDate>
-      <guid>//localhost:1313/posts/2025/09/hello-world/</guid>
+      <guid>http://localhost:1313/posts/2025/09/hello-world/</guid>
       <description>A sample post to verify layout, TOC, and metadata.</description>
     </item>
   </channel>
