@@ -1,7 +1,7 @@
 ---
 title: Context Engineering
-date: 2025-09-30T12:10:00+08:00
-lastmod: 2025-09-30T12:10:00+08:00
+date: "<% tp.date.now('YYYY-MM-DD') %>"
+lastmod: "<% tp.date.now('YYYY-MM-DD') %>"
 slug: context-engineering
 summary: A practical, evergreen framework to learn faster and remember longer.
 tags:
