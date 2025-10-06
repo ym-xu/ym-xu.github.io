@@ -4,53 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "d8ea621d7c9c3c47",
+        "id": "041afd361cb4dd9e",
         "type": "tabs",
         "children": [
           {
-            "id": "8c5cf0acf4e36947",
+            "id": "61d27cb8a8ae352b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "youtube-embed-demo/index.md",
+                "file": "template/index.md",
                 "mode": "source",
-                "source": false
+                "source": true
               },
               "icon": "lucide-file",
               "title": "index"
             }
-          },
-          {
-            "id": "66bec9f46a2480a6",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Context Engineering/context engineering.md",
-                "mode": "preview",
-                "source": true
-              },
-              "icon": "lucide-file",
-              "title": "context engineering"
-            }
-          },
-          {
-            "id": "01a9c58970f31c3d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Context Engineering/context engineering.md",
-                "mode": "preview",
-                "source": true
-              },
-              "icon": "lucide-file",
-              "title": "context engineering"
-            }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -123,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Context Engineering/context engineering.md",
+                "file": "template/index.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -133,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "context engineering 的反向链接列表"
+              "title": "index 的反向链接列表"
             }
           },
           {
@@ -142,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Context Engineering/context engineering.md",
+                "file": "template/index.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "context engineering 的出链列表"
+              "title": "index 的出链列表"
             }
           },
           {
@@ -171,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Context Engineering/context engineering.md",
+                "file": "template/index.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "context engineering 的大纲"
+              "title": "index 的大纲"
             }
           }
         ]
@@ -195,16 +166,19 @@
       "daily-notes:打开/创建今天的日记": false,
       "templates:插入模板": false,
       "command-palette:打开命令面板": false,
-      "bases:创建新数据库": false
+      "bases:创建新数据库": false,
+      "templater-obsidian:Templater": false
     }
   },
-  "active": "01a9c58970f31c3d",
+  "active": "61d27cb8a8ae352b",
   "lastOpenFiles": [
-    "template/posts.md",
+    "youtube-embed-demo/index.md",
+    "template/index.md",
+    "未命名.md",
+    "first-principles-learning/index.md",
+    "2025-10-05.md",
     "Context Engineering/context engineering.md",
     "template",
-    "first-principles-learning/index.md",
-    "youtube-embed-demo/index.md",
     "Context Engineering"
   ]
 }
