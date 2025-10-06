@@ -13,8 +13,8 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "template/index.md",
-                "mode": "source",
+                "file": "Context Engineering/index.md",
+                "mode": "preview",
                 "source": true
               },
               "icon": "lucide-file",
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "template/index.md",
+                "file": "Context Engineering/index.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -113,7 +113,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "template/index.md",
+                "file": "Context Engineering/index.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -142,7 +142,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "template/index.md",
+                "file": "Context Engineering/index.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -172,10 +172,11 @@
   },
   "active": "61d27cb8a8ae352b",
   "lastOpenFiles": [
-    "youtube-embed-demo/index.md",
     "template/index.md",
-    "未命名.md",
+    "Context Engineering/index.md",
+    "youtube-embed-demo/index.md",
     "first-principles-learning/index.md",
+    "未命名.md",
     "2025-10-05.md",
     "Context Engineering/context engineering.md",
     "template",
