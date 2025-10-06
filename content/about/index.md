@@ -31,11 +31,12 @@ After graduation, I worked in industry for two years, focusing on AI Agents deve
 ---
 
 ### NEWS
-- May. 2025: I start my PhD at Computer Vision Center, UAB
 
-- Jan. 2025 I receieved FPI Fellowship.
+-	May 2025: I started my PhD at the Computer Vision Center (CVC), Universitat Autònoma de Barcelona (UAB).
 
-- Feb. 2024: My master thesis was accepted by COLING 2024.
+-	Jan 2025: I received the FPI Fellowship to support my PhD research at CVC, UAB.
+
+-	Feb 2024: My master’s thesis was accepted to COLING 2024.
 
 ---
 
