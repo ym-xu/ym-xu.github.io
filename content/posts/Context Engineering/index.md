@@ -1,12 +1,10 @@
 ---
-title: "Planner Desgin"
-date: "{{date:YYYY-MM-DD}}"
-lastmod: "{{date:YYYY-MM-DD}}"
-slug: 
+title: planner design
+date: 2025-10-07
+lastmod: 2025-10-07T10:06:17+02:00
+slug:
 summary: ""
 tags:
-  - ""
-  - ""
   - ""
 series: ""
 draft: false
@@ -152,3 +150,5 @@ comments: true
 - 对于“结构/多模态/跨页聚合/计数”这类题，**Agent 的分阶段策略**比“RAG 一步到位”**更稳定且可重跑**；
     
 - 同时，我们保留 RAG baseline 和兜底路径，公平对比并提高系统鲁棒性。
+
+before  build the context window, do embedding based retrieval first.
