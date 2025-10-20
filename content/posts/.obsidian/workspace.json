@@ -27,9 +27,9 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "planner design/index.md",
-                "mode": "source",
-                "source": false
+                "file": "Spanish A1/index.md",
+                "mode": "preview",
+                "source": true
               },
               "icon": "lucide-file",
               "title": "index"
@@ -187,14 +187,15 @@
   },
   "active": "306e43eab1a64aa6",
   "lastOpenFiles": [
-    "hello-world/index.md",
-    "planner design/index.md",
     "template/index.md",
+    "Spanish A1/index.md",
+    "planner design/index.md",
+    "Spanish A1",
+    "hello-world/index.md",
     "CS336",
     "Generative Information Retrieval/index.md",
     "Generative Information Retrieval",
     "youtube-embed-demo/index.md",
-    "未命名",
     "Context Engineering/index.md",
     "planner design",
     "first-principles-learning/index.md",
