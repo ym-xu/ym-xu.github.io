@@ -27,7 +27,21 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Spanish A1/index.md",
+                "file": "planner design/index.md",
+                "mode": "source",
+                "source": true
+              },
+              "icon": "lucide-file",
+              "title": "index"
+            }
+          },
+          {
+            "id": "b40565e1f87120d8",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Reading List/index.md",
                 "mode": "preview",
                 "source": true
               },
@@ -36,7 +50,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -185,11 +199,13 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "306e43eab1a64aa6",
+  "active": "b40565e1f87120d8",
   "lastOpenFiles": [
     "template/index.md",
-    "Spanish A1/index.md",
+    "Reading List/index.md",
     "planner design/index.md",
+    "Reading List",
+    "Spanish A1/index.md",
     "Spanish A1",
     "hello-world/index.md",
     "CS336",
