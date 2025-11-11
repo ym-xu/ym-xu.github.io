@@ -41,7 +41,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Qwen Series/index.md",
+                "file": "Reading List/index.md",
                 "mode": "source",
                 "source": true
               },
@@ -199,19 +199,19 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "b40565e1f87120d8",
+  "active": "fb33fde7a546dcd3",
   "lastOpenFiles": [
     "DeepSeek Series/index.md",
+    "Reading List/index.md",
     "planner design/index.md",
     "Context Engineering/index.md",
     "youtube-embed-demo/index.md",
     "Generative Information Retrieval/index.md",
     "first-principles-learning/index.md",
     "Spanish A1/index.md",
-    "Qwen Series/index.md",
     "template/index.md",
     "DeepSeek Series",
-    "Qwen Series",
+    "Reading List",
     "Spanish A1",
     "hello-world/index.md",
     "CS336",
