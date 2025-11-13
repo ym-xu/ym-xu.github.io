@@ -25,7 +25,8 @@ I am currently a PhD Fellow at the Computer Vision Center (CVC), Universitat Aut
 I am part of the [Vision & Language Group](https://www.karatzas.co.uk/home), supervised by Dimosthenis Karatzas and Ernest Valveny, my research focuse on Multimodal Document Understanding.
 
 Before starting my PhD, I received my master degree from the University of Amsterdam, where I completed my thesis on Multimodal RAG under the supervision of [Benno Kruit](https://scholar.google.com/citations?user=iKI-htQAAAAJ&hl=en) and [Jan-Christoph Kalo](https://scholar.google.com/citations?user=2EE-YUsAAAAJ&hl=en).
-After graduation, I spent two years in industry building AI agents for e-commerce scenarios. I served as the principal developer on our flagship agent project, which went on to raise close to USD 7 million in funding.
+
+ After graduating from my MSc program, I spent two years in industry building AI agents for e-commerce scenarios. I served as the principal developer on our flagship agent project, which went on to raise close to USD 7 million in funding.
 {{< /intro >}}
 
 ---
