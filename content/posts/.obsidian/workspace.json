@@ -41,9 +41,9 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reading List/index.md",
+                "file": "DocLens/index.md",
                 "mode": "source",
-                "source": true
+                "source": false
               },
               "icon": "lucide-file",
               "title": "index"
@@ -199,13 +199,17 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "fb33fde7a546dcd3",
+  "active": "b40565e1f87120d8",
   "lastOpenFiles": [
-    "DeepSeek Series/index.md",
+    "DocLens/Pasted image 20251117124801.png",
+    "DocLens/index.md",
+    "youtube-embed-demo/index.md",
     "Reading List/index.md",
+    "2025-10-07.md",
+    "DocLens",
+    "DeepSeek Series/index.md",
     "planner design/index.md",
     "Context Engineering/index.md",
-    "youtube-embed-demo/index.md",
     "Generative Information Retrieval/index.md",
     "first-principles-learning/index.md",
     "Spanish A1/index.md",

@@ -21,3 +21,4 @@ key: value
 | DeepSeek-OCR: Contexts Optical Compression | [Link](https://arxiv.org/pdf/2510.18234) | [Code](https://github.com/deepseek-ai/DeepSeek-OCR) | arXiv | DeepSeek |
 | DocThinker: Explainable Multimodal Large Language Models with Rule-based Reinforcement Learning for Document Understanding | [Link](https://arxiv.org/pdf/2508.08589) | [Code](https://github.com/wenwenyu/DocThinker) | arXiv | Alibaba |
 | SlideAgent: Hierarchical Agentic Framework for Multi-Page Visual Document Understanding | [Link](https://arxiv.org/pdf/2510.26615) | [Project](https://slideagent.github.io/) | arXiv | Georgia Tech & JPMorgan Research |
+| DocLens : A Tool-Augmented Multi-Agent Framework for Long Visual Document Understanding | [Link](https://www.arxiv.org/pdf/2511.11552) | [Project](https://dwzhu-pku.github.io/DocLens/) | arXiv | Google Cloud |
