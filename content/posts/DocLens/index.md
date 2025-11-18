@@ -12,4 +12,4 @@ toc: true
 comments: true
 key: value
 ---
-![DocLens overview](Pasted image 20251117124801.png)
+![DocLens overview](doclens-overview.png)

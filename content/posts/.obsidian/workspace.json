@@ -41,7 +41,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DocLens/index.md",
+                "file": "youtube-embed-demo/index.md",
                 "mode": "source",
                 "source": false
               },
@@ -201,8 +201,10 @@
   },
   "active": "b40565e1f87120d8",
   "lastOpenFiles": [
-    "DocLens/Pasted image 20251117124801.png",
+    "DocLens/doclens-overview.png",
+    "Pasted.md",
     "DocLens/index.md",
+    "DocLens/Pasted image 20251117124801.png",
     "youtube-embed-demo/index.md",
     "Reading List/index.md",
     "2025-10-07.md",
