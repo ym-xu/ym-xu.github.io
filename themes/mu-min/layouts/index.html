@@ -18,22 +18,4 @@
     {{ end }}
   </section>
 
-  <section>
-    <h2>Latest Notes</h2>
-    {{ $notes := first 5 (where site.RegularPages "Section" "notes") }}
-    {{ if gt (len $notes) 0 }}
-      <ul class="note-list">
-        {{ range $notes }}
-          <li>
-            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-            <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
-            {{ with .Params.summary }}<p class="summary">{{ . }}</p>{{ end }}
-          </li>
-        {{ end }}
-      </ul>
-      <p><a href="{{ "/notes/" | relURL }}">More notes →</a></p>
-    {{ else }}
-      <p>No notes yet.</p>
-    {{ end }}
-  </section>
 {{ end }}
