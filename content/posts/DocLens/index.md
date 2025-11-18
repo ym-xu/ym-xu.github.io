@@ -12,4 +12,6 @@ toc: true
 comments: true
 key: value
 ---
-![DocLens overview](doclens-overview.png)
+<p style="max-width: 900px; margin: 0 auto;">
+  <img src="doclens-overview.png" alt="DocLens overview" style="width: 100%; height: auto;" />
+</p>
