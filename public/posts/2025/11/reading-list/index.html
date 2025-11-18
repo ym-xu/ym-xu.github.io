@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reading List — Yiming Xu</title>
+<meta name="description" content="A clean and fast content website" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1763455480" />
+<link rel="stylesheet" href="/css/custom.css?v=1763455480" />
+
+
+<meta property="og:title" content="Reading List — Yiming Xu" />
+<meta property="og:description" content="A clean and fast content website" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/posts/2025/11/reading-list/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <h1>Reading List</h1>
+      
+      
+        <div class="meta">
+          <span>2025-11-11</span>
+           · <span>1 min read</span>
+           · <span>
+            <a href="/tags/">#</a>
+          </span>
+        </div>
+      
+    </header>
+
+    
+    
+      
+        <aside class="toc"><nav id="TableOfContents"></nav></aside>
+      
+    
+
+    <div class="content"><table>
+  <thead>
+      <tr>
+          <th>Paper</th>
+          <th>Paper Link</th>
+          <th>Code / Model</th>
+          <th>Venue</th>
+          <th>Brand</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>MDocAgent: A Multi-Modal Multi-Agent Framework for Document Understanding</td>
+          <td><a href="https://arxiv.org/pdf/2503.13964">Link</a></td>
+          <td><a href="https://github.com/aiming-lab/MDocAgent">Code</a></td>
+          <td>arXiv</td>
+          <td>AIMing Lab</td>
+      </tr>
+      <tr>
+          <td>Visual Document Understanding and Question Answering: A Multi-Agent Collaboration Framework with Test-Time Scaling</td>
+          <td><a href="https://arxiv.org/pdf/2508.03404">Link</a></td>
+          <td><a href="https://github.com/YU-deep/MACT">Code</a></td>
+          <td>arXiv</td>
+          <td>Qwen</td>
+      </tr>
+      <tr>
+          <td>ViDoRAG: Visual Document Retrieval-Augmented Generation via Dynamic Iterative Reasoning Agents</td>
+          <td><a href="https://arxiv.org/pdf/2502.18017">Link</a></td>
+          <td><a href="https://github.com/Alibaba-NLP/ViDoRAG">Code</a></td>
+          <td>arXiv</td>
+          <td>Alibaba NLP</td>
+      </tr>
+      <tr>
+          <td>DeepSeek-OCR: Contexts Optical Compression</td>
+          <td><a href="https://arxiv.org/pdf/2510.18234">Link</a></td>
+          <td><a href="https://github.com/deepseek-ai/DeepSeek-OCR">Code</a></td>
+          <td>arXiv</td>
+          <td>DeepSeek</td>
+      </tr>
+      <tr>
+          <td>DocThinker: Explainable Multimodal Large Language Models with Rule-based Reinforcement Learning for Document Understanding</td>
+          <td><a href="https://arxiv.org/pdf/2508.08589">Link</a></td>
+          <td><a href="https://github.com/wenwenyu/DocThinker">Code</a></td>
+          <td>arXiv</td>
+          <td>Alibaba</td>
+      </tr>
+      <tr>
+          <td>SlideAgent: Hierarchical Agentic Framework for Multi-Page Visual Document Understanding</td>
+          <td><a href="https://arxiv.org/pdf/2510.26615">Link</a></td>
+          <td><a href="https://slideagent.github.io/">Project</a></td>
+          <td>arXiv</td>
+          <td>Georgia Tech &amp; JPMorgan Research</td>
+      </tr>
+      <tr>
+          <td>DocLens : A Tool-Augmented Multi-Agent Framework for Long Visual Document Understanding</td>
+          <td><a href="https://www.arxiv.org/pdf/2511.11552">Link</a></td>
+          <td><a href="https://dwzhu-pku.github.io/DocLens/">Project</a></td>
+          <td>arXiv</td>
+          <td>Google Cloud</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+
+    <nav class="pager">
+      <a class="prev" href="/posts/2025/10/">← </a>
+      <a class="next" href="/posts/2025/11/doclens-a-tool-augmented-multi-agent-framework-for-long-visual-document-understanding/">DocLens : A Tool-Augmented Multi-Agent Framework for Long Visual Document Understanding →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>planner work process — Yiming Xu</title>
+<meta name="description" content="A clean and fast content website" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1763455480" />
+<link rel="stylesheet" href="/css/custom.css?v=1763455480" />
+
+
+<meta property="og:title" content="planner work process — Yiming Xu" />
+<meta property="og:description" content="A clean and fast content website" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/posts/2025/10/planner-work-process/" />
+
+  </head>
+  <body>
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/posts/">Posts</a>
+      
+        <a class="nav-item" href="/about/">About</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <h1>planner work process</h1>
+      
+      
+        <div class="meta">
+          <span>2025-10-07</span>
+           · <span>2 min read</span>
+           · <span>
+            <a href="/tags/">#</a>
+          </span>
+        </div>
+      
+    </header>
+
+    
+    
+      
+        <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#router-hint-accuracy-hit-on-any-matching-evidence-source">Router Hint Accuracy (Hit-on-Any Matching Evidence Source)</a></li>
+        <li><a href="#support-nodes-page-accuracy">Support Nodes‘ Page Accuracy</a></li>
+        <li><a href="#router-hint-accuracy-doc">Router Hint Accuracy (Doc)</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></aside>
+      
+    
+
+    <div class="content"><p>planner</p>
+<p><strong>索引产物</strong></p>
+<ul>
+<li>dense_coarse.jsonl / coarse.faiss：section/image/table 的语义摘要（MMR）</li>
+<li>sparse_coarse.jsonl / bm25_coarse/：多域（title/caption/table_schema/labels/aliases/body）</li>
+<li>dense_leaf.jsonl（仅 chunk） / leaf.faiss / bm25_leaf/：叶子级检索（Observer 用）</li>
+<li>graph_edges.jsonl：child / parent / sibling / same_page / ref / has_col</li>
+<li>id_maps.json：label2id、figure、table
+<strong>角色</strong>：section、image（figure）、table
+<strong>Planner 输出</strong>：<strong>计划</strong>，不是执行结果；执行交给 <strong>Observer</strong>，判定与补证由 <strong>Reasoner</strong> 完成。
+<strong>LLM-Only</strong>：无 LLM 直接报错，不走规则回退。</li>
+</ul>
+<p>让agents自己决定使用哪种检索方法</p>
+<p>1 特定任务 医疗场景</p>
+<p>2 小模型碰瓷大模型</p>
+<p>3 可解释性，怎么证明你的可解释性比CoT优越呢</p>
+<p>4 长文档理解，但是做攻击或隐私保护</p>
+<table>
+  <thead>
+      <tr>
+          <th>Type        </th>
+          <th style="text-align: right">Samples</th>
+          <th style="text-align: right">Correct</th>
+          <th style="text-align: right">Accuracy</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Single-page </td>
+          <td style="text-align: right">    370</td>
+          <td style="text-align: right">      89</td>
+          <td style="text-align: right">  24.05%</td>
+      </tr>
+      <tr>
+          <td>Cross-page  </td>
+          <td style="text-align: right">    465</td>
+          <td style="text-align: right">      32</td>
+          <td style="text-align: right">    6.88%</td>
+      </tr>
+      <tr>
+          <td>Unknown     </td>
+          <td style="text-align: right">    219</td>
+          <td style="text-align: right">    146</td>
+          <td style="text-align: right">  66.67%</td>
+      </tr>
+      <tr>
+          <td><strong>Overall</strong> </td>
+          <td style="text-align: right">  1,054</td>
+          <td style="text-align: right">    267</td>
+          <td style="text-align: right">  25.33%</td>
+      </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+      <tr>
+          <th>Evidence Source </th>
+          <th style="text-align: right">Samples</th>
+          <th style="text-align: right">Correct</th>
+          <th style="text-align: right">Accuracy</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Chart           </td>
+          <td style="text-align: right">    174</td>
+          <td style="text-align: right">      36</td>
+          <td style="text-align: right">  20.69%</td>
+      </tr>
+      <tr>
+          <td>Table           </td>
+          <td style="text-align: right">    210</td>
+          <td style="text-align: right">      30</td>
+          <td style="text-align: right">  14.29%</td>
+      </tr>
+      <tr>
+          <td>Pure-text       </td>
+          <td style="text-align: right">    300</td>
+          <td style="text-align: right">      51</td>
+          <td style="text-align: right">  17.00%</td>
+      </tr>
+      <tr>
+          <td>Generalized-text</td>
+          <td style="text-align: right">    115</td>
+          <td style="text-align: right">      11</td>
+          <td style="text-align: right">    9.57%</td>
+      </tr>
+      <tr>
+          <td>Figure          </td>
+          <td style="text-align: right">    296</td>
+          <td style="text-align: right">      26</td>
+          <td style="text-align: right">    8.78%</td>
+      </tr>
+      <tr>
+          <td><strong>Overall</strong>     </td>
+          <td style="text-align: right">  1,054</td>
+          <td style="text-align: right">    267</td>
+          <td style="text-align: right">  25.33%</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="router-hint-accuracy-hit-on-any-matching-evidence-source">Router Hint Accuracy (Hit-on-Any Matching Evidence Source)</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Router Hint</th>
+          <th>Evidence Targets</th>
+          <th style="text-align: right">Count</th>
+          <th style="text-align: right">Correct</th>
+          <th style="text-align: right">Accuracy</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>text</td>
+          <td>Pure-text (Plain-text)</td>
+          <td style="text-align: right">484</td>
+          <td style="text-align: right">174</td>
+          <td style="text-align: right">35.95 %</td>
+      </tr>
+      <tr>
+          <td>table</td>
+          <td>Table</td>
+          <td style="text-align: right">253</td>
+          <td style="text-align: right">108</td>
+          <td style="text-align: right">42.69 %</td>
+      </tr>
+      <tr>
+          <td>graphics</td>
+          <td>Chart, Figure</td>
+          <td style="text-align: right">226</td>
+          <td style="text-align: right">178</td>
+          <td style="text-align: right">78.76 %</td>
+      </tr>
+      <tr>
+          <td>layout</td>
+          <td>Generalized-text (Layout)</td>
+          <td style="text-align: right">23</td>
+          <td style="text-align: right">8</td>
+          <td style="text-align: right">34.78 %</td>
+      </tr>
+      <tr>
+          <td><strong>total</strong></td>
+          <td>All above</td>
+          <td style="text-align: right">986</td>
+          <td style="text-align: right">468</td>
+          <td style="text-align: right">47.46 %</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="support-nodes-page-accuracy">Support Nodes‘ Page Accuracy</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Metric</th>
+          <th>Value</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Hit@Any</td>
+          <td>35.45 % (296 / 835)</td>
+      </tr>
+      <tr>
+          <td>precision</td>
+          <td>0.2341</td>
+      </tr>
+      <tr>
+          <td>recall</td>
+          <td>0.2400</td>
+      </tr>
+      <tr>
+          <td>F1</td>
+          <td>0.2223</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="router-hint-accuracy-doc">Router Hint Accuracy (Doc)</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Router Hint</th>
+          <th>Evidence Targets</th>
+          <th style="text-align: right">Count</th>
+          <th style="text-align: right">Correct</th>
+          <th style="text-align: right">Accuracy</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>text</td>
+          <td>Pure-text (Plain-text)</td>
+          <td style="text-align: right">367</td>
+          <td style="text-align: right">147</td>
+          <td style="text-align: right">40.05 %</td>
+      </tr>
+      <tr>
+          <td>table</td>
+          <td>Table</td>
+          <td style="text-align: right">190</td>
+          <td style="text-align: right">95</td>
+          <td style="text-align: right">50.00 %</td>
+      </tr>
+      <tr>
+          <td>graphics</td>
+          <td>Chart, Figure</td>
+          <td style="text-align: right">153</td>
+          <td style="text-align: right">122</td>
+          <td style="text-align: right">79.74 %</td>
+      </tr>
+      <tr>
+          <td>layout</td>
+          <td>Generalized-text (Layout)</td>
+          <td style="text-align: right">18</td>
+          <td style="text-align: right">6</td>
+          <td style="text-align: right">33.33 %</td>
+      </tr>
+      <tr>
+          <td><strong>Overall</strong>     </td>
+          <td>All above</td>
+          <td style="text-align: right">778</td>
+          <td style="text-align: right">370</td>
+          <td style="text-align: right">47.58 %</td>
+      </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+      <tr>
+          <th>Router Hint</th>
+          <th>Evidence Targets</th>
+          <th style="text-align: right">Baseline Count</th>
+          <th style="text-align: right">Baseline Correct</th>
+          <th style="text-align: right">Baseline Accuracy</th>
+          <th style="text-align: right">DocTree Count</th>
+          <th style="text-align: right">DocTree  Correct</th>
+          <th style="text-align: right">DocTree Accuracy</th>
+          <th style="text-align: right">Δ Accuracy</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>text</td>
+          <td>Pure-text (Plain-text)</td>
+          <td style="text-align: right">413</td>
+          <td style="text-align: right">162</td>
+          <td style="text-align: right">39.23 %</td>
+          <td style="text-align: right">300</td>
+          <td style="text-align: right">139</td>
+          <td style="text-align: right">46.33 %</td>
+          <td style="text-align: right">+7.11 pts</td>
+      </tr>
+      <tr>
+          <td>table</td>
+          <td>Table</td>
+          <td style="text-align: right">199</td>
+          <td style="text-align: right">96</td>
+          <td style="text-align: right">48.24 %</td>
+          <td style="text-align: right">296</td>
+          <td style="text-align: right">138</td>
+          <td style="text-align: right">46.62 %</td>
+          <td style="text-align: right">−1.62 pts</td>
+      </tr>
+      <tr>
+          <td>graphics</td>
+          <td>Chart, Figure</td>
+          <td style="text-align: right">181</td>
+          <td style="text-align: right">146</td>
+          <td style="text-align: right">80.66 %</td>
+          <td style="text-align: right">234</td>
+          <td style="text-align: right">186</td>
+          <td style="text-align: right">79.49 %</td>
+          <td style="text-align: right">−1.18 pts</td>
+      </tr>
+      <tr>
+          <td>layout</td>
+          <td>Generalized-text (Layout)</td>
+          <td style="text-align: right">19</td>
+          <td style="text-align: right">6</td>
+          <td style="text-align: right">31.58 %</td>
+          <td style="text-align: right">9</td>
+          <td style="text-align: right">2</td>
+          <td style="text-align: right">22.22 %</td>
+          <td style="text-align: right">−9.36 pts</td>
+      </tr>
+      <tr>
+          <td>unknown</td>
+          <td>—</td>
+          <td style="text-align: right">51</td>
+          <td style="text-align: right">0</td>
+          <td style="text-align: right">0.00 %</td>
+          <td style="text-align: right">32</td>
+          <td style="text-align: right">0</td>
+          <td style="text-align: right">0.00 %</td>
+          <td style="text-align: right">0.00 pts</td>
+      </tr>
+      <tr>
+          <td>none</td>
+          <td>—</td>
+          <td style="text-align: right">8</td>
+          <td style="text-align: right">0</td>
+          <td style="text-align: right">0.00 %</td>
+          <td style="text-align: right">0</td>
+          <td style="text-align: right">0</td>
+          <td style="text-align: right">—</td>
+          <td style="text-align: right">—</td>
+      </tr>
+      <tr>
+          <td>Total</td>
+          <td>All above</td>
+          <td style="text-align: right">871</td>
+          <td style="text-align: right">410</td>
+          <td style="text-align: right">47.07 %</td>
+          <td style="text-align: right">871</td>
+          <td style="text-align: right">465</td>
+          <td style="text-align: right">53.39 %</td>
+          <td style="text-align: right">+6.31 pts</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+
+    <nav class="pager">
+      <a class="prev" href="/posts/2025/09/youtube-embed-demo/">← YouTube Embed Demo</a>
+      <a class="next" href="/posts/2025/10/planner-design/">planner design →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2025 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>
