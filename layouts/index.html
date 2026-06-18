@@ -1,41 +1,40 @@
 {{ define "main" }}
   {{ $h := site.Params.home }}
   {{ $about := site.GetPage "about" }}
-  {{ $avatar := "" }}
-  {{ with $about }}{{ with .Resources.GetMatch "avatar.jpg" }}{{ $avatar = .RelPermalink }}{{ end }}{{ end }}
+  {{ $avatar := $h.avatar }}
+  {{ if not $avatar }}{{ with $about }}{{ with .Resources.GetMatch "avatar.jpg" }}{{ $avatar = .RelPermalink }}{{ end }}{{ end }}{{ end }}
 
   {{/* ---- Hero / bio ---- */}}
   <section class="intro home-hero">
     <div class="intro-text">
       <h1 class="home-name">{{ site.Title }}</h1>
-      {{ with $h.role }}<p class="home-role">{{ . }}</p>{{ end }}
+      <p class="home-role">PhD Fellow working on <span class="role-em">Multimodal Document Understanding</span> at the Computer Vision Center, Universitat Autònoma de Barcelona.</p>
       <div class="home-bio">{{ .Content }}</div>
       <div class="home-actions">
         <a id="home-email" class="home-email" data-u="{{ $h.emailUser }}" data-d="{{ $h.emailDomain }}" href="#">{{ $h.emailUser }}<span>&#64;</span>{{ $h.emailDomain }}</a>
         {{ with $h.cvUrl }}<a class="btn-outline" href="{{ . }}">Download CV (PDF) &darr;</a>{{ end }}
+        {{ partial "social.html" (dict "social" $h.social) }}
       </div>
     </div>
     <div class="intro-media">
       {{ if $avatar }}<img src="{{ $avatar }}" alt="{{ site.Title }}" loading="lazy" decoding="async" />{{ end }}
-      {{ partial "social.html" (dict "social" $h.social) }}
     </div>
   </section>
 
-  {{/* ---- Selected project ---- */}}
+  {{/* ---- Selected projects (simple cards: year, title, blurb) ---- */}}
   {{ $projects := (where site.RegularPages "Section" "projects").ByWeight }}
   {{ if gt (len $projects) 0 }}
   <section class="home-section">
     <div class="section-head"><h2>Selected project</h2><a href="{{ "/projects/" | relURL }}">All projects &rarr;</a></div>
-    {{ $p := index $projects 0 }}
-    <a class="proj-card" href="{{ $p.RelPermalink }}">
-      <div class="proj-top">
-        <h3>{{ $p.Title }}</h3>
-        <span class="proj-year">{{ $p.Params.year }}</span>
-      </div>
-      <div class="proj-role">{{ $p.Params.role }}</div>
-      {{ with $p.Params.summary }}<p class="proj-blurb">{{ . }}</p>{{ end }}
-      {{ with $p.Params.tags }}<div class="tag-row">{{ range . }}<span class="pill">{{ . }}</span>{{ end }}</div>{{ end }}
-    </a>
+    <div class="home-projs">
+      {{ range first 3 $projects }}
+        <a class="home-proj" href="{{ .RelPermalink }}">
+          <div class="home-proj-year">{{ .Params.year }}</div>
+          <h3 class="home-proj-title">{{ .Title }}</h3>
+          {{ with .Params.summary }}<p class="home-proj-blurb">{{ . }}</p>{{ end }}
+        </a>
+      {{ end }}
+    </div>
   </section>
   {{ end }}
 
@@ -44,29 +43,40 @@
   {{ if gt (len $posts) 0 }}
   <section class="home-section">
     <div class="section-head"><h2>Recent writing</h2><a href="{{ "/posts/" | relURL }}">All writing &rarr;</a></div>
-    <ul class="row-list">
+    <ul class="home-rows">
       {{ range $posts }}
+        <li><span class="home-key">{{ .Date.Format "2006-01-02" }}</span><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  {{/* ---- Recent publications (compact rows: venue+year, title, badge, authors) ---- */}}
+  {{ $pubs := first 3 (where site.RegularPages "Section" "publications").ByDate.Reverse }}
+  {{ if gt (len $pubs) 0 }}
+  <section class="home-section">
+    <div class="section-head"><h2>Recent publications</h2><a href="{{ "/publications/" | relURL }}">All publications &rarr;</a></div>
+    <ul class="home-rows">
+      {{ range $pubs }}
+        {{ $authors := replace (.Params.authors | default "") "Yiming Xu" "<strong>Yiming Xu</strong>" }}
         <li>
-          <span class="row-key">{{ .Date.Format "2006-01-02" }}</span>
-          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          <span class="home-key">{{ .Params.venue }} {{ .Params.year }}</span>
+          <div>
+            <a class="home-pub-title" href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.badge }} <span class="home-badge">{{ . }}</span>{{ end }}
+            <div class="home-pub-authors">{{ $authors | safeHTML }}</div>
+          </div>
         </li>
       {{ end }}
     </ul>
   </section>
   {{ end }}
 
-  {{/* ---- Recent publications ---- */}}
-  <section class="home-section">
-    <div class="section-head"><h2>Recent publications</h2><a href="{{ "/publications/" | relURL }}">All publications &rarr;</a></div>
-    {{ partial "publication_cards.html" (dict "limit" 3) }}
-  </section>
-
   {{/* ---- Awards ---- */}}
   {{ with site.Data.awards }}
   <section class="home-section">
     <div class="section-head"><h2>Awards</h2></div>
-    <ul class="row-list awards">
-      {{ range . }}<li><span class="row-key">{{ .year }}</span> <span>{{ .text }}</span></li>{{ end }}
+    <ul class="home-rows">
+      {{ range . }}<li><span class="home-key">{{ .year }}</span> <span>{{ .text }}</span></li>{{ end }}
     </ul>
   </section>
   {{ end }}

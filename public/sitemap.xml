@@ -23,19 +23,49 @@
     <loc>http://localhost:1313/publications/icdar-adanav/</loc>
     <lastmod>2026-04-01T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>http://localhost:1313/tags/planner/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2025/10/planner-design/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/rag/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/</loc>
+    <lastmod>2025-10-07T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/tags/agents/</loc>
-    <lastmod>2025-01-01T00:00:00+00:00</lastmod>
+    <lastmod>2025-09-21T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/context/</loc>
+    <lastmod>2025-09-21T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2025/09/context-engineering/</loc>
+    <lastmod>2025-09-21T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2025/08/doclens/</loc>
+    <lastmod>2025-08-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/documents/</loc>
+    <lastmod>2025-08-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/vlm/</loc>
+    <lastmod>2025-08-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/reading/</loc>
+    <lastmod>2025-07-02T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2025/07/reading-list/</loc>
+    <lastmod>2025-07-02T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/planning/</loc>
     <lastmod>2025-01-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/projects/</loc>
-    <lastmod>2025-01-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/rag/</loc>
-    <lastmod>2025-01-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/</loc>
     <lastmod>2025-01-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/publications/lrec-coling-2024-kg-qa/</loc>

@@ -45,6 +45,7 @@ ignoreLogs = ['warning-goldmark-raw-html']
 # --- Home hero (phase 2) ---
 [params.home]
   role = "PhD Fellow, Multimodal Document Understanding"
+  avatar = "/avatar.jpg"   # drop your photo at static/avatar.jpg (already included in this package)
   # Email kept in two parts so the literal address is never a contiguous string
   # in the HTML; assembled client-side on click.
   emailUser = "yiming"
@@ -73,6 +74,10 @@ ignoreLogs = ['warning-goldmark-raw-html']
     privacyEnhanced = true
 
 [menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 5
   [[menu.main]]
     name = "Projects"
     url = "/projects/"

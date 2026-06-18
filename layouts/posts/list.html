@@ -1,0 +1,18 @@
+{{ define "main" }}
+  <h1>Writing</h1>
+  <p class="page-sub">Notes on research, system design, and things I'm reading.</p>
+  {{ $p := .Paginate (.Pages) }}
+  <div class="post-rows">
+    {{ range $p.Pages }}
+      <article class="post-row">
+        <div class="post-row-date">{{ .Date.Format "2006-01-02" }}</div>
+        <div class="post-row-body">
+          <h3 class="post-row-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+          {{ with .Params.summary }}<p class="post-row-sum">{{ . }}</p>{{ end }}
+          {{ with .Params.tags }}<div class="tag-line">{{ range . }}<a href="{{ (print "/tags/" . | urlize | relURL) }}">#{{ . }}</a>{{ end }}</div>{{ end }}
+        </div>
+      </article>
+    {{ end }}
+  </div>
+  {{ template "partials/pagination.html" . }}
+{{ end }}

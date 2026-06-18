@@ -8,8 +8,8 @@
 <meta name="description" content="A clean and fast content website" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781793675" />
-<link rel="stylesheet" href="/css/custom.css?v=1781793675" />
+<link rel="stylesheet" href="/css/styles.css?v=1781798519" />
+<link rel="stylesheet" href="/css/custom.css?v=1781798519" />
 
 
 <meta property="og:title" content="Yiming Xu" />
@@ -18,7 +18,7 @@
 <meta property="og:url" content="http://localhost:1313/" />
 
   </head>
-  <body>
+  <body class="kind-home section-">
     <header>
       <div class="container header">
   <div class="brand">
@@ -26,6 +26,8 @@
   </div>
   <nav class="nav">
     
+      
+        <a class="nav-item" href="/">Home</a>
       
         <a class="nav-item" href="/projects/">Projects</a>
       
@@ -53,18 +55,14 @@
   <section class="intro home-hero">
     <div class="intro-text">
       <h1 class="home-name">Yiming Xu</h1>
-      <p class="home-role">PhD Fellow, Multimodal Document Understanding</p>
+      <p class="home-role">PhD Fellow working on <span class="role-em">Multimodal Document Understanding</span> at the Computer Vision Center, Universitat Autònoma de Barcelona.</p>
       <div class="home-bio"><p>I work in the <a href="https://www.karatzas.co.uk/home">Vision &amp; Language Group</a> at CVC, UAB, advised by Dimosthenis Karatzas and Ernest Valveny — building agentic document-understanding systems and foundation models for document understanding.</p>
 <p>Before Barcelona I earned an MSc at the University of Amsterdam (thesis on Multimodal RAG) and spent two years as principal developer building e-commerce AI agents.</p>
 </div>
       <div class="home-actions">
         <a id="home-email" class="home-email" data-u="yiming" data-d="cvc.uab.cat" href="#">yiming<span>&#64;</span>cvc.uab.cat</a>
         <a class="btn-outline" href="/cv.pdf">Download CV (PDF) &darr;</a>
-      </div>
-    </div>
-    <div class="intro-media">
-      
-      
+        
 
 
 <div class="intro-social">
@@ -95,6 +93,10 @@
 </div>
 
 
+      </div>
+    </div>
+    <div class="intro-media">
+      <img src="/avatar.jpg" alt="Yiming Xu" loading="lazy" decoding="async" />
     </div>
   </section>
 
@@ -103,117 +105,91 @@
   
   <section class="home-section">
     <div class="section-head"><h2>Selected project</h2><a href="/projects/">All projects &rarr;</a></div>
-    
-    <a class="proj-card" href="/projects/hierarchical-planner/">
-      <div class="proj-top">
-        <h3>Hierarchical Planner</h3>
-        <span class="proj-year">2025</span>
-      </div>
-      <div class="proj-role">PhD research · CVC</div>
-      <p class="proj-blurb">A navigation-first planner that walks a document&#39;s hierarchy instead of flat top-k retrieval, using layered embeddings as routing hints.</p>
-      <div class="tag-row"><span class="pill">Agents</span><span class="pill">Planning</span><span class="pill">RAG</span></div>
-    </a>
+    <div class="home-projs">
+      
+        <a class="home-proj" href="/projects/hierarchical-planner/">
+          <div class="home-proj-year">2025</div>
+          <h3 class="home-proj-title">Hierarchical Planner</h3>
+          <p class="home-proj-blurb">A navigation-first planner that walks a document&#39;s hierarchy instead of flat top-k retrieval, using layered embeddings as routing hints.</p>
+        </a>
+      
+        <a class="home-proj" href="/projects/ecommerce-agent/">
+          <div class="home-proj-year">2022 — 2024</div>
+          <h3 class="home-proj-title">E-commerce AI Agent</h3>
+          <p class="home-proj-blurb">Flagship conversational shopping agent. Led development end-to-end; the project went on to raise close to USD 7M in funding.</p>
+        </a>
+      
+        <a class="home-proj" href="/projects/multimodal-rag/">
+          <div class="home-proj-year">2023</div>
+          <h3 class="home-proj-title">Multimodal RAG</h3>
+          <p class="home-proj-blurb">Master&#39;s thesis on retrieval-augmented generation across text and image, supervised by Benno Kruit and Jan-Christoph Kalo.</p>
+        </a>
+      
+    </div>
   </section>
   
 
   
   
   
+  <section class="home-section">
+    <div class="section-head"><h2>Recent writing</h2><a href="/posts/">All writing &rarr;</a></div>
+    <ul class="home-rows">
+      
+        <li><span class="home-key">2025-10-07</span><a href="/posts/2025/10/planner-design/">Planner design</a></li>
+      
+        <li><span class="home-key">2025-09-21</span><a href="/posts/2025/09/context-engineering/">Context engineering</a></li>
+      
+        <li><span class="home-key">2025-08-14</span><a href="/posts/2025/08/doclens/">DocLens</a></li>
+      
+    </ul>
+  </section>
+  
 
+  
+  
   
   <section class="home-section">
     <div class="section-head"><h2>Recent publications</h2><a href="/publications/">All publications &rarr;</a></div>
-    
-
-
-  
-
-
-<div class="cards cards-hz">
-  
-    
-    
-    <article class="card pub-card hz no-cover">
+    <ul class="home-rows">
       
-      <div class="card-body">
-        <h3 class="card-title"><a href="/publications/icml-madqa/">Strategic Navigation or Stochastic Search? How Agents and Humans Reason Over Document Collections</a></h3>
-        <div class="card-meta">
-          <span class="authors">Łukasz Borchmann, Jordy Van Landeghem, Michał Turski, Shreyansh Padarha, Ryan Othniel Kearns, Adam Mahdi, Niels Rogge, Clémentine Fourrier, Siwei Han, Huaxiu Yao, Artemis Llabrés, <strong>Yiming Xu</strong>, Dimosthenis Karatzas, Hao Zhang, Anupam Datta</span>
-           · <span class="venue">ICML</span>
-           <span class="year">(2026)</span>
-           <span class="pill pill-accent">Oral</span>
-        </div>
-        <p class="card-summary">MADQA — a multimodal agentic document-QA benchmark that scores full search trajectories, not just answers, and shows agents match human accuracy only by working ~5× harder.</p>
-        <div class="card-links">
-          <a class="pill" href="https://arxiv.org/abs/2603.12180" target="_blank" rel="noopener">PDF</a>
-          <a class="pill" href="https://github.com/OxRML/MADQA" target="_blank" rel="noopener">Code</a>
-          
-          <a class="pill" href="https://huggingface.co/spaces/Snowflake/MADQA-Leaderboard" target="_blank" rel="noopener">Leaderboard</a>
-          <a class="pill" href="https://huggingface.co/datasets/OxRML/MADQA" target="_blank" rel="noopener">Data</a>
-          
-        </div>
-      </div>
-    </article>
-  
-    
-    
-    <article class="card pub-card hz no-cover">
+        
+        <li>
+          <span class="home-key">ICML 2026</span>
+          <div>
+            <a class="home-pub-title" href="/publications/icml-madqa/">Strategic Navigation or Stochastic Search? How Agents and Humans Reason Over Document Collections</a> <span class="home-badge">Oral</span>
+            <div class="home-pub-authors">Łukasz Borchmann, Jordy Van Landeghem, Michał Turski, Shreyansh Padarha, Ryan Othniel Kearns, Adam Mahdi, Niels Rogge, Clémentine Fourrier, Siwei Han, Huaxiu Yao, Artemis Llabrés, <strong>Yiming Xu</strong>, Dimosthenis Karatzas, Hao Zhang, Anupam Datta</div>
+          </div>
+        </li>
       
-      <div class="card-body">
-        <h3 class="card-title"><a href="/publications/icdar-adanav/">AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</a></h3>
-        <div class="card-meta">
-          <span class="authors"><strong>Yiming Xu</strong>, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas</span>
-           · <span class="venue">ICDAR</span>
-           <span class="year">(2026)</span>
-           <span class="pill pill-accent">Accepted</span>
-        </div>
-        <p class="card-summary">AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages.</p>
-        <div class="card-links">
-          
-          
-          
-          
-          
-          
-        </div>
-      </div>
-    </article>
-  
-    
-    
-    <article class="card pub-card hz no-cover">
+        
+        <li>
+          <span class="home-key">ICDAR 2026</span>
+          <div>
+            <a class="home-pub-title" href="/publications/icdar-adanav/">AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</a> <span class="home-badge">Accepted</span>
+            <div class="home-pub-authors"><strong>Yiming Xu</strong>, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas</div>
+          </div>
+        </li>
       
-      <div class="card-body">
-        <h3 class="card-title"><a href="/publications/lrec-coling-2024-kg-qa/">Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</a></h3>
-        <div class="card-meta">
-          <span class="authors">Benno Kruit, <strong>Yiming Xu</strong>, Jan-Christoph Kalo</span>
-           · <span class="venue">LREC-COLING</span>
-           <span class="year">(2024)</span>
-           <span class="pill pill-accent">Oral</span>
-        </div>
-        <p class="card-summary">A multimodal retriever that combines knowledge-graph entity features with dense text retrieval, improving open-domain QA precision on rare, entity-centric questions where dense retrievers fall short.</p>
-        <div class="card-links">
-          <a class="pill" href="https://aclanthology.org/2024.lrec-main.1225.pdf" target="_blank" rel="noopener">PDF</a>
-          
-          
-          
-          
-          <a class="pill" href="https://aclanthology.org/2024.lrec-main.1225/" target="_blank" rel="noopener">Page</a>
-        </div>
-      </div>
-    </article>
-  
-</div>
-
-
+        
+        <li>
+          <span class="home-key">LREC-COLING 2024</span>
+          <div>
+            <a class="home-pub-title" href="/publications/lrec-coling-2024-kg-qa/">Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</a> <span class="home-badge">Oral</span>
+            <div class="home-pub-authors">Benno Kruit, <strong>Yiming Xu</strong>, Jan-Christoph Kalo</div>
+          </div>
+        </li>
+      
+    </ul>
   </section>
+  
 
   
   
   <section class="home-section">
     <div class="section-head"><h2>Awards</h2></div>
-    <ul class="row-list awards">
-      <li><span class="row-key">2025</span> <span>FPI (Formación de Personal Investigador) Fellowship</span></li><li><span class="row-key">2017</span> <span>Chinese Academy of Sciences Science and Innovation Program Scholarship</span></li>
+    <ul class="home-rows">
+      <li><span class="home-key">2025</span> <span>FPI (Formación de Personal Investigador) Fellowship</span></li><li><span class="home-key">2017</span> <span>Chinese Academy of Sciences Science and Innovation Program Scholarship</span></li>
     </ul>
   </section>
   

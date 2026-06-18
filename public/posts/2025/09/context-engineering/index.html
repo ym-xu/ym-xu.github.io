@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Context engineering — Yiming Xu</title>
+<meta name="description" content="Notes on shaping the context window as a first-class design surface." />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781798519" />
+<link rel="stylesheet" href="/css/custom.css?v=1781798519" />
+
+
+<meta property="og:title" content="Context engineering — Yiming Xu" />
+<meta property="og:description" content="Notes on shaping the context window as a first-class design surface." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://localhost:1313/posts/2025/09/context-engineering/" />
+
+  </head>
+  <body class="kind-page section-posts">
+    <header>
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav">
+    
+      
+        <a class="nav-item" href="/">Home</a>
+      
+        <a class="nav-item" href="/projects/">Projects</a>
+      
+        <a class="nav-item" href="/publications/">Publications</a>
+      
+        <a class="nav-item" href="/posts/">Writing</a>
+      
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <h1>Context engineering</h1>
+      
+      
+        <div class="meta">
+          <span>2025-09-21</span>
+           · <span>1 min read</span>
+           · <span>
+            <a href="/tags/context">#context</a>, <a href="/tags/agents">#agents</a>
+          </span>
+        </div>
+      
+    </header>
+
+    
+    
+      
+        <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#navigation-over-retrieval">Navigation over retrieval</a></li>
+  </ul>
+</nav></aside>
+      
+    
+
+    <div class="content"><p>Context engineering treats the prompt window as a budget to be allocated, not a bucket to be filled. Every token competes; the planner decides what earns a slot.</p>
+<h2 id="navigation-over-retrieval">Navigation over retrieval</h2>
+<p>Rather than dumping the top-k passages, we expose a navigable structure — sections summarised, leaves embedded — and let the agent walk it. Embeddings act as navigation hints; the real extraction happens at the observer.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>budget <span style="color:#0550ae">=</span> Budget<span style="color:#1f2328">(</span>tokens<span style="color:#0550ae">=</span><span style="color:#0550ae">8_000</span><span style="color:#1f2328">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#cf222e">for</span> node <span style="color:#0550ae">in</span> planner<span style="color:#0550ae">.</span>walk<span style="color:#1f2328">(</span>doc<span style="color:#1f2328">):</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#cf222e">if</span> budget<span style="color:#0550ae">.</span>fits<span style="color:#1f2328">(</span>node<span style="color:#1f2328">):</span>
+</span></span><span style="display:flex;"><span>        ctx<span style="color:#0550ae">.</span>add<span style="color:#1f2328">(</span>node<span style="color:#1f2328">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+
+    <nav class="pager">
+      <a class="prev" href="/posts/2025/08/doclens/">← DocLens</a>
+      <a class="next" href="/posts/2025/10/planner-design/">Planner design →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

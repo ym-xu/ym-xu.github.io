@@ -1,33 +1,26 @@
 {{ define "main" }}
   <h1>Publications</h1>
+  <p class="page-sub">Peer-reviewed work on cross-modal retrieval and question answering.</p>
   {{ $p := .Paginate (.Pages.ByDate.Reverse) }}
-  <div class="cards">
+  <div class="pub-rows">
     {{ range $p.Pages }}
-      {{ $cover := .Resources.GetMatch "cover*" }}
       {{ $authors := replace (.Params.authors | default "") "Yiming Xu" "<strong>Yiming Xu</strong>" }}
-      <a class="card pub-card{{ if not $cover }} no-cover{{ end }}" href="{{ .RelPermalink }}">
-        {{ if $cover }}
-          <div class="card-media">
-            <img src="{{ $cover.RelPermalink }}" alt="cover for {{ .Title }}" loading="lazy" decoding="async" />
-          </div>
-        {{ end }}
-        <div class="card-body">
-          <h3 class="card-title">{{ .Title }}</h3>
-          <div class="card-meta">
-            {{ with $authors }}<span class="authors">{{ . | safeHTML }}</span>{{ end }}
-            {{ with .Params.venue }} · <span class="venue">{{ . }}</span>{{ end }}
-            {{ with .Params.year }} <span class="year">({{ . }})</span>{{ end }}
-            {{ with .Params.badge }} <span class="pill pill-accent">{{ . }}</span>{{ end }}
-          </div>
-          {{ with .Params.summary }}<p class="card-summary">{{ . }}</p>{{ end }}
-          <div class="card-links">
-            {{ with .Params.links.pdf }}<span class="pill">PDF</span>{{ end }}
-            {{ with .Params.links.code }}<span class="pill">Code</span>{{ end }}
-            {{ with .Params.links.doi }}<span class="pill">DOI</span>{{ end }}
-            {{ with .Params.links.leaderboard }}<span class="pill">Leaderboard</span>{{ end }}
-            {{ with .Params.links.data }}<span class="pill">Data</span>{{ end }}
-            {{ with .Params.links.page }}<span class="pill">Page</span>{{ end }}
-          </div>
+      {{ $badge := .Params.badge }}{{ $year := .Params.year }}
+      <a class="pub-row" href="{{ .RelPermalink }}">
+        <h3 class="pub-row-title">{{ .Title }}</h3>
+        <div class="card-meta">
+          {{ with $authors }}<span class="authors">{{ . | safeHTML }}</span>{{ end }}
+          {{ with .Params.venue }} · <span class="venue">{{ . }}{{ with $badge }} · {{ . }}{{ end }}</span>{{ end }}
+          {{ with $year }} <span class="year">({{ . }})</span>{{ end }}
+        </div>
+        {{ with .Params.summary }}<p class="card-summary">{{ . }}</p>{{ end }}
+        <div class="card-links">
+          {{ with .Params.links.pdf }}<span class="pill">PDF</span>{{ end }}
+          {{ with .Params.links.code }}<span class="pill">Code</span>{{ end }}
+          {{ with .Params.links.doi }}<span class="pill">DOI</span>{{ end }}
+          {{ with .Params.links.leaderboard }}<span class="pill">Leaderboard</span>{{ end }}
+          {{ with .Params.links.data }}<span class="pill">Data</span>{{ end }}
+          {{ with .Params.links.page }}<span class="pill">Page</span>{{ end }}
         </div>
       </a>
     {{ end }}

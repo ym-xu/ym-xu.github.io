@@ -7,9 +7,8 @@
         {{ $authors := replace (.Params.authors | default "") "Yiming Xu" "<strong>Yiming Xu</strong>" }}
         <div class="meta">
           {{ with $authors }}<span>{{ . | safeHTML }}</span>{{ end }}
-          {{ with .Params.venue }} · <span>{{ . }}</span>{{ end }}
+          {{ with .Params.venue }} · <span>{{ . }}{{ with $.Params.badge }} · {{ . }}{{ end }}</span>{{ end }}
           {{ with .Params.year }} <span>({{ . }})</span>{{ end }}
-          {{ with .Params.badge }} <span class="pill pill-accent">{{ . }}</span>{{ end }}
         </div>
       {{ end }}
     </header>
