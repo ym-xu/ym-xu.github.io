@@ -175,15 +175,7 @@ body { font-family: "PalatinoWeb","Palatino","Palatino Linotype","Book Antiqua",
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* Ship the real Palatino webfont (same as the standalone) so every visitor
-   sees the true face, not a fallback. */
-@font-face {
-  font-family: "PalatinoWeb";
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/fonts/palatino-regular.ttf") format("truetype");
-}
+/* (file-path @font-face removed — the inlined PalatinoWeb below is the only one) */
 
 :root {
   --font-serif: "PalatinoWeb","Palatino","Palatino Linotype","Book Antiqua","URW Palladio L","TeX Gyre Pagella","Gelasio",Georgia,"Times New Roman",serif;
