@@ -1,0 +1,40 @@
+{{ $limit := or .limit 6 }}
+{{ $pubs := slice }}
+{{ with site.GetPage "section" "publications" }}
+  {{ $pubs = .Pages.ByDate.Reverse }}
+{{ end }}
+{{ if gt (len $pubs) 0 }}
+<div class="cards cards-hz">
+  {{ range first (int $limit) $pubs }}
+    {{ $cover := .Resources.GetMatch "cover*" }}
+    {{ $authors := replace (.Params.authors | default "") "Yiming Xu" "<strong>Yiming Xu</strong>" }}
+    <article class="card pub-card hz{{ if not $cover }} no-cover{{ end }}">
+      {{ if $cover }}
+        <a class="card-media" href="{{ .RelPermalink }}" aria-label="Open {{ .Title }}">
+          <img src="{{ $cover.RelPermalink }}" alt="cover for {{ .Title }}" loading="lazy" decoding="async" />
+        </a>
+      {{ end }}
+      <div class="card-body">
+        <h3 class="card-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+        <div class="card-meta">
+          {{ with $authors }}<span class="authors">{{ . | safeHTML }}</span>{{ end }}
+          {{ with .Params.venue }} · <span class="venue">{{ . }}</span>{{ end }}
+          {{ with .Params.year }} <span class="year">({{ . }})</span>{{ end }}
+          {{ with .Params.badge }} <span class="pill pill-accent">{{ . }}</span>{{ end }}
+        </div>
+        {{ with .Params.summary }}<p class="card-summary">{{ . }}</p>{{ end }}
+        <div class="card-links">
+          {{ with .Params.links.pdf }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">PDF</a>{{ end }}
+          {{ with .Params.links.code }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Code</a>{{ end }}
+          {{ with .Params.links.doi }}<a class="pill" href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>{{ end }}
+          {{ with .Params.links.leaderboard }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Leaderboard</a>{{ end }}
+          {{ with .Params.links.data }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Data</a>{{ end }}
+          {{ with .Params.links.page }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Page</a>{{ end }}
+        </div>
+      </div>
+    </article>
+  {{ end }}
+</div>
+{{ else }}
+<p class="muted">No publications yet.</p>
+{{ end }}

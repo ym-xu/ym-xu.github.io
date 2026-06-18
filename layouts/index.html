@@ -1,0 +1,84 @@
+{{ define "main" }}
+  {{ $h := site.Params.home }}
+  {{ $about := site.GetPage "about" }}
+  {{ $avatar := "" }}
+  {{ with $about }}{{ with .Resources.GetMatch "avatar.jpg" }}{{ $avatar = .RelPermalink }}{{ end }}{{ end }}
+
+  {{/* ---- Hero / bio ---- */}}
+  <section class="intro home-hero">
+    <div class="intro-text">
+      <h1 class="home-name">{{ site.Title }}</h1>
+      {{ with $h.role }}<p class="home-role">{{ . }}</p>{{ end }}
+      <div class="home-bio">{{ .Content }}</div>
+      <div class="home-actions">
+        <a id="home-email" class="home-email" data-u="{{ $h.emailUser }}" data-d="{{ $h.emailDomain }}" href="#">{{ $h.emailUser }}<span>&#64;</span>{{ $h.emailDomain }}</a>
+        {{ with $h.cvUrl }}<a class="btn-outline" href="{{ . }}">Download CV (PDF) &darr;</a>{{ end }}
+      </div>
+    </div>
+    <div class="intro-media">
+      {{ if $avatar }}<img src="{{ $avatar }}" alt="{{ site.Title }}" loading="lazy" decoding="async" />{{ end }}
+      {{ partial "social.html" (dict "social" $h.social) }}
+    </div>
+  </section>
+
+  {{/* ---- Selected project ---- */}}
+  {{ $projects := (where site.RegularPages "Section" "projects").ByWeight }}
+  {{ if gt (len $projects) 0 }}
+  <section class="home-section">
+    <div class="section-head"><h2>Selected project</h2><a href="{{ "/projects/" | relURL }}">All projects &rarr;</a></div>
+    {{ $p := index $projects 0 }}
+    <a class="proj-card" href="{{ $p.RelPermalink }}">
+      <div class="proj-top">
+        <h3>{{ $p.Title }}</h3>
+        <span class="proj-year">{{ $p.Params.year }}</span>
+      </div>
+      <div class="proj-role">{{ $p.Params.role }}</div>
+      {{ with $p.Params.summary }}<p class="proj-blurb">{{ . }}</p>{{ end }}
+      {{ with $p.Params.tags }}<div class="tag-row">{{ range . }}<span class="pill">{{ . }}</span>{{ end }}</div>{{ end }}
+    </a>
+  </section>
+  {{ end }}
+
+  {{/* ---- Recent writing ---- */}}
+  {{ $posts := first 3 (where site.RegularPages "Section" "posts") }}
+  {{ if gt (len $posts) 0 }}
+  <section class="home-section">
+    <div class="section-head"><h2>Recent writing</h2><a href="{{ "/posts/" | relURL }}">All writing &rarr;</a></div>
+    <ul class="row-list">
+      {{ range $posts }}
+        <li>
+          <span class="row-key">{{ .Date.Format "2006-01-02" }}</span>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        </li>
+      {{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  {{/* ---- Recent publications ---- */}}
+  <section class="home-section">
+    <div class="section-head"><h2>Recent publications</h2><a href="{{ "/publications/" | relURL }}">All publications &rarr;</a></div>
+    {{ partial "publication_cards.html" (dict "limit" 3) }}
+  </section>
+
+  {{/* ---- Awards ---- */}}
+  {{ with site.Data.awards }}
+  <section class="home-section">
+    <div class="section-head"><h2>Awards</h2></div>
+    <ul class="row-list awards">
+      {{ range . }}<li><span class="row-key">{{ .year }}</span> <span>{{ .text }}</span></li>{{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  <script>
+    (function(){
+      var a = document.getElementById('home-email');
+      if (!a) return;
+      a.addEventListener('click', function(e){
+        e.preventDefault();
+        window.location.href = 'mailto:' + this.dataset.u + String.fromCharCode(64) + this.dataset.d;
+      });
+    })();
+  </script>
+{{ end }}

@@ -42,6 +42,20 @@ ignoreLogs = ['warning-goldmark-raw-html']
 [params.author]
   name = "Yiming Xu"
 
+# --- Home hero (phase 2) ---
+[params.home]
+  role = "PhD Fellow, Multimodal Document Understanding"
+  # Email kept in two parts so the literal address is never a contiguous string
+  # in the HTML; assembled client-side on click.
+  emailUser = "yiming"
+  emailDomain = "cvc.uab.cat"
+  cvUrl = "/cv.pdf"   # TODO: drop your CV PDF at static/cv.pdf (or change this path)
+  [params.home.social]
+    linkedin = "https://www.linkedin.com/in/yiming-xu-86371b201/"
+    github = "https://github.com/ym-xu"
+    scholar = "https://scholar.google.com/citations?user=n1skXDsAAAAJ&hl=en"
+    twitter = "https://x.com/Yiming_xu_1104"
+
 [params.giscus]
   repo = ""
   repo_id = ""
@@ -60,10 +74,14 @@ ignoreLogs = ['warning-goldmark-raw-html']
 
 [menu]
   [[menu.main]]
-    name = "Posts"
-    url = "/posts/"
+    name = "Projects"
+    url = "/projects/"
     weight = 10
   [[menu.main]]
-    name = "About"
-    url = "/about/"
-    weight = 90
+    name = "Publications"
+    url = "/publications/"
+    weight = 20
+  [[menu.main]]
+    name = "Writing"
+    url = "/posts/"
+    weight = 30

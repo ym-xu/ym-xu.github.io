@@ -1,0 +1,17 @@
+{{ define "main" }}
+  <article class="project-single">
+    <header class="post-header">
+      <h1>{{ .Title }}</h1>
+      <div class="meta">
+        {{ with .Params.year }}<span>{{ . }}</span>{{ end }}
+        {{ with .Params.role }} · <span>{{ . }}</span>{{ end }}
+      </div>
+      {{ with .Params.tags }}<div class="tag-row">{{ range . }}<span class="pill">{{ . }}</span>{{ end }}</div>{{ end }}
+    </header>
+    <div class="content">{{ .Content }}</div>
+    <nav class="pager">
+      {{ with .PrevInSection }}<a class="prev" href="{{ .RelPermalink }}">&larr; {{ .Title }}</a>{{ end }}
+      {{ with .NextInSection }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} &rarr;</a>{{ end }}
+    </nav>
+  </article>
+{{ end }}

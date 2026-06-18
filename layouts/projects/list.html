@@ -1,0 +1,16 @@
+{{ define "main" }}
+  <h1>Projects</h1>
+  <div class="proj-list">
+    {{ range (.Pages).ByWeight }}
+      <a class="proj-card" href="{{ .RelPermalink }}">
+        <div class="proj-top">
+          <h3>{{ .Title }}</h3>
+          <span class="proj-year">{{ .Params.year }}</span>
+        </div>
+        <div class="proj-role">{{ .Params.role }}</div>
+        {{ with .Params.summary }}<p class="proj-blurb">{{ . }}</p>{{ end }}
+        {{ with .Params.tags }}<div class="tag-row">{{ range . }}<span class="pill">{{ . }}</span>{{ end }}</div>{{ end }}
+      </a>
+    {{ end }}
+  </div>
+{{ end }}
