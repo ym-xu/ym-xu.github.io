@@ -1,20 +1,20 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Publications — Yiming Xu</title>
 <meta name="description" content="A clean and fast content website" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1763455480" />
-<link rel="stylesheet" href="/css/custom.css?v=1763455480" />
+<link rel="stylesheet" href="/css/styles.css?v=1781793675" />
+<link rel="stylesheet" href="/css/custom.css?v=1781793675" />
 
 
 <meta property="og:title" content="Publications — Yiming Xu" />
 <meta property="og:description" content="A clean and fast content website" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://ym-xu.github.io/publications/" />
+<meta property="og:url" content="http://localhost:1313/publications/" />
 
   </head>
   <body>
@@ -26,9 +26,11 @@
   <nav class="nav">
     
       
-        <a class="nav-item" href="/posts/">Posts</a>
+        <a class="nav-item" href="/projects/">Projects</a>
       
-        <a class="nav-item" href="/about/">About</a>
+        <a class="nav-item" href="/publications/">Publications</a>
+      
+        <a class="nav-item" href="/posts/">Writing</a>
       
     
     
@@ -46,21 +48,45 @@
   <div class="cards">
     
       
-      <a class="card pub-card" href="/publications/lrec-coling-2024-kg-qa/">
-        <div class="card-media">
-          
-            <img src="/publications/lrec-coling-2024-kg-qa/cover.jpg" alt="cover for Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph" loading="lazy" decoding="async" />
-          
-        </div>
+      
+      <a class="card pub-card no-cover" href="/publications/icml-madqa/">
+        
         <div class="card-body">
-          <h3 class="card-title">Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</h3>
+          <h3 class="card-title">Strategic Navigation or Stochastic Search? How Agents and Humans Reason Over Document Collections</h3>
           <div class="card-meta">
-            <span class="authors">Benno Kruit, Yiming Xu, Jan-Christoph Kalo</span>
-             · <span class="venue">LREC-COLING</span>
-             <span class="year">(2024)</span>
+            <span class="authors">Łukasz Borchmann, Jordy Van Landeghem, Michał Turski, Shreyansh Padarha, Ryan Othniel Kearns, Adam Mahdi, Niels Rogge, Clémentine Fourrier, Siwei Han, Huaxiu Yao, Artemis Llabrés, <strong>Yiming Xu</strong>, Dimosthenis Karatzas, Hao Zhang, Anupam Datta</span>
+             · <span class="venue">ICML</span>
+             <span class="year">(2026)</span>
+             <span class="pill pill-accent">Oral</span>
           </div>
-          <p class="card-summary">A retrieval QA method that expands passages with KG context to improve recall and answer quality.</p>
+          <p class="card-summary">MADQA — a multimodal agentic document-QA benchmark that scores full search trajectories, not just answers, and shows agents match human accuracy only by working ~5× harder.</p>
           <div class="card-links">
+            <span class="pill">PDF</span>
+            <span class="pill">Code</span>
+            
+            <span class="pill">Leaderboard</span>
+            <span class="pill">Data</span>
+            
+          </div>
+        </div>
+      </a>
+    
+      
+      
+      <a class="card pub-card no-cover" href="/publications/icdar-adanav/">
+        
+        <div class="card-body">
+          <h3 class="card-title">AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</h3>
+          <div class="card-meta">
+            <span class="authors"><strong>Yiming Xu</strong>, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas</span>
+             · <span class="venue">ICDAR</span>
+             <span class="year">(2026)</span>
+             <span class="pill pill-accent">Accepted</span>
+          </div>
+          <p class="card-summary">AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages.</p>
+          <div class="card-links">
+            
+            
             
             
             
@@ -70,25 +96,49 @@
       </a>
     
       
-      <a class="card pub-card" href="/publications/iccs-fglab/">
-        <div class="card-media">
-          
-            <img src="/publications/iccs-fglab/cover.jpg" alt="cover for Fine-grained label learning via siamese network for cross-modal information retrieval" loading="lazy" decoding="async" />
-          
+      
+      <a class="card pub-card no-cover" href="/publications/lrec-coling-2024-kg-qa/">
+        
+        <div class="card-body">
+          <h3 class="card-title">Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</h3>
+          <div class="card-meta">
+            <span class="authors">Benno Kruit, <strong>Yiming Xu</strong>, Jan-Christoph Kalo</span>
+             · <span class="venue">LREC-COLING</span>
+             <span class="year">(2024)</span>
+             <span class="pill pill-accent">Oral</span>
+          </div>
+          <p class="card-summary">A multimodal retriever that combines knowledge-graph entity features with dense text retrieval, improving open-domain QA precision on rare, entity-centric questions where dense retrievers fall short.</p>
+          <div class="card-links">
+            <span class="pill">PDF</span>
+            
+            
+            
+            
+            <span class="pill">Page</span>
+          </div>
         </div>
+      </a>
+    
+      
+      
+      <a class="card pub-card no-cover" href="/publications/iccs-fglab/">
+        
         <div class="card-body">
           <h3 class="card-title">Fine-grained label learning via siamese network for cross-modal information retrieval</h3>
           <div class="card-meta">
-            <span class="authors">Yiming Xu, Jing Yu, Jingjing Guo, Yue Hu, Jianlong Tan</span>
+            <span class="authors"><strong>Yiming Xu</strong>, Jing Yu, Jingjing Guo, Yue Hu, Jianlong Tan</span>
              · <span class="venue">ICCS</span>
              <span class="year">(2019)</span>
+            
           </div>
-          <p class="card-summary">Mining hard negatives to improve cross-modal information retrieval.</p>
+          <p class="card-summary">Fine-grained labels capture the &#34;hardness&#34; of text–image pairs; a siamese network and a weighted pairwise loss exploit them to improve cross-modal retrieval on three benchmarks.</p>
           <div class="card-links">
+            <span class="pill">PDF</span>
+            
+            <span class="pill">DOI</span>
             
             
-            
-            
+            <span class="pill">Page</span>
           </div>
         </div>
       </a>
@@ -101,7 +151,7 @@
     <footer>
       <div class="container footer">
   <div class="left">
-    <small>© 2025 Yiming Xu</small>
+    <small>© 2026 Yiming Xu</small>
   </div>
   <div class="right">
     <a href="/index.xml">RSS</a>

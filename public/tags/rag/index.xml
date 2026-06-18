@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>RAG on Yiming Xu</title>
+    <link>http://localhost:1313/tags/rag/</link>
+    <description>Recent content in RAG on Yiming Xu</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 01 Jan 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/rag/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hierarchical Planner</title>
+      <link>http://localhost:1313/projects/hierarchical-planner/</link>
+      <pubDate>Wed, 01 Jan 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/projects/hierarchical-planner/</guid>
+      <description>A navigation-first planner that walks a document&amp;rsquo;s hierarchy instead of flat top-k retrieval, using layered embeddings as routing hints.</description>
+    </item>
+    <item>
+      <title>Multimodal RAG</title>
+      <link>http://localhost:1313/projects/multimodal-rag/</link>
+      <pubDate>Sun, 01 Jan 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/projects/multimodal-rag/</guid>
+      <description>Master&amp;rsquo;s thesis on retrieval-augmented generation across text and image, supervised by Benno Kruit and Jan-Christoph Kalo.</description>
+    </item>
+  </channel>
+</rss>
