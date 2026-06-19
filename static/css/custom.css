@@ -229,3 +229,42 @@ body.kind-section.section-projects #content.container { max-width: 980px; }
   border-radius: var(--radius-sm);
   font-size: .9em;
 }
+
+/* ---- Claude-style code blocks (render hook .code-card) ---- */
+.content .code-card {
+  --code-bg: #f6f8fa; --code-bar-bg: #eceff2; --code-border: #d8dee4; --code-fg: #1f2328;
+  margin: 1.15rem 0;
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  overflow: hidden;
+}
+[data-theme='dark'] .content .code-card {
+  --code-bg: #0d1117; --code-bar-bg: #161b22; --code-border: #30363d; --code-fg: #e6edf3;
+}
+.content .code-card-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .3rem .55rem .3rem .8rem;
+  background: var(--code-bar-bg);
+  border-bottom: 1px solid var(--code-border);
+}
+.content .code-lang {
+  font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--muted);
+}
+.content .code-copy {
+  font-family: var(--font-mono); font-size: .7rem; line-height: 1; cursor: pointer;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--code-border); border-radius: var(--radius-sm);
+  padding: .22rem .5rem; transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.content .code-copy:hover { color: var(--fg); border-color: var(--link); }
+.content .code-copy.copied { color: var(--link); border-color: var(--link); }
+/* the highlighted <pre> sits flush inside the card, transparent so the card owns the bg */
+.content .code-card pre,
+.content .code-card .chroma {
+  margin: 0; border: 0; border-radius: 0; padding: .8rem .9rem;
+  background: transparent; color: var(--code-fg);
+  overflow-x: auto; font-size: .86rem; line-height: 1.5;
+}
+.content .code-card code { background: transparent; padding: 0; font-size: inherit; }

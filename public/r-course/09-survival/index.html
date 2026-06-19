@@ -7,8 +7,9 @@
 <meta name="description" content="肿瘤研究最高频的图:Kaplan-Meier 曲线与 Cox 回归,用现代 ggsurvfit &#43; gtsummary 出投稿级图表。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Lesson 9 · 生存分析 Survival Analysis — Yiming Xu" />
@@ -79,17 +80,35 @@
 <hr>
 <h2 id="0-准备安装并加载包">0. 准备:安装并加载包</h2>
 <p>只需在<strong>第一次</strong>用时安装一次(去掉每行开头的 <code>#</code> 运行):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># install.packages(c(&#34;survival&#34;, &#34;ggsurvfit&#34;, &#34;gtsummary&#34;, &#34;dplyr&#34;))</span>
-</span></span></code></pre></div><p>每次开始分析时加载:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(survival)    <span style="color:#8b949e;font-style:italic"># 生存分析的核心:Surv()、survfit()、coxph()</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(ggsurvfit)   <span style="color:#8b949e;font-style:italic"># 画现代、好看的生存曲线</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(gtsummary)   <span style="color:#8b949e;font-style:italic"># 一行生成投稿级表格</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(dplyr)       <span style="color:#8b949e;font-style:italic"># 数据整理(Lesson 2 学过)</span>
-</span></span></code></pre></div><hr>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># install.packages(c(&#34;survival&#34;, &#34;ggsurvfit&#34;, &#34;gtsummary&#34;, &#34;dplyr&#34;))</span></span></span></code></pre></div>
+</div>
+<p>每次开始分析时加载:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">survival</span><span class="p">)</span>    <span class="c1"># 生存分析的核心:Surv()、survfit()、coxph()</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">ggsurvfit</span><span class="p">)</span>   <span class="c1"># 画现代、好看的生存曲线</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>   <span class="c1"># 一行生成投稿级表格</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">dplyr</span><span class="p">)</span>       <span class="c1"># 数据整理(Lesson 2 学过)</span></span></span></code></pre></div>
+</div>
+<hr>
 <h2 id="1-认识数据lung">1. 认识数据:<code>lung</code></h2>
 <p><code>survival</code> 包自带一份<strong>真实的肺癌数据</strong> <code>lung</code>(NCCTG 晚期肺癌患者),正好适合练手。直接就能用:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(lung)
-</span></span></code></pre></div><p>我们这节课只用到这几列:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">lung</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>我们这节课只用到这几列:</p>
 <table>
   <thead>
       <tr>
@@ -121,64 +140,112 @@
   </tbody>
 </table>
 <p>⚠️ <strong>最容易踩的坑就是 <code>status</code> 的编码</strong>。<code>lung</code> 里用的是 <code>1/2</code>,但 R 里习惯用 <code>0 = 删失 / 1 = 事件</code>。我们先把它和 <code>sex</code> 一起整理好:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>lung2 <span style="color:#ff7b72;font-weight:bold">&lt;-</span> lung <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">mutate</span>(
-</span></span><span style="display:flex;"><span>    status <span style="color:#ff7b72;font-weight:bold">=</span> status <span style="color:#ff7b72;font-weight:bold">-</span> <span style="color:#a5d6ff">1</span>,   <span style="color:#8b949e;font-style:italic"># 1→0(删失)、2→1(死亡=事件)</span>
-</span></span><span style="display:flex;"><span>    sex <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">factor</span>(sex, levels <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">c</span>(<span style="color:#a5d6ff">1</span>, <span style="color:#a5d6ff">2</span>), labels <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">c</span>(<span style="color:#a5d6ff">&#34;Male&#34;</span>, <span style="color:#a5d6ff">&#34;Female&#34;</span>))
-</span></span><span style="display:flex;"><span>  )
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">lung2</span> <span class="o">&lt;-</span> <span class="n">lung</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mutate</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="n">status</span> <span class="o">=</span> <span class="n">status</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span>   <span class="c1"># 1→0(删失)、2→1(死亡=事件)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sex</span> <span class="o">=</span> <span class="nf">factor</span><span class="p">(</span><span class="n">sex</span><span class="p">,</span> <span class="n">levels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">),</span> <span class="n">labels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;Male&#34;</span><span class="p">,</span> <span class="s">&#34;Female&#34;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">  <span class="p">)</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p>把 <code>sex</code> 变成带标签的 factor,后面表格和图例里就会直接显示 &ldquo;Male/Female&rdquo; 而不是 1/2。</p></blockquote>
 <hr>
 <h2 id="2-第一步生存对象-surv">2. 第一步:生存对象 <code>Surv()</code></h2>
 <p>生存分析的所有函数都不直接吃 <code>time</code> 和 <code>status</code>,而是吃一个把两者打包好的<strong>生存对象</strong>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">Surv</span>(lung2<span style="color:#ff7b72;font-weight:bold">$</span>time, lung2<span style="color:#ff7b72;font-weight:bold">$</span>status)[1<span style="color:#ff7b72;font-weight:bold">:</span><span style="color:#a5d6ff">10</span>]
-</span></span></code></pre></div><p>输出里带 <code>+</code> 号的(如 <code>306  455  1010+</code>)就是<strong>删失</strong>的观测——这个病人到 1010 天时还活着,我们只知道&quot;活过了 1010 天&quot;。这正是 Lesson 4 讲的删失。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">Surv</span><span class="p">(</span><span class="n">lung2</span><span class="o">$</span><span class="n">time</span><span class="p">,</span> <span class="n">lung2</span><span class="o">$</span><span class="n">status</span><span class="p">)</span><span class="n">[1</span><span class="o">:</span><span class="m">10</span><span class="n">]</span></span></span></code></pre></div>
+</div>
+<p>输出里带 <code>+</code> 号的(如 <code>306  455  1010+</code>)就是<strong>删失</strong>的观测——这个病人到 1010 天时还活着,我们只知道&quot;活过了 1010 天&quot;。这正是 Lesson 4 讲的删失。</p>
 <hr>
 <h2 id="3-kaplan-meier-曲线整体">3. Kaplan-Meier 曲线(整体)</h2>
 <p>KM 曲线估计的是&quot;活过某个时间点的概率 S(t)&quot;。<code>~ 1</code> 表示不分组、看全体:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">survfit2</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> <span style="color:#a5d6ff">1</span>, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">ggsurvfit</span>() <span style="color:#ff7b72;font-weight:bold">+</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">labs</span>(x <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;天数 Days&#34;</span>, y <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;总生存概率 Overall survival&#34;</span>) <span style="color:#ff7b72;font-weight:bold">+</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">add_confidence_interval</span>() <span style="color:#ff7b72;font-weight:bold">+</span>   <span style="color:#8b949e;font-style:italic"># 加上 95% 置信区间的阴影带</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">add_risktable</span>()               <span style="color:#8b949e;font-style:italic"># 在图下方加风险表(各时点还在随访的人数)</span>
-</span></span></code></pre></div><p><strong>怎么读</strong>:曲线每往下一个台阶代表发生了一次死亡;曲线越平、越靠上,生存越好。风险表(risk table)是论文里 KM 图的标配,审稿人会看。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">survfit2</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="m">1</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">ggsurvfit</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;天数 Days&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;总生存概率 Overall survival&#34;</span><span class="p">)</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_confidence_interval</span><span class="p">()</span> <span class="o">+</span>   <span class="c1"># 加上 95% 置信区间的阴影带</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_risktable</span><span class="p">()</span>               <span class="c1"># 在图下方加风险表(各时点还在随访的人数)</span></span></span></code></pre></div>
+</div>
+<p><strong>怎么读</strong>:曲线每往下一个台阶代表发生了一次死亡;曲线越平、越靠上,生存越好。风险表(risk table)是论文里 KM 图的标配,审稿人会看。</p>
 <hr>
 <h2 id="4-按组比较男-vs-女">4. 按组比较:男 vs 女</h2>
 <p>把 <code>~ 1</code> 换成 <code>~ sex</code> 就分组了:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">survfit2</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> sex, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">ggsurvfit</span>() <span style="color:#ff7b72;font-weight:bold">+</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">labs</span>(x <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;天数 Days&#34;</span>, y <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;总生存概率 Overall survival&#34;</span>) <span style="color:#ff7b72;font-weight:bold">+</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">add_confidence_interval</span>() <span style="color:#ff7b72;font-weight:bold">+</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">add_risktable</span>()
-</span></span></code></pre></div><p>你会看到女性(Female)的曲线在男性上方——女性生存更好。但<strong>光看图不够,得做统计检验</strong>(下一步)。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">survfit2</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">ggsurvfit</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;天数 Days&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;总生存概率 Overall survival&#34;</span><span class="p">)</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_confidence_interval</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_risktable</span><span class="p">()</span></span></span></code></pre></div>
+</div>
+<p>你会看到女性(Female)的曲线在男性上方——女性生存更好。但<strong>光看图不够,得做统计检验</strong>(下一步)。</p>
 <blockquote>
 <p>🔬 在你自己的肿瘤数据里,这里最常见的不是 <code>sex</code>,而是&quot;某基因高表达 vs 低表达&quot;。怎么分组、为什么别随便按中位数二分,回顾 Lesson 4。</p></blockquote>
 <hr>
 <h2 id="5-x-年生存率-与-中位生存期">5. x 年生存率 与 中位生存期</h2>
 <p>论文里常报&quot;1 年生存率&quot;和&quot;中位生存期&quot;。注意 <code>time</code> 是天,1 年 = <code>365.25</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># 1 年生存率</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">survfit</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> <span style="color:#a5d6ff">1</span>, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">tbl_survfit</span>(times <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">365.25</span>, label_header <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;**1 年生存率 (95% CI)**&#34;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># 中位生存期(生存概率降到 0.5 的时间)</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">survfit</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> <span style="color:#a5d6ff">1</span>, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">tbl_survfit</span>(probs <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">0.5</span>, label_header <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;**中位生存期 (95% CI)**&#34;</span>)
-</span></span></code></pre></div><p><code>tbl_survfit()</code> 直接给你带 95% 置信区间的、能复制进论文的表。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 1 年生存率</span>
+</span></span><span class="line"><span class="cl"><span class="nf">survfit</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="m">1</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_survfit</span><span class="p">(</span><span class="n">times</span> <span class="o">=</span> <span class="m">365.25</span><span class="p">,</span> <span class="n">label_header</span> <span class="o">=</span> <span class="s">&#34;**1 年生存率 (95% CI)**&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 中位生存期(生存概率降到 0.5 的时间)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">survfit</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="m">1</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_survfit</span><span class="p">(</span><span class="n">probs</span> <span class="o">=</span> <span class="m">0.5</span><span class="p">,</span> <span class="n">label_header</span> <span class="o">=</span> <span class="s">&#34;**中位生存期 (95% CI)**&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p><code>tbl_survfit()</code> 直接给你带 95% 置信区间的、能复制进论文的表。</p>
 <hr>
 <h2 id="6-log-rank-检验两组差异显著吗">6. log-rank 检验:两组差异显著吗?</h2>
 <p>log-rank 检验回答&quot;两条生存曲线的差异是不是统计上显著&quot;:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">survdiff</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> sex, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2)
-</span></span></code></pre></div><p>看输出最后的 <code>p</code> 值(<code>lung</code> 里约 <code>p = 0.001</code>)。p &lt; 0.05 通常认为差异显著——但记住 Lesson 4 说的:<strong>显著 ≠ 重要</strong>。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">survdiff</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>看输出最后的 <code>p</code> 值(<code>lung</code> 里约 <code>p = 0.001</code>)。p &lt; 0.05 通常认为差异显著——但记住 Lesson 4 说的:<strong>显著 ≠ 重要</strong>。</p>
 <hr>
 <h2 id="7-cox-回归估计风险比-hr">7. Cox 回归:估计风险比 HR</h2>
 <p>KM + log-rank 只能比较分组、且一次只看一个因素。<strong>Cox 比例风险模型</strong>能同时校正多个变量,并给出<strong>风险比(HR)</strong>。</p>
 <p>单因素(只看性别):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">coxph</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> sex, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">tbl_regression</span>(exp <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">TRUE</span>)   <span style="color:#8b949e;font-style:italic"># exp=TRUE 把系数转成 HR</span>
-</span></span></code></pre></div><p>多因素(同时校正年龄、体力评分):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">coxph</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> sex <span style="color:#ff7b72;font-weight:bold">+</span> age <span style="color:#ff7b72;font-weight:bold">+</span> ph.ecog, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">tbl_regression</span>(exp <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">TRUE</span>)
-</span></span></code></pre></div><p><strong>怎么读 HR</strong>(Lesson 4 讲过):</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># exp=TRUE 把系数转成 HR</span></span></span></code></pre></div>
+</div>
+<p>多因素(同时校正年龄、体力评分):</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span> <span class="o">+</span> <span class="n">age</span> <span class="o">+</span> <span class="n">ph.ecog</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p><strong>怎么读 HR</strong>(Lesson 4 讲过):</p>
 <ul>
 <li>HR &lt; 1 → 该因素<strong>降低</strong>死亡风险(如 Female 的 HR ≈ 0.6,即女性死亡风险约为男性的 60%)</li>
 <li>HR = 1 → 没影响</li>
@@ -189,9 +256,15 @@
 <hr>
 <h2 id="8-检验比例风险假设">8. 检验比例风险假设</h2>
 <p>Cox 模型有个<strong>前提</strong>:各组的风险比不随时间变化(比例风险)。这个前提不查就用,结论可能是错的:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>fit <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">coxph</span>(<span style="color:#d2a8ff;font-weight:bold">Surv</span>(time, status) <span style="color:#ff7b72;font-weight:bold">~</span> sex <span style="color:#ff7b72;font-weight:bold">+</span> age <span style="color:#ff7b72;font-weight:bold">+</span> ph.ecog, data <span style="color:#ff7b72;font-weight:bold">=</span> lung2)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">cox.zph</span>(fit)
-</span></span></code></pre></div><p>每个变量和整体(GLOBAL)都给一个 p 值:<strong>p &gt; 0.05 表示没有违反假设</strong>(好事)。若某个变量 p 很小,说明它违反了比例风险,需要进阶处理(见 Zabor 教程 Part 2/4)。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit</span> <span class="o">&lt;-</span> <span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span> <span class="o">+</span> <span class="n">age</span> <span class="o">+</span> <span class="n">ph.ecog</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">cox.zph</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>每个变量和整体(GLOBAL)都给一个 p 值:<strong>p &gt; 0.05 表示没有违反假设</strong>(好事)。若某个变量 p 很小,说明它违反了比例风险,需要进阶处理(见 Zabor 教程 Part 2/4)。</p>
 <hr>
 <h2 id="9-把它用到你自己的数据">9. 把它用到你自己的数据</h2>
 <p><code>lung</code> 是干净的内置数据;你自己的数据通常是一张 Excel,真正的工作量在<strong>把它整理成 <code>time</code> + <code>status</code></strong>:</p>
@@ -201,10 +274,16 @@
 </li>
 <li>
 <p><strong><code>time</code>(时间)</strong>:很少现成,通常要从两个日期算。例如随访时长 =(末次随访或死亡日期)−(诊断/入组日期)。用 <code>lubridate</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(lubridate)
-</span></span><span style="display:flex;"><span>mydata <span style="color:#ff7b72;font-weight:bold">&lt;-</span> mydata <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">mutate</span>(time <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">as.numeric</span>(<span style="color:#d2a8ff;font-weight:bold">as_date</span>(last_date) <span style="color:#ff7b72;font-weight:bold">-</span> <span style="color:#d2a8ff;font-weight:bold">as_date</span>(dx_date)))  <span style="color:#8b949e;font-style:italic"># 天数</span>
-</span></span></code></pre></div></li>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">lubridate</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">mydata</span> <span class="o">&lt;-</span> <span class="n">mydata</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mutate</span><span class="p">(</span><span class="n">time</span> <span class="o">=</span> <span class="nf">as.numeric</span><span class="p">(</span><span class="nf">as_date</span><span class="p">(</span><span class="n">last_date</span><span class="p">)</span> <span class="o">-</span> <span class="nf">as_date</span><span class="p">(</span><span class="n">dx_date</span><span class="p">)))</span>  <span class="c1"># 天数</span></span></span></code></pre></div>
+</div>
+</li>
 <li>
 <p><strong>分组/协变量</strong>:基因高低、分期、年龄等,整理成列(回顾 Lesson 2)。</p>
 </li>
@@ -321,6 +400,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

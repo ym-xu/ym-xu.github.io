@@ -7,8 +7,9 @@
 <meta name="description" content="Hierarchical &#43; leaf embeddings for navigation, not naive top-k retrieval." />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Planner design — Yiming Xu" />
@@ -67,10 +68,16 @@
 <p>为什么不直接像 RAG 一样&quot;扔进向量库 → 取前 k 段就回答&quot;？因为我们的任务大量涉及版面结构、跨页聚合、图表计数/读数、多模态对齐与可解释路径。</p>
 <h2 id="embedding-覆盖策略">Embedding 覆盖策略</h2>
 <p>L1/L2/L3 section：对每个章节节点生成 summary（80–150 token），再对 summary 做 embedding。用途：Planner 的第一跳定向。</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ff7b72">def</span> <span style="color:#d2a8ff;font-weight:bold">expand</span>(passage, kg):
-</span></span><span style="display:flex;"><span>    neighbors <span style="color:#ff7b72;font-weight:bold">=</span> salient_neighbors(kg, budget<span style="color:#ff7b72;font-weight:bold">=</span><span style="color:#a5d6ff">8</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#ff7b72">return</span> passage <span style="color:#ff7b72;font-weight:bold">+</span> <span style="color:#a5d6ff">&#34; &#34;</span><span style="color:#ff7b72;font-weight:bold">.</span>join(neighbors)
-</span></span></code></pre></div></div>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">python</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="n">passage</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">neighbors</span> <span class="o">=</span> <span class="n">salient_neighbors</span><span class="p">(</span><span class="n">kg</span><span class="p">,</span> <span class="n">budget</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">passage</span> <span class="o">+</span> <span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+</div>
 
     <nav class="pager">
       <a class="prev" href="/posts/2025/09/context-engineering/">← Context engineering</a>
@@ -108,6 +115,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

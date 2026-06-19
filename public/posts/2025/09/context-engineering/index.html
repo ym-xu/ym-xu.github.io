@@ -7,8 +7,9 @@
 <meta name="description" content="Notes on shaping the context window as a first-class design surface." />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Context engineering — Yiming Xu" />
@@ -66,11 +67,17 @@
     <div class="content"><p>Context engineering treats the prompt window as a budget to be allocated, not a bucket to be filled. Every token competes; the planner decides what earns a slot.</p>
 <h2 id="navigation-over-retrieval">Navigation over retrieval</h2>
 <p>Rather than dumping the top-k passages, we expose a navigable structure — sections summarised, leaves embedded — and let the agent walk it. Embeddings act as navigation hints; the real extraction happens at the observer.</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>budget <span style="color:#ff7b72;font-weight:bold">=</span> Budget(tokens<span style="color:#ff7b72;font-weight:bold">=</span><span style="color:#a5d6ff">8_000</span>)
-</span></span><span style="display:flex;"><span><span style="color:#ff7b72">for</span> node <span style="color:#ff7b72;font-weight:bold">in</span> planner<span style="color:#ff7b72;font-weight:bold">.</span>walk(doc):
-</span></span><span style="display:flex;"><span>    <span style="color:#ff7b72">if</span> budget<span style="color:#ff7b72;font-weight:bold">.</span>fits(node):
-</span></span><span style="display:flex;"><span>        ctx<span style="color:#ff7b72;font-weight:bold">.</span>add(node)
-</span></span></code></pre></div></div>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">python</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">budget</span> <span class="o">=</span> <span class="n">Budget</span><span class="p">(</span><span class="n">tokens</span><span class="o">=</span><span class="mi">8_000</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">planner</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="n">budget</span><span class="o">.</span><span class="n">fits</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+</div>
 
     <nav class="pager">
       <a class="prev" href="/posts/2025/08/doclens/">← DocLens</a>
@@ -108,6 +115,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

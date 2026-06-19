@@ -7,8 +7,9 @@
 <meta name="description" content="用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Lesson 2 · 数据整理 Data Wrangling — Yiming Xu" />
@@ -74,83 +75,131 @@
 </ul>
 <h2 id="0-准备安装并加载包">0. 准备:安装并加载包</h2>
 <p>第一次用时安装一次(去掉 <code>#</code> 运行):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># install.packages(&#34;tidyverse&#34;)</span>
-</span></span></code></pre></div><p>每次分析开头加载:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(tidyverse)   <span style="color:#8b949e;font-style:italic"># 一次性加载 dplyr、tidyr、ggplot2 等一整套</span>
-</span></span></code></pre></div><h2 id="1-先造一张练习表">1. 先造一张练习表</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># install.packages(&#34;tidyverse&#34;)</span></span></span></code></pre></div>
+</div>
+<p>每次分析开头加载:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">tidyverse</span><span class="p">)</span>   <span class="c1"># 一次性加载 dplyr、tidyr、ggplot2 等一整套</span></span></span></code></pre></div>
+</div>
+<h2 id="1-先造一张练习表">1. 先造一张练习表</h2>
 <p>为了让你能直接跑(不依赖外部文件),我们用 <code>tribble()</code> 手敲一张小临床表。<code>tribble()</code> 是&quot;按行&quot;写的 tibble,一眼能看出表长什么样:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">tribble</span>(
-</span></span><span style="display:flex;"><span>  <span style="color:#ff7b72;font-weight:bold">~</span>patient_id, <span style="color:#ff7b72;font-weight:bold">~</span>age, <span style="color:#ff7b72;font-weight:bold">~</span>sex,     <span style="color:#ff7b72;font-weight:bold">~</span>stage, <span style="color:#ff7b72;font-weight:bold">~</span>gene_expr, <span style="color:#ff7b72;font-weight:bold">~</span>time, <span style="color:#ff7b72;font-weight:bold">~</span>status,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P01&#34;</span>,        <span style="color:#a5d6ff">58</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;III&#34;</span>,   <span style="color:#a5d6ff">12.4</span>,       <span style="color:#a5d6ff">455</span>,   <span style="color:#a5d6ff">1</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P02&#34;</span>,        <span style="color:#a5d6ff">63</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;II&#34;</span>,     <span style="color:#a5d6ff">8.1</span>,       <span style="color:#a5d6ff">1010</span>,  <span style="color:#a5d6ff">0</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P03&#34;</span>,        <span style="color:#a5d6ff">47</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;I&#34;</span>,      <span style="color:#a5d6ff">5.3</span>,       <span style="color:#79c0ff">NA</span>,    <span style="color:#a5d6ff">0</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P04&#34;</span>,        <span style="color:#a5d6ff">71</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;IV&#34;</span>,    <span style="color:#a5d6ff">15.9</span>,       <span style="color:#a5d6ff">210</span>,   <span style="color:#a5d6ff">1</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P05&#34;</span>,        <span style="color:#a5d6ff">55</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;II&#34;</span>,     <span style="color:#a5d6ff">7.7</span>,       <span style="color:#a5d6ff">883</span>,   <span style="color:#a5d6ff">0</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P06&#34;</span>,        <span style="color:#a5d6ff">68</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;III&#34;</span>,   <span style="color:#a5d6ff">13.2</span>,       <span style="color:#a5d6ff">310</span>,   <span style="color:#a5d6ff">1</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P07&#34;</span>,        <span style="color:#a5d6ff">49</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;I&#34;</span>,      <span style="color:#a5d6ff">4.8</span>,       <span style="color:#a5d6ff">1220</span>,  <span style="color:#a5d6ff">0</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P08&#34;</span>,        <span style="color:#a5d6ff">60</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;IV&#34;</span>,    <span style="color:#a5d6ff">16.5</span>,       <span style="color:#a5d6ff">145</span>,   <span style="color:#a5d6ff">1</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>clinical
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">&lt;-</span> <span class="nf">tribble</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="o">~</span><span class="n">patient_id</span><span class="p">,</span> <span class="o">~</span><span class="n">age</span><span class="p">,</span> <span class="o">~</span><span class="n">sex</span><span class="p">,</span>     <span class="o">~</span><span class="n">stage</span><span class="p">,</span> <span class="o">~</span><span class="n">gene_expr</span><span class="p">,</span> <span class="o">~</span><span class="n">time</span><span class="p">,</span> <span class="o">~</span><span class="n">status</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P01&#34;</span><span class="p">,</span>        <span class="m">58</span><span class="p">,</span>  <span class="s">&#34;Male&#34;</span><span class="p">,</span>   <span class="s">&#34;III&#34;</span><span class="p">,</span>   <span class="m">12.4</span><span class="p">,</span>       <span class="m">455</span><span class="p">,</span>   <span class="m">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P02&#34;</span><span class="p">,</span>        <span class="m">63</span><span class="p">,</span>  <span class="s">&#34;Female&#34;</span><span class="p">,</span> <span class="s">&#34;II&#34;</span><span class="p">,</span>     <span class="m">8.1</span><span class="p">,</span>       <span class="m">1010</span><span class="p">,</span>  <span class="m">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P03&#34;</span><span class="p">,</span>        <span class="m">47</span><span class="p">,</span>  <span class="s">&#34;Female&#34;</span><span class="p">,</span> <span class="s">&#34;I&#34;</span><span class="p">,</span>      <span class="m">5.3</span><span class="p">,</span>       <span class="kc">NA</span><span class="p">,</span>    <span class="m">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P04&#34;</span><span class="p">,</span>        <span class="m">71</span><span class="p">,</span>  <span class="s">&#34;Male&#34;</span><span class="p">,</span>   <span class="s">&#34;IV&#34;</span><span class="p">,</span>    <span class="m">15.9</span><span class="p">,</span>       <span class="m">210</span><span class="p">,</span>   <span class="m">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P05&#34;</span><span class="p">,</span>        <span class="m">55</span><span class="p">,</span>  <span class="s">&#34;Female&#34;</span><span class="p">,</span> <span class="s">&#34;II&#34;</span><span class="p">,</span>     <span class="m">7.7</span><span class="p">,</span>       <span class="m">883</span><span class="p">,</span>   <span class="m">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P06&#34;</span><span class="p">,</span>        <span class="m">68</span><span class="p">,</span>  <span class="s">&#34;Male&#34;</span><span class="p">,</span>   <span class="s">&#34;III&#34;</span><span class="p">,</span>   <span class="m">13.2</span><span class="p">,</span>       <span class="m">310</span><span class="p">,</span>   <span class="m">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P07&#34;</span><span class="p">,</span>        <span class="m">49</span><span class="p">,</span>  <span class="s">&#34;Female&#34;</span><span class="p">,</span> <span class="s">&#34;I&#34;</span><span class="p">,</span>      <span class="m">4.8</span><span class="p">,</span>       <span class="m">1220</span><span class="p">,</span>  <span class="m">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P08&#34;</span><span class="p">,</span>        <span class="m">60</span><span class="p">,</span>  <span class="s">&#34;Male&#34;</span><span class="p">,</span>   <span class="s">&#34;IV&#34;</span><span class="p">,</span>    <span class="m">16.5</span><span class="p">,</span>       <span class="m">145</span><span class="p">,</span>   <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p><strong>tibble</strong> 是 tidyverse 版的 data.frame,打印更友好、行为更可控。<code>status</code>:1=事件(死亡/复发),0=删失(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p></blockquote>
 <h2 id="2-管道符-把然后连起来">2. 管道符 <code>%&gt;%</code>:把&quot;然后&quot;连起来</h2>
 <p>管道符 <code>%&gt;%</code>(或 R 自带的 <code>|&gt;</code>)把左边的结果&quot;喂&quot;给右边的函数,读作&quot;然后&quot;。下面两种写法等价:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">summary</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>age)            <span style="color:#8b949e;font-style:italic"># 传统写法,从里往外读</span>
-</span></span><span style="display:flex;"><span>clinical<span style="color:#ff7b72;font-weight:bold">$</span>age <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">summary</span>()       <span style="color:#8b949e;font-style:italic"># 管道写法,从左往右读:age,然后求概况</span>
-</span></span></code></pre></div><p>管道的好处是能把多步操作串成一条自然的句子,后面你会一直用到。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">clinical</span><span class="o">$</span><span class="n">age</span><span class="p">)</span>            <span class="c1"># 传统写法,从里往外读</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span><span class="o">$</span><span class="n">age</span> <span class="o">%&gt;%</span> <span class="nf">summary</span><span class="p">()</span>       <span class="c1"># 管道写法,从左往右读:age,然后求概况</span></span></span></code></pre></div>
+</div>
+<p>管道的好处是能把多步操作串成一条自然的句子,后面你会一直用到。</p>
 <h2 id="3-dplyr-五个核心动词">3. dplyr 五个核心动词</h2>
 <p>整理数据 90% 靠这五个动词:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># filter:按条件筛行</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">filter</span>(stage <span style="color:#ff7b72;font-weight:bold">==</span> <span style="color:#a5d6ff">&#34;IV&#34;</span>)              <span style="color:#8b949e;font-style:italic"># 只要 IV 期</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># select:挑列</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">select</span>(patient_id, age, gene_expr) <span style="color:#8b949e;font-style:italic"># 只看这几列</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># mutate:加新列 / 改列</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">mutate</span>(expr_high <span style="color:#ff7b72;font-weight:bold">=</span> gene_expr <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#a5d6ff">10</span>) <span style="color:#8b949e;font-style:italic"># 加一列&#34;是否高表达&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># arrange:排序</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">arrange</span>(<span style="color:#d2a8ff;font-weight:bold">desc</span>(gene_expr))           <span style="color:#8b949e;font-style:italic"># 按表达量从高到低</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># group_by + summarise:分组统计</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">group_by</span>(stage) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">summarise</span>(n <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">n</span>(), mean_age <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">mean</span>(age))      <span style="color:#8b949e;font-style:italic"># 每个分期的人数与平均年龄</span>
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># filter:按条件筛行</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">filter</span><span class="p">(</span><span class="n">stage</span> <span class="o">==</span> <span class="s">&#34;IV&#34;</span><span class="p">)</span>              <span class="c1"># 只要 IV 期</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># select:挑列</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">select</span><span class="p">(</span><span class="n">patient_id</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">gene_expr</span><span class="p">)</span> <span class="c1"># 只看这几列</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># mutate:加新列 / 改列</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">expr_high</span> <span class="o">=</span> <span class="n">gene_expr</span> <span class="o">&gt;</span> <span class="m">10</span><span class="p">)</span> <span class="c1"># 加一列&#34;是否高表达&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># arrange:排序</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">arrange</span><span class="p">(</span><span class="nf">desc</span><span class="p">(</span><span class="n">gene_expr</span><span class="p">))</span>           <span class="c1"># 按表达量从高到低</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># group_by + summarise:分组统计</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">group_by</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">summarise</span><span class="p">(</span><span class="n">n</span> <span class="o">=</span> <span class="nf">n</span><span class="p">(),</span> <span class="n">mean_age</span> <span class="o">=</span> <span class="nf">mean</span><span class="p">(</span><span class="n">age</span><span class="p">))</span>      <span class="c1"># 每个分期的人数与平均年龄</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p>🔬 &ldquo;按基因表达高/低分组、再比较两组&rdquo; 是肿瘤研究的常见操作。但 ⚠️ 别随手按中位数二分——代价见 <a href="../04-stats-concepts/">Lesson 4</a>。</p></blockquote>
 <h2 id="4-处理缺失值-na">4. 处理缺失值 NA</h2>
 <p><code>P03</code> 的 <code>time</code> 是 <code>NA</code>(缺失)。缺失值不处理会让很多计算直接返回 <code>NA</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">mean</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>time)                 <span style="color:#8b949e;font-style:italic"># 结果是 NA!</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">mean</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>time, na.rm <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">TRUE</span>)   <span style="color:#8b949e;font-style:italic"># 加 na.rm=TRUE 才会忽略缺失</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">filter</span>(<span style="color:#d2a8ff;font-weight:bold">is.na</span>(time))    <span style="color:#8b949e;font-style:italic"># 找出哪些行缺失</span>
-</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">drop_na</span>(time)          <span style="color:#8b949e;font-style:italic"># 丢掉 time 缺失的行</span>
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">mean</span><span class="p">(</span><span class="n">clinical</span><span class="o">$</span><span class="n">time</span><span class="p">)</span>                 <span class="c1"># 结果是 NA!</span>
+</span></span><span class="line"><span class="cl"><span class="nf">mean</span><span class="p">(</span><span class="n">clinical</span><span class="o">$</span><span class="n">time</span><span class="p">,</span> <span class="n">na.rm</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># 加 na.rm=TRUE 才会忽略缺失</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">filter</span><span class="p">(</span><span class="nf">is.na</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>    <span class="c1"># 找出哪些行缺失</span>
+</span></span><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">drop_na</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>          <span class="c1"># 丢掉 time 缺失的行</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p>⚠️ 别盲目删缺失值——先搞清楚为什么缺。删之前最好统计一下缺多少、缺在哪。</p></blockquote>
 <h2 id="5-合并两张表-left_join">5. 合并两张表 <code>left_join</code></h2>
 <p>真实场景:临床信息在一张表,疗效/分子数据在另一张表,靠<strong>病人 ID</strong> 对应。先造第二张表:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>response <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">tribble</span>(
-</span></span><span style="display:flex;"><span>  <span style="color:#ff7b72;font-weight:bold">~</span>patient_id, <span style="color:#ff7b72;font-weight:bold">~</span>response,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P01&#34;</span>,       <span style="color:#a5d6ff">&#34;PR&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P02&#34;</span>,       <span style="color:#a5d6ff">&#34;CR&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P04&#34;</span>,       <span style="color:#a5d6ff">&#34;PD&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P05&#34;</span>,       <span style="color:#a5d6ff">&#34;SD&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>merged <span style="color:#ff7b72;font-weight:bold">&lt;-</span> clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">left_join</span>(response, by <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;patient_id&#34;</span>)
-</span></span><span style="display:flex;"><span>merged
-</span></span></code></pre></div><p><code>left_join</code> 以左表(clinical)为准,把 response 按 <code>patient_id</code> 贴上来;左表里没有匹配的病人,response 列填 <code>NA</code>。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">response</span> <span class="o">&lt;-</span> <span class="nf">tribble</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="o">~</span><span class="n">patient_id</span><span class="p">,</span> <span class="o">~</span><span class="n">response</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P01&#34;</span><span class="p">,</span>       <span class="s">&#34;PR&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P02&#34;</span><span class="p">,</span>       <span class="s">&#34;CR&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P04&#34;</span><span class="p">,</span>       <span class="s">&#34;PD&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="s">&#34;P05&#34;</span><span class="p">,</span>       <span class="s">&#34;SD&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">merged</span> <span class="o">&lt;-</span> <span class="n">clinical</span> <span class="o">%&gt;%</span> <span class="nf">left_join</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">by</span> <span class="o">=</span> <span class="s">&#34;patient_id&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">merged</span></span></span></code></pre></div>
+</div>
+<p><code>left_join</code> 以左表(clinical)为准,把 response 按 <code>patient_id</code> 贴上来;左表里没有匹配的病人,response 列填 <code>NA</code>。</p>
 <blockquote>
 <p>🔬 把&quot;临床表 + 表达矩阵 + 疗效&quot;合并成一张分析表,是动手分析前的标准准备步骤。</p></blockquote>
 <h2 id="6-串成一条流水线">6. 串成一条流水线</h2>
 <p>把上面几步用管道连起来,就是一句完整的&quot;数据整理&quot;:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>analysis_tbl <span style="color:#ff7b72;font-weight:bold">&lt;-</span> clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">filter</span>(<span style="color:#ff7b72;font-weight:bold">!</span><span style="color:#d2a8ff;font-weight:bold">is.na</span>(time)) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>                       <span style="color:#8b949e;font-style:italic"># 去掉生存时间缺失的</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">mutate</span>(expr_group <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">if_else</span>(gene_expr <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#d2a8ff;font-weight:bold">median</span>(gene_expr),
-</span></span><span style="display:flex;"><span>                              <span style="color:#a5d6ff">&#34;High&#34;</span>, <span style="color:#a5d6ff">&#34;Low&#34;</span>)) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#8b949e;font-style:italic"># 加分组列</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">left_join</span>(response, by <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;patient_id&#34;</span>) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>      <span style="color:#8b949e;font-style:italic"># 合并疗效</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">arrange</span>(stage)                                  <span style="color:#8b949e;font-style:italic"># 按分期排序</span>
-</span></span><span style="display:flex;"><span>analysis_tbl
-</span></span></code></pre></div><h2 id="小结">小结</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">analysis_tbl</span> <span class="o">&lt;-</span> <span class="n">clinical</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">filter</span><span class="p">(</span><span class="o">!</span><span class="nf">is.na</span><span class="p">(</span><span class="n">time</span><span class="p">))</span> <span class="o">%&gt;%</span>                       <span class="c1"># 去掉生存时间缺失的</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mutate</span><span class="p">(</span><span class="n">expr_group</span> <span class="o">=</span> <span class="nf">if_else</span><span class="p">(</span><span class="n">gene_expr</span> <span class="o">&gt;</span> <span class="nf">median</span><span class="p">(</span><span class="n">gene_expr</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">                              <span class="s">&#34;High&#34;</span><span class="p">,</span> <span class="s">&#34;Low&#34;</span><span class="p">))</span> <span class="o">%&gt;%</span> <span class="c1"># 加分组列</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">left_join</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">by</span> <span class="o">=</span> <span class="s">&#34;patient_id&#34;</span><span class="p">)</span> <span class="o">%&gt;%</span>      <span class="c1"># 合并疗效</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">arrange</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>                                  <span class="c1"># 按分期排序</span>
+</span></span><span class="line"><span class="cl"><span class="n">analysis_tbl</span></span></span></code></pre></div>
+</div>
+<h2 id="小结">小结</h2>
 <table>
   <thead>
       <tr>
@@ -269,6 +318,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

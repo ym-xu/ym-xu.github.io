@@ -1,0 +1,8 @@
+{{- $lang := .Type | default "text" -}}
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">{{ $lang }}</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  {{ highlight .Inner $lang "" }}
+</div>

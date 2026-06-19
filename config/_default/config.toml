@@ -19,7 +19,7 @@ enableRobotsTXT = true
 
 [markup]
   [markup.highlight]
-    style = "github-dark"
+    noClasses = false
     lineNos = false
     tabWidth = 2
   [markup.tableOfContents]

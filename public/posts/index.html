@@ -7,8 +7,9 @@
 <meta name="description" content="A clean and fast content website" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Writing — Yiming Xu" />
@@ -112,6 +113,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

@@ -7,8 +7,9 @@
 <meta name="description" content="把差异表达结果可视化:火山图展示 DEGs,热图展示样本聚类。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Lesson 7 · 火山图与热图 Volcano &amp; Heatmap — Yiming Xu" />
@@ -69,19 +70,25 @@
 <li>一张带分组注释、行聚类的表达热图</li>
 </ul>
 <h2 id="0-准备加载包--快速重建-l6-的结果">0. 准备:加载包 + 快速重建 L6 的结果</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(DESeq2)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(airway)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(EnhancedVolcano)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(pheatmap)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># —— 快速重建 Lesson 6 的 dds 和 res(自包含,可直接跑)——</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">data</span>(airway)
-</span></span><span style="display:flex;"><span>airway<span style="color:#ff7b72;font-weight:bold">$</span>dex <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">relevel</span>(airway<span style="color:#ff7b72;font-weight:bold">$</span>dex, ref <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;untrt&#34;</span>)
-</span></span><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">DESeqDataSet</span>(airway, design <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#ff7b72;font-weight:bold">~</span> cell <span style="color:#ff7b72;font-weight:bold">+</span> dex)
-</span></span><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> dds<span style="color:#d2a8ff;font-weight:bold">[rowSums</span>(<span style="color:#d2a8ff;font-weight:bold">counts</span>(dds)) <span style="color:#ff7b72;font-weight:bold">&gt;=</span> <span style="color:#a5d6ff">10</span>, ]
-</span></span><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">DESeq</span>(dds)
-</span></span><span style="display:flex;"><span>res <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">results</span>(dds)
-</span></span></code></pre></div><h2 id="1-火山图的原理">1. 火山图的原理</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">DESeq2</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">airway</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">EnhancedVolcano</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">pheatmap</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># —— 快速重建 Lesson 6 的 dds 和 res(自包含,可直接跑)——</span>
+</span></span><span class="line"><span class="cl"><span class="nf">data</span><span class="p">(</span><span class="n">airway</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">airway</span><span class="o">$</span><span class="n">dex</span> <span class="o">&lt;-</span> <span class="nf">relevel</span><span class="p">(</span><span class="n">airway</span><span class="o">$</span><span class="n">dex</span><span class="p">,</span> <span class="n">ref</span> <span class="o">=</span> <span class="s">&#34;untrt&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">dds</span> <span class="o">&lt;-</span> <span class="nf">DESeqDataSet</span><span class="p">(</span><span class="n">airway</span><span class="p">,</span> <span class="n">design</span> <span class="o">=</span> <span class="o">~</span> <span class="n">cell</span> <span class="o">+</span> <span class="n">dex</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">dds</span> <span class="o">&lt;-</span> <span class="n">dds</span><span class="nf">[rowSums</span><span class="p">(</span><span class="nf">counts</span><span class="p">(</span><span class="n">dds</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="m">10</span><span class="p">,</span> <span class="n">]</span>
+</span></span><span class="line"><span class="cl"><span class="n">dds</span> <span class="o">&lt;-</span> <span class="nf">DESeq</span><span class="p">(</span><span class="n">dds</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">res</span> <span class="o">&lt;-</span> <span class="nf">results</span><span class="p">(</span><span class="n">dds</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="1-火山图的原理">1. 火山图的原理</h2>
 <p>火山图把每个基因画成一个点:</p>
 <ul>
 <li><strong>x 轴 = log2FoldChange</strong>:越往右上调越强,越往左下调越强</li>
@@ -92,34 +99,58 @@
 <p>🔬 审稿人扫一眼火山图就能判断&quot;差异基因多不多、对不对称&quot;。</p></blockquote>
 <h2 id="2-画火山图">2. 画火山图</h2>
 <p><code>EnhancedVolcano</code> 一个函数搞定,还能自动标注、画阈值线:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">EnhancedVolcano</span>(res,
-</span></span><span style="display:flex;"><span>  lab    <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">rownames</span>(res),       <span style="color:#8b949e;font-style:italic"># 点的标签(airway 里是 Ensembl ID)</span>
-</span></span><span style="display:flex;"><span>  x      <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#39;log2FoldChange&#39;</span>,
-</span></span><span style="display:flex;"><span>  y      <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#39;padj&#39;</span>,              <span style="color:#8b949e;font-style:italic"># 用校正后的 p 值</span>
-</span></span><span style="display:flex;"><span>  pCutoff  <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">0.05</span>,              <span style="color:#8b949e;font-style:italic"># 显著性阈值(横虚线)</span>
-</span></span><span style="display:flex;"><span>  FCcutoff <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">1</span>,                 <span style="color:#8b949e;font-style:italic"># fold-change 阈值(竖虚线)</span>
-</span></span><span style="display:flex;"><span>  title  <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#39;Tumor vs Normal&#39;</span>,
-</span></span><span style="display:flex;"><span>  pointSize <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">1.5</span>, labSize <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">3</span>)
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">EnhancedVolcano</span><span class="p">(</span><span class="n">res</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">lab</span>    <span class="o">=</span> <span class="nf">rownames</span><span class="p">(</span><span class="n">res</span><span class="p">),</span>       <span class="c1"># 点的标签(airway 里是 Ensembl ID)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">x</span>      <span class="o">=</span> <span class="s">&#39;log2FoldChange&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">y</span>      <span class="o">=</span> <span class="s">&#39;padj&#39;</span><span class="p">,</span>              <span class="c1"># 用校正后的 p 值</span>
+</span></span><span class="line"><span class="cl">  <span class="n">pCutoff</span>  <span class="o">=</span> <span class="m">0.05</span><span class="p">,</span>              <span class="c1"># 显著性阈值(横虚线)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">FCcutoff</span> <span class="o">=</span> <span class="m">1</span><span class="p">,</span>                 <span class="c1"># fold-change 阈值(竖虚线)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">title</span>  <span class="o">=</span> <span class="s">&#39;Tumor vs Normal&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">pointSize</span> <span class="o">=</span> <span class="m">1.5</span><span class="p">,</span> <span class="n">labSize</span> <span class="o">=</span> <span class="m">3</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p>标签是 Ensembl ID 不好读时,可以先把 ID 映射成基因名(symbol)再传给 <code>lab=</code>,映射方法见 <a href="../08-enrichment/">Lesson 8</a> 的 <code>bitr()</code>。</p></blockquote>
 <h2 id="3-为什么热图不能直接用原始-counts">3. 为什么热图不能直接用原始 counts</h2>
 <p>原始 counts 量级差异巨大(有的基因几十、有的上万),且方差随均值变化。直接画热图会被高表达基因主导。标准做法是先做<strong>方差稳定变换 vst</strong>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>vsd <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">vst</span>(dds, blind <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">FALSE</span>)   <span style="color:#8b949e;font-style:italic"># 方差稳定变换,得到适合可视化/聚类的值</span>
-</span></span><span style="display:flex;"><span>mat <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">assay</span>(vsd)                <span style="color:#8b949e;font-style:italic"># 取出变换后的矩阵</span>
-</span></span></code></pre></div><h2 id="4-取-top-差异基因">4. 取 top 差异基因</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">vsd</span> <span class="o">&lt;-</span> <span class="nf">vst</span><span class="p">(</span><span class="n">dds</span><span class="p">,</span> <span class="n">blind</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>   <span class="c1"># 方差稳定变换,得到适合可视化/聚类的值</span>
+</span></span><span class="line"><span class="cl"><span class="n">mat</span> <span class="o">&lt;-</span> <span class="nf">assay</span><span class="p">(</span><span class="n">vsd</span><span class="p">)</span>                <span class="c1"># 取出变换后的矩阵</span></span></span></code></pre></div>
+</div>
+<h2 id="4-取-top-差异基因">4. 取 top 差异基因</h2>
 <p>热图通常只画最显著的若干基因(全画看不清):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>top_genes <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">head</span>(<span style="color:#d2a8ff;font-weight:bold">order</span>(res<span style="color:#ff7b72;font-weight:bold">$</span>padj), <span style="color:#a5d6ff">30</span>)   <span style="color:#8b949e;font-style:italic"># padj 最小的 30 个</span>
-</span></span><span style="display:flex;"><span>mat_top <span style="color:#ff7b72;font-weight:bold">&lt;-</span> mat[top_genes, ]
-</span></span></code></pre></div><h2 id="5-画带注释的热图">5. 画带注释的热图</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">top_genes</span> <span class="o">&lt;-</span> <span class="nf">head</span><span class="p">(</span><span class="nf">order</span><span class="p">(</span><span class="n">res</span><span class="o">$</span><span class="n">padj</span><span class="p">),</span> <span class="m">30</span><span class="p">)</span>   <span class="c1"># padj 最小的 30 个</span>
+</span></span><span class="line"><span class="cl"><span class="n">mat_top</span> <span class="o">&lt;-</span> <span class="n">mat[top_genes</span><span class="p">,</span> <span class="n">]</span></span></span></code></pre></div>
+</div>
+<h2 id="5-画带注释的热图">5. 画带注释的热图</h2>
 <p><code>scale = &quot;row&quot;</code> 对每个基因按行做 z-score 标准化,这样看的是&quot;相对高低&quot;而非绝对值;<code>annotation_col</code> 给样本加上分组注释条:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>anno <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">as.data.frame</span>(<span style="color:#d2a8ff;font-weight:bold">colData</span>(dds)[, <span style="color:#d2a8ff;font-weight:bold">c</span>(<span style="color:#a5d6ff">&#34;dex&#34;</span>, <span style="color:#a5d6ff">&#34;cell&#34;</span>)])  <span style="color:#8b949e;font-style:italic"># 样本注释:处理/细胞系</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">pheatmap</span>(mat_top,
-</span></span><span style="display:flex;"><span>  scale <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;row&#34;</span>,              <span style="color:#8b949e;font-style:italic"># ⚠️ 按行 z-score,热图的关键</span>
-</span></span><span style="display:flex;"><span>  annotation_col <span style="color:#ff7b72;font-weight:bold">=</span> anno,      <span style="color:#8b949e;font-style:italic"># 顶部加分组注释条</span>
-</span></span><span style="display:flex;"><span>  show_colnames <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">FALSE</span>,
-</span></span><span style="display:flex;"><span>  main <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;Top 30 DEGs&#34;</span>)
-</span></span></code></pre></div><p><strong>怎么读</strong>:颜色 = 相对表达(红高蓝低,默认);顶部聚类树把表达模式相似的样本聚在一起——如果同一处理组的样本自然聚到一块,说明分组的差异是真实的。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">anno</span> <span class="o">&lt;-</span> <span class="nf">as.data.frame</span><span class="p">(</span><span class="nf">colData</span><span class="p">(</span><span class="n">dds</span><span class="p">)</span><span class="n">[</span><span class="p">,</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;dex&#34;</span><span class="p">,</span> <span class="s">&#34;cell&#34;</span><span class="p">)</span><span class="n">]</span><span class="p">)</span>  <span class="c1"># 样本注释:处理/细胞系</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">pheatmap</span><span class="p">(</span><span class="n">mat_top</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">scale</span> <span class="o">=</span> <span class="s">&#34;row&#34;</span><span class="p">,</span>              <span class="c1"># ⚠️ 按行 z-score,热图的关键</span>
+</span></span><span class="line"><span class="cl">  <span class="n">annotation_col</span> <span class="o">=</span> <span class="n">anno</span><span class="p">,</span>      <span class="c1"># 顶部加分组注释条</span>
+</span></span><span class="line"><span class="cl">  <span class="n">show_colnames</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">main</span> <span class="o">=</span> <span class="s">&#34;Top 30 DEGs&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p><strong>怎么读</strong>:颜色 = 相对表达(红高蓝低,默认);顶部聚类树把表达模式相似的样本聚在一起——如果同一处理组的样本自然聚到一块,说明分组的差异是真实的。</p>
 <blockquote>
 <p>想要更精细的注释和配色,可换 <code>ComplexHeatmap::Heatmap()</code>,功能更强但语法稍复杂。</p></blockquote>
 <h2 id="小结">小结</h2>
@@ -230,6 +261,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

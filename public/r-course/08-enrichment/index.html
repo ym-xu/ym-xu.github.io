@@ -7,8 +7,9 @@
 <meta name="description" content="用 clusterProfiler 做 GO / KEGG / GSEA,解释差异基因背后的通路。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Lesson 8 · 功能富集 Enrichment — Yiming Xu" />
@@ -72,10 +73,16 @@
 <li>画出富集结果的点图、条形图、GSEA 曲线</li>
 </ul>
 <h2 id="0-准备加载包">0. 准备:加载包</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(clusterProfiler)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(org.Hs.eg.db)   <span style="color:#8b949e;font-style:italic"># 人类基因注释数据库</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(enrichplot)     <span style="color:#8b949e;font-style:italic"># 富集结果可视化</span>
-</span></span></code></pre></div><h2 id="1-ora-vs-gsea两种思路">1. ORA vs GSEA:两种思路</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">clusterProfiler</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">org.Hs.eg.db</span><span class="p">)</span>   <span class="c1"># 人类基因注释数据库</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">enrichplot</span><span class="p">)</span>     <span class="c1"># 富集结果可视化</span></span></span></code></pre></div>
+</div>
+<h2 id="1-ora-vs-gsea两种思路">1. ORA vs GSEA:两种思路</h2>
 <ul>
 <li><strong>过表征分析 ORA(Over-Representation Analysis)</strong>:你先卡阈值挑出一批显著基因(如 <a href="../06-deseq2/">L6</a> 的 DEGs),问&quot;这批基因里某通路是不是出现得比随机更多&quot;。</li>
 <li><strong>GSEA(Gene Set Enrichment Analysis)</strong>:不卡阈值,把<strong>所有</strong>基因按 log2FC 排序,问&quot;某通路的基因是不是整体集中在排序的一端&quot;。</li>
@@ -84,45 +91,81 @@
 <p>一句话直觉:ORA 用&quot;显著基因名单&quot;,GSEA 用&quot;全基因的排名&quot;。两者互补,论文里常一起报。</p></blockquote>
 <h2 id="2-准备基因数据">2. 准备基因数据</h2>
 <p>为了能直接跑,用 <code>clusterProfiler</code>/<code>DOSE</code> 自带的示例 <code>geneList</code>——一个<strong>按 log2FC 从高到低排好序、名字是 Entrez ID 的数值向量</strong>。真实场景里它就来自 <a href="../06-deseq2/">L6</a> 的结果。</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">data</span>(geneList, package <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;DOSE&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(geneList)                       <span style="color:#8b949e;font-style:italic"># 名字=ENTREZID,值=log2FC,已降序</span>
-</span></span><span style="display:flex;"><span>gene <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">names</span>(geneList)<span style="color:#d2a8ff;font-weight:bold">[abs</span>(geneList) <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#a5d6ff">2</span>]  <span style="color:#8b949e;font-style:italic"># 取 |log2FC|&gt;2 的显著基因,供 ORA 用</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">length</span>(gene)
-</span></span></code></pre></div><h2 id="3-基因-id-转换-bitr">3. 基因 ID 转换 bitr</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">data</span><span class="p">(</span><span class="n">geneList</span><span class="p">,</span> <span class="n">package</span> <span class="o">=</span> <span class="s">&#34;DOSE&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">geneList</span><span class="p">)</span>                       <span class="c1"># 名字=ENTREZID,值=log2FC,已降序</span>
+</span></span><span class="line"><span class="cl"><span class="n">gene</span> <span class="o">&lt;-</span> <span class="nf">names</span><span class="p">(</span><span class="n">geneList</span><span class="p">)</span><span class="nf">[abs</span><span class="p">(</span><span class="n">geneList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="m">2</span><span class="n">]</span>  <span class="c1"># 取 |log2FC|&gt;2 的显著基因,供 ORA 用</span>
+</span></span><span class="line"><span class="cl"><span class="nf">length</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="3-基因-id-转换-bitr">3. 基因 ID 转换 bitr</h2>
 <p>各数据库认的 ID 不同:GO/KEGG 富集常要 <strong>Entrez ID</strong>,而你手里可能是基因名(SYMBOL)。用 <code>bitr()</code> 转换:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>ids <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">bitr</span>(<span style="color:#d2a8ff;font-weight:bold">c</span>(<span style="color:#a5d6ff">&#34;TP53&#34;</span>, <span style="color:#a5d6ff">&#34;BRCA1&#34;</span>, <span style="color:#a5d6ff">&#34;EGFR&#34;</span>),
-</span></span><span style="display:flex;"><span>            fromType <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;SYMBOL&#34;</span>, toType <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;ENTREZID&#34;</span>,
-</span></span><span style="display:flex;"><span>            OrgDb <span style="color:#ff7b72;font-weight:bold">=</span> org.Hs.eg.db)
-</span></span><span style="display:flex;"><span>ids
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">ids</span> <span class="o">&lt;-</span> <span class="nf">bitr</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;TP53&#34;</span><span class="p">,</span> <span class="s">&#34;BRCA1&#34;</span><span class="p">,</span> <span class="s">&#34;EGFR&#34;</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">            <span class="n">fromType</span> <span class="o">=</span> <span class="s">&#34;SYMBOL&#34;</span><span class="p">,</span> <span class="n">toType</span> <span class="o">=</span> <span class="s">&#34;ENTREZID&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">OrgDb</span> <span class="o">=</span> <span class="n">org.Hs.eg.db</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">ids</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p>⚠️ 转换一定会<strong>丢掉一部分</strong>匹配不上的基因(过时/别名/非编码),<code>bitr</code> 会提示丢了百分之几,属正常。</p></blockquote>
 <h2 id="4-orago-与-kegg-富集">4. ORA:GO 与 KEGG 富集</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># GO 富集(BP = 生物学过程;还可选 MF 分子功能、CC 细胞组分)</span>
-</span></span><span style="display:flex;"><span>ego <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">enrichGO</span>(gene <span style="color:#ff7b72;font-weight:bold">=</span> gene, OrgDb <span style="color:#ff7b72;font-weight:bold">=</span> org.Hs.eg.db,
-</span></span><span style="display:flex;"><span>                keyType <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;ENTREZID&#34;</span>, ont <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;BP&#34;</span>,
-</span></span><span style="display:flex;"><span>                pAdjustMethod <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;BH&#34;</span>, qvalueCutoff <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">0.05</span>,
-</span></span><span style="display:flex;"><span>                readable <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">TRUE</span>)            <span style="color:#8b949e;font-style:italic"># readable=TRUE 把 ID 转回基因名</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(ego)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># KEGG 通路富集(hsa = 人)</span>
-</span></span><span style="display:flex;"><span>ekegg <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">enrichKEGG</span>(gene <span style="color:#ff7b72;font-weight:bold">=</span> gene, organism <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;hsa&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(ekegg)
-</span></span></code></pre></div><h2 id="5-gsea用全基因排名">5. GSEA:用全基因排名</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>gse <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">gseGO</span>(geneList <span style="color:#ff7b72;font-weight:bold">=</span> geneList, OrgDb <span style="color:#ff7b72;font-weight:bold">=</span> org.Hs.eg.db,
-</span></span><span style="display:flex;"><span>             ont <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;BP&#34;</span>, pvalueCutoff <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">0.05</span>)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(gse)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>gkegg <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">gseKEGG</span>(geneList <span style="color:#ff7b72;font-weight:bold">=</span> geneList, organism <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;hsa&#34;</span>)
-</span></span></code></pre></div><blockquote>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># GO 富集(BP = 生物学过程;还可选 MF 分子功能、CC 细胞组分)</span>
+</span></span><span class="line"><span class="cl"><span class="n">ego</span> <span class="o">&lt;-</span> <span class="nf">enrichGO</span><span class="p">(</span><span class="n">gene</span> <span class="o">=</span> <span class="n">gene</span><span class="p">,</span> <span class="n">OrgDb</span> <span class="o">=</span> <span class="n">org.Hs.eg.db</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="n">keyType</span> <span class="o">=</span> <span class="s">&#34;ENTREZID&#34;</span><span class="p">,</span> <span class="n">ont</span> <span class="o">=</span> <span class="s">&#34;BP&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="n">pAdjustMethod</span> <span class="o">=</span> <span class="s">&#34;BH&#34;</span><span class="p">,</span> <span class="n">qvalueCutoff</span> <span class="o">=</span> <span class="m">0.05</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="n">readable</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>            <span class="c1"># readable=TRUE 把 ID 转回基因名</span>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">ego</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># KEGG 通路富集(hsa = 人)</span>
+</span></span><span class="line"><span class="cl"><span class="n">ekegg</span> <span class="o">&lt;-</span> <span class="nf">enrichKEGG</span><span class="p">(</span><span class="n">gene</span> <span class="o">=</span> <span class="n">gene</span><span class="p">,</span> <span class="n">organism</span> <span class="o">=</span> <span class="s">&#34;hsa&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">ekegg</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="5-gsea用全基因排名">5. GSEA:用全基因排名</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">gse</span> <span class="o">&lt;-</span> <span class="nf">gseGO</span><span class="p">(</span><span class="n">geneList</span> <span class="o">=</span> <span class="n">geneList</span><span class="p">,</span> <span class="n">OrgDb</span> <span class="o">=</span> <span class="n">org.Hs.eg.db</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">             <span class="n">ont</span> <span class="o">=</span> <span class="s">&#34;BP&#34;</span><span class="p">,</span> <span class="n">pvalueCutoff</span> <span class="o">=</span> <span class="m">0.05</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">gse</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">gkegg</span> <span class="o">&lt;-</span> <span class="nf">gseKEGG</span><span class="p">(</span><span class="n">geneList</span> <span class="o">=</span> <span class="n">geneList</span><span class="p">,</span> <span class="n">organism</span> <span class="o">=</span> <span class="s">&#34;hsa&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<blockquote>
 <p><code>geneList</code> 必须是<strong>已降序排好、带 Entrez 名字</strong>的数值向量,这是 GSEA 最容易出错的地方。</p></blockquote>
 <h2 id="6-可视化">6. 可视化</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">dotplot</span>(ego, showCategory <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">15</span>)              <span style="color:#8b949e;font-style:italic"># 点图:最常用,点大小=基因数,颜色=显著性</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">barplot</span>(ego, showCategory <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">15</span>)              <span style="color:#8b949e;font-style:italic"># 条形图</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">gseaplot2</span>(gse, geneSetID <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">1</span>, title <span style="color:#ff7b72;font-weight:bold">=</span> gse<span style="color:#ff7b72;font-weight:bold">$</span>Description[1])  <span style="color:#8b949e;font-style:italic"># 经典 GSEA 富集曲线</span>
-</span></span></code></pre></div><h2 id="7-写进论文">7. 写进论文</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">dotplot</span><span class="p">(</span><span class="n">ego</span><span class="p">,</span> <span class="n">showCategory</span> <span class="o">=</span> <span class="m">15</span><span class="p">)</span>              <span class="c1"># 点图:最常用,点大小=基因数,颜色=显著性</span>
+</span></span><span class="line"><span class="cl"><span class="nf">barplot</span><span class="p">(</span><span class="n">ego</span><span class="p">,</span> <span class="n">showCategory</span> <span class="o">=</span> <span class="m">15</span><span class="p">)</span>              <span class="c1"># 条形图</span>
+</span></span><span class="line"><span class="cl"><span class="nf">gseaplot2</span><span class="p">(</span><span class="n">gse</span><span class="p">,</span> <span class="n">geneSetID</span> <span class="o">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="n">gse</span><span class="o">$</span><span class="n">Description[1]</span><span class="p">)</span>  <span class="c1"># 经典 GSEA 富集曲线</span></span></span></code></pre></div>
+</div>
+<h2 id="7-写进论文">7. 写进论文</h2>
 <p>富集结果表(<code>as.data.frame(ego)</code>)里,通常报告:通路名(Description)、富集到的基因数(Count)、校正 p 值(p.adjust)、以及该通路里命中的基因(geneID)。结果部分一般这样写:&ldquo;差异基因显著富集于 XX、YY 通路(p.adjust &lt; 0.05),提示……&quot;。</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">write.csv</span>(<span style="color:#d2a8ff;font-weight:bold">as.data.frame</span>(ego), <span style="color:#a5d6ff">&#34;GO_enrichment.csv&#34;</span>)
-</span></span></code></pre></div><h2 id="小结">小结</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">write.csv</span><span class="p">(</span><span class="nf">as.data.frame</span><span class="p">(</span><span class="n">ego</span><span class="p">),</span> <span class="s">&#34;GO_enrichment.csv&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="小结">小结</h2>
 <table>
   <thead>
       <tr>
@@ -233,6 +276,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 

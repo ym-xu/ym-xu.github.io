@@ -7,8 +7,9 @@
 <meta name="description" content="用 TCGAbiolinks 直接下载 TCGA 数据,复现或对照自己的结果。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
-<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
+<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
 
 
 <meta property="og:title" content="Lesson 10 · 公共数据 TCGA — Yiming Xu" />
@@ -73,9 +74,15 @@
 <li>整理成一个 <code>SummarizedExperiment</code>(呼应 <a href="../05-bioconductor/">L5</a>),接入前面的分析流程</li>
 </ul>
 <h2 id="0-准备加载包">0. 准备:加载包</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(TCGAbiolinks)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(SummarizedExperiment)
-</span></span></code></pre></div><h2 id="1-tcga--gdc-数据结构">1. TCGA / GDC 数据结构</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">TCGAbiolinks</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">SummarizedExperiment</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="1-tcga--gdc-数据结构">1. TCGA / GDC 数据结构</h2>
 <p>TCGA 数据托管在 <strong>GDC(Genomic Data Commons)</strong>。查询时主要指定三件事:</p>
 <ul>
 <li><strong>project</strong>:哪个癌种,如 <code>&quot;TCGA-BRCA&quot;</code>(乳腺癌)、<code>&quot;TCGA-LUAD&quot;</code>(肺腺癌)</li>
@@ -83,41 +90,65 @@
 <li><strong>workflow.type</strong>:用哪条处理流程的结果,如 <code>&quot;STAR - Counts&quot;</code></li>
 </ul>
 <h2 id="2-构建查询">2. 构建查询</h2>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>query <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">GDCquery</span>(
-</span></span><span style="display:flex;"><span>  project       <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;TCGA-BRCA&#34;</span>,
-</span></span><span style="display:flex;"><span>  data.category <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;Transcriptome Profiling&#34;</span>,
-</span></span><span style="display:flex;"><span>  data.type     <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;Gene Expression Quantification&#34;</span>,
-</span></span><span style="display:flex;"><span>  workflow.type <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;STAR - Counts&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span></code></pre></div><p>这一步只是&quot;问 GDC 有哪些文件&quot;,还没下载。<code>getResults(query)</code> 可以看查到的文件清单。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">query</span> <span class="o">&lt;-</span> <span class="nf">GDCquery</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">project</span>       <span class="o">=</span> <span class="s">&#34;TCGA-BRCA&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">data.category</span> <span class="o">=</span> <span class="s">&#34;Transcriptome Profiling&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">data.type</span>     <span class="o">=</span> <span class="s">&#34;Gene Expression Quantification&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">workflow.type</span> <span class="o">=</span> <span class="s">&#34;STAR - Counts&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>这一步只是&quot;问 GDC 有哪些文件&quot;,还没下载。<code>getResults(query)</code> 可以看查到的文件清单。</p>
 <h2 id="3--只取几个样本再下载">3. ⚠️ 只取几个样本再下载</h2>
 <p>直接 <code>GDCdownload(query)</code> 会下载整个 BRCA 项目(上千样本)。学习阶段先用 <code>barcode=</code> 限定几个样本:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># 先拿到前几个样本的 barcode</span>
-</span></span><span style="display:flex;"><span>all_barcodes <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">getResults</span>(query, cols <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;cases&#34;</span>)
-</span></span><span style="display:flex;"><span>few <span style="color:#ff7b72;font-weight:bold">&lt;-</span> all_barcodes[1<span style="color:#ff7b72;font-weight:bold">:</span><span style="color:#a5d6ff">6</span>]                 <span style="color:#8b949e;font-style:italic"># 只取 6 个样本</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>query_small <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">GDCquery</span>(
-</span></span><span style="display:flex;"><span>  project       <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;TCGA-BRCA&#34;</span>,
-</span></span><span style="display:flex;"><span>  data.category <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;Transcriptome Profiling&#34;</span>,
-</span></span><span style="display:flex;"><span>  data.type     <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;Gene Expression Quantification&#34;</span>,
-</span></span><span style="display:flex;"><span>  workflow.type <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;STAR - Counts&#34;</span>,
-</span></span><span style="display:flex;"><span>  barcode       <span style="color:#ff7b72;font-weight:bold">=</span> few                    <span style="color:#8b949e;font-style:italic"># 关键:限定样本</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">GDCdownload</span>(query_small)                  <span style="color:#8b949e;font-style:italic"># 现在只下这 6 个,很快</span>
-</span></span><span style="display:flex;"><span>data <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">GDCprepare</span>(query_small)           <span style="color:#8b949e;font-style:italic"># 整理成 SummarizedExperiment</span>
-</span></span><span style="display:flex;"><span>data
-</span></span></code></pre></div><h2 id="4-取出表达矩阵与临床信息">4. 取出表达矩阵与临床信息</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 先拿到前几个样本的 barcode</span>
+</span></span><span class="line"><span class="cl"><span class="n">all_barcodes</span> <span class="o">&lt;-</span> <span class="nf">getResults</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="s">&#34;cases&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">few</span> <span class="o">&lt;-</span> <span class="n">all_barcodes[1</span><span class="o">:</span><span class="m">6</span><span class="n">]</span>                 <span class="c1"># 只取 6 个样本</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">query_small</span> <span class="o">&lt;-</span> <span class="nf">GDCquery</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">project</span>       <span class="o">=</span> <span class="s">&#34;TCGA-BRCA&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">data.category</span> <span class="o">=</span> <span class="s">&#34;Transcriptome Profiling&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">data.type</span>     <span class="o">=</span> <span class="s">&#34;Gene Expression Quantification&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">workflow.type</span> <span class="o">=</span> <span class="s">&#34;STAR - Counts&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">barcode</span>       <span class="o">=</span> <span class="n">few</span>                    <span class="c1"># 关键:限定样本</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">GDCdownload</span><span class="p">(</span><span class="n">query_small</span><span class="p">)</span>                  <span class="c1"># 现在只下这 6 个,很快</span>
+</span></span><span class="line"><span class="cl"><span class="n">data</span> <span class="o">&lt;-</span> <span class="nf">GDCprepare</span><span class="p">(</span><span class="n">query_small</span><span class="p">)</span>           <span class="c1"># 整理成 SummarizedExperiment</span>
+</span></span><span class="line"><span class="cl"><span class="n">data</span></span></span></code></pre></div>
+</div>
+<h2 id="4-取出表达矩阵与临床信息">4. 取出表达矩阵与临床信息</h2>
 <p><code>GDCprepare()</code> 返回的就是 <a href="../05-bioconductor/">L5</a> 学过的 <code>SummarizedExperiment</code>,用法完全一样:</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">assay</span>(data)[1<span style="color:#ff7b72;font-weight:bold">:</span><span style="color:#a5d6ff">5</span>, <span style="color:#a5d6ff">1</span><span style="color:#ff7b72;font-weight:bold">:</span><span style="color:#a5d6ff">3</span>]   <span style="color:#8b949e;font-style:italic"># 表达矩阵(counts)</span>
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">colData</span>(data)           <span style="color:#8b949e;font-style:italic"># 样本信息,含肿瘤/正常、分期、随访等</span>
-</span></span></code></pre></div><p>样本的肿瘤/正常状态可以从 barcode 或 <code>colData</code> 的样本类型字段判断(TCGA 里 <code>01</code> 开头多为肿瘤、<code>11</code> 为正常组织)。</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">assay</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="n">[1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="n">]</span>   <span class="c1"># 表达矩阵(counts)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">colData</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>           <span class="c1"># 样本信息,含肿瘤/正常、分期、随访等</span></span></span></code></pre></div>
+</div>
+<p>样本的肿瘤/正常状态可以从 barcode 或 <code>colData</code> 的样本类型字段判断(TCGA 里 <code>01</code> 开头多为肿瘤、<code>11</code> 为正常组织)。</p>
 <h2 id="5-单独取临床随访表">5. 单独取临床随访表</h2>
 <p>要做生存分析,用专门的函数取临床表(含生存时间/结局):</p>
-<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>clin <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">GDCquery_clinic</span>(project <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;TCGA-BRCA&#34;</span>, type <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;clinical&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">colnames</span>(clin)
-</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># 关键列:vital_status(存活/死亡)、days_to_death、days_to_last_follow_up</span>
-</span></span></code></pre></div><h2 id="6--接入前面的流程">6. 🔬 接入前面的流程</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">clin</span> <span class="o">&lt;-</span> <span class="nf">GDCquery_clinic</span><span class="p">(</span><span class="n">project</span> <span class="o">=</span> <span class="s">&#34;TCGA-BRCA&#34;</span><span class="p">,</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;clinical&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">colnames</span><span class="p">(</span><span class="n">clin</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 关键列:vital_status(存活/死亡)、days_to_death、days_to_last_follow_up</span></span></span></code></pre></div>
+</div>
+<h2 id="6--接入前面的流程">6. 🔬 接入前面的流程</h2>
 <p>拿到 TCGA 数据后,就能复用前面所有技能:</p>
 <ul>
 <li>把 counts 喂给 <a href="../06-deseq2/">L6 DESeq2</a> 做 <strong>肿瘤 vs 正常</strong> 差异表达 → <a href="../07-volcano-heatmap/">L7</a> 火山图/热图 → <a href="../08-enrichment/">L8</a> 富集</li>
@@ -239,6 +270,25 @@
     });
   }
   document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
 })();
 </script>
 
