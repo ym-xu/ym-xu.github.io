@@ -19,8 +19,9 @@ enableRobotsTXT = true
 
 [markup]
   [markup.highlight]
-    style = "github"
-    lineNos = true
+    style = "github-dark"
+    lineNos = false
+    tabWidth = 2
   [markup.tableOfContents]
     startLevel = 2
     endLevel = 4

@@ -1,1 +1,40 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Publications on Yiming Xu</title><link>https://ym-xu.github.io/publications/</link><description>Recent content in Publications on Yiming Xu</description><generator>Hugo</generator><language>en</language><lastBuildDate>Mon, 01 Jun 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://ym-xu.github.io/publications/index.xml" rel="self" type="application/rss+xml"/><item><title>Strategic Navigation or Stochastic Search? How Agents and Humans Reason Over Document Collections</title><link>https://ym-xu.github.io/publications/icml-madqa/</link><pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate><guid>https://ym-xu.github.io/publications/icml-madqa/</guid><description>MADQA — a multimodal agentic document-QA benchmark that scores full search trajectories, not just answers, and shows agents match human accuracy only by working ~5× harder.</description></item><item><title>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</title><link>https://ym-xu.github.io/publications/icdar-adanav/</link><pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate><guid>https://ym-xu.github.io/publications/icdar-adanav/</guid><description>AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages.</description></item><item><title>Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</title><link>https://ym-xu.github.io/publications/lrec-coling-2024-kg-qa/</link><pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate><guid>https://ym-xu.github.io/publications/lrec-coling-2024-kg-qa/</guid><description>A multimodal retriever that combines knowledge-graph entity features with dense text retrieval, improving open-domain QA precision on rare, entity-centric questions where dense retrievers fall short.</description></item><item><title>Fine-grained label learning via siamese network for cross-modal information retrieval</title><link>https://ym-xu.github.io/publications/iccs-fglab/</link><pubDate>Sat, 08 Jun 2019 00:00:00 +0000</pubDate><guid>https://ym-xu.github.io/publications/iccs-fglab/</guid><description>Fine-grained labels capture the &amp;ldquo;hardness&amp;rdquo; of text–image pairs; a siamese network and a weighted pairwise loss exploit them to improve cross-modal retrieval on three benchmarks.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Publications on Yiming Xu</title>
+    <link>https://ym-xu.github.io/publications/</link>
+    <description>Recent content in Publications on Yiming Xu</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Mon, 01 Jun 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://ym-xu.github.io/publications/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Strategic Navigation or Stochastic Search? How Agents and Humans Reason Over Document Collections</title>
+      <link>https://ym-xu.github.io/publications/icml-madqa/</link>
+      <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+      <guid>https://ym-xu.github.io/publications/icml-madqa/</guid>
+      <description>MADQA — a multimodal agentic document-QA benchmark that scores full search trajectories, not just answers, and shows agents match human accuracy only by working ~5× harder.</description>
+    </item>
+    <item>
+      <title>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</title>
+      <link>https://ym-xu.github.io/publications/icdar-adanav/</link>
+      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>https://ym-xu.github.io/publications/icdar-adanav/</guid>
+      <description>AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages.</description>
+    </item>
+    <item>
+      <title>Retrieval-based Question Answering with Passage Expansion Using a Knowledge Graph</title>
+      <link>https://ym-xu.github.io/publications/lrec-coling-2024-kg-qa/</link>
+      <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
+      <guid>https://ym-xu.github.io/publications/lrec-coling-2024-kg-qa/</guid>
+      <description>A multimodal retriever that combines knowledge-graph entity features with dense text retrieval, improving open-domain QA precision on rare, entity-centric questions where dense retrievers fall short.</description>
+    </item>
+    <item>
+      <title>Fine-grained label learning via siamese network for cross-modal information retrieval</title>
+      <link>https://ym-xu.github.io/publications/iccs-fglab/</link>
+      <pubDate>Sat, 08 Jun 2019 00:00:00 +0000</pubDate>
+      <guid>https://ym-xu.github.io/publications/iccs-fglab/</guid>
+      <description>Fine-grained labels capture the &amp;ldquo;hardness&amp;rdquo; of text–image pairs; a siamese network and a weighted pairwise loss exploit them to improve cross-modal retrieval on three benchmarks.</description>
+    </item>
+  </channel>
+</rss>

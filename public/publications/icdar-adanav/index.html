@@ -1,7 +1,119 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding — Yiming Xu</title><meta name=description content="AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages."><link rel=alternate type=application/rss+xml href=/index.xml title="Yiming Xu"><link rel=stylesheet href="/css/styles.css?v=1781873131"><link rel=stylesheet href="/css/custom.css?v=1781873131"><meta property="og:title" content="AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding — Yiming Xu"><meta property="og:description" content="AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages."><meta property="og:type" content="website"><meta property="og:url" content="https://ym-xu.github.io/publications/icdar-adanav/"></head><body class="kind-page section-publications"><header class=site-header><div class="container header"><div class=brand><a href=/>Yiming Xu</a></div><nav class=nav><a class=nav-item href=/>Home</a>
-<a class=nav-item href=/projects/>Projects</a>
-<a class="nav-item active" aria-current=page href=/publications/>Publications</a>
-<a class=nav-item href=/posts/>Writing</a>
-<button id=theme-toggle aria-label="Toggle theme">🌓</button></nav></div></header><main id=content class=container><article class=pub-single><header class=post-header><h1>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</h1><div class=meta><span><strong>Yiming Xu</strong>, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas</span>
-· <span>ICDAR · Accepted</span>
-<span>(2026)</span></div></header><div class=pub-links></div><div class=content><h2 id=problem>Problem</h2><p>Long document understanding is hard for Vision-Language Models: relevant evidence is scattered across dozens of pages of text, tables, and figures. Existing pipelines fall into two extremes. Embedding-based retrieval is scalable but misses pages when the query–evidence relation is compositional (multi-hop, cross-page, or cross-modal). Embedding-free approaches feed every page to a VLM, avoiding retrieval bias but incurring large token budgets and high inference cost. Neither exploits the document&rsquo;s inherent hierarchical structure for efficient navigation.</p><h2 id=approach>Approach</h2><p>AdaNav constructs a multimodal document tree that hierarchically organizes sections, pages, and visual elements, enabling structured navigation without an embedding retriever. The navigator adapts retrieval granularity to the question, moving coarse-to-fine from sections to pages to elements and filtering irrelevant branches early. A multi-agent system pairs a question router with specialized navigators whose differing action spaces let them traverse the tree at the appropriate granularity.</p><h2 id=results>Results</h2><p>On MMLongBench-Doc, AdaNav outperforms existing open-source VLM-based agent systems by over 5% accuracy without using any embedding model. Compared with embedding-free approaches it retrieves far fewer pages through tree-structured navigation. The results show that heterogeneous tree representations with query-adaptive navigation are an effective alternative to both retrieval paradigms for multimodal long-document understanding.</p></div></article></main><footer><div class="container footer"><div class=left><small>© 2026 Yiming Xu</small></div><div class=right><a href=/index.xml>RSS</a></div></div></footer><script>(function(){const e="prefers-color-scheme",t=document.getElementById("theme-toggle"),n=document.documentElement;function s(e){n.setAttribute("data-theme",e)}function o(){return localStorage.getItem(e)||"auto"}function i(){const i=o();(i==="dark"||i==="auto"&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&s("dark"),t&&t.addEventListener("click",()=>{const t=n.getAttribute("data-theme")==="dark"?"light":"dark";s(t),localStorage.setItem(e,t)})}document.addEventListener("DOMContentLoaded",i)})()</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding — Yiming Xu</title>
+<meta name="description" content="AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages." />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding — Yiming Xu" />
+<meta property="og:description" content="AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/publications/icdar-adanav/" />
+
+  </head>
+  <body class="kind-page section-publications">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item active" aria-current="page" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article class="pub-single">
+    <header class="post-header">
+      <h1>AdaNav: Query-Adaptive Multi-Granularity Navigation for Long Document Understanding</h1>
+      
+      
+        
+        <div class="meta">
+          <span><strong>Yiming Xu</strong>, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas</span>
+           · <span>ICDAR · Accepted</span>
+           <span>(2026)</span>
+        </div>
+      
+    </header>
+
+    
+    
+    
+    
+
+    
+      <div class="pub-links">
+        
+        
+        
+        
+        
+        
+      </div>
+    
+
+    <div class="content"><h2 id="problem">Problem</h2>
+<p>Long document understanding is hard for Vision-Language Models: relevant evidence is scattered across dozens of pages of text, tables, and figures. Existing pipelines fall into two extremes. Embedding-based retrieval is scalable but misses pages when the query–evidence relation is compositional (multi-hop, cross-page, or cross-modal). Embedding-free approaches feed every page to a VLM, avoiding retrieval bias but incurring large token budgets and high inference cost. Neither exploits the document&rsquo;s inherent hierarchical structure for efficient navigation.</p>
+<h2 id="approach">Approach</h2>
+<p>AdaNav constructs a multimodal document tree that hierarchically organizes sections, pages, and visual elements, enabling structured navigation without an embedding retriever. The navigator adapts retrieval granularity to the question, moving coarse-to-fine from sections to pages to elements and filtering irrelevant branches early. A multi-agent system pairs a question router with specialized navigators whose differing action spaces let them traverse the tree at the appropriate granularity.</p>
+<h2 id="results">Results</h2>
+<p>On MMLongBench-Doc, AdaNav outperforms existing open-source VLM-based agent systems by over 5% accuracy without using any embedding model. Compared with embedding-free approaches it retrieves far fewer pages through tree-structured navigation. The results show that heterogeneous tree representations with query-adaptive navigation are an effective alternative to both retrieval paradigms for multimodal long-document understanding.</p>
+</div>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

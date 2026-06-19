@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 2 · 数据整理 Data Wrangling — Yiming Xu</title>
+<meta name="description" content="用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="Lesson 2 · 数据整理 Data Wrangling — Yiming Xu" />
+<meta property="og:description" content="用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/02-data-wrangling/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 2 · 数据整理 Data Wrangling</h1>
+      <p class="page-sub">用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#0-准备安装并加载包">0. 准备:安装并加载包</a></li>
+    <li><a href="#1-先造一张练习表">1. 先造一张练习表</a></li>
+    <li><a href="#2-管道符-把然后连起来">2. 管道符 <code>%&gt;%</code>:把&#34;然后&#34;连起来</a></li>
+    <li><a href="#3-dplyr-五个核心动词">3. dplyr 五个核心动词</a></li>
+    <li><a href="#4-处理缺失值-na">4. 处理缺失值 NA</a></li>
+    <li><a href="#5-合并两张表-left_join">5. 合并两张表 <code>left_join</code></a></li>
+    <li><a href="#6-串成一条流水线">6. 串成一条流水线</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p>真实分析里,<strong>80% 的时间花在整理数据上</strong>,而不是跑模型。这一课用 <code>tidyverse</code> 把一张乱糟糟的临床表整理成能直接分析的样子:筛选、排序、分组统计、和另一张表合并。</p>
+<blockquote>
+<p>接着 <a href="../01-setup/">Lesson 1</a> 来。这一课的产出(干净的、带 <code>time</code>/<code>status</code> 的表)正是 <a href="../09-survival/">Lesson 9 生存分析</a> 的输入。</p></blockquote>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>把临床表筛选、排序、加新列、分组统计</li>
+<li>正确处理缺失值 <code>NA</code></li>
+<li>把&quot;临床表&quot;和&quot;疗效表&quot;按病人 ID 合并成一张分析用表</li>
+</ul>
+<h2 id="0-准备安装并加载包">0. 准备:安装并加载包</h2>
+<p>第一次用时安装一次(去掉 <code>#</code> 运行):</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># install.packages(&#34;tidyverse&#34;)</span>
+</span></span></code></pre></div><p>每次分析开头加载:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(tidyverse)   <span style="color:#8b949e;font-style:italic"># 一次性加载 dplyr、tidyr、ggplot2 等一整套</span>
+</span></span></code></pre></div><h2 id="1-先造一张练习表">1. 先造一张练习表</h2>
+<p>为了让你能直接跑(不依赖外部文件),我们用 <code>tribble()</code> 手敲一张小临床表。<code>tribble()</code> 是&quot;按行&quot;写的 tibble,一眼能看出表长什么样:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">tribble</span>(
+</span></span><span style="display:flex;"><span>  <span style="color:#ff7b72;font-weight:bold">~</span>patient_id, <span style="color:#ff7b72;font-weight:bold">~</span>age, <span style="color:#ff7b72;font-weight:bold">~</span>sex,     <span style="color:#ff7b72;font-weight:bold">~</span>stage, <span style="color:#ff7b72;font-weight:bold">~</span>gene_expr, <span style="color:#ff7b72;font-weight:bold">~</span>time, <span style="color:#ff7b72;font-weight:bold">~</span>status,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P01&#34;</span>,        <span style="color:#a5d6ff">58</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;III&#34;</span>,   <span style="color:#a5d6ff">12.4</span>,       <span style="color:#a5d6ff">455</span>,   <span style="color:#a5d6ff">1</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P02&#34;</span>,        <span style="color:#a5d6ff">63</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;II&#34;</span>,     <span style="color:#a5d6ff">8.1</span>,       <span style="color:#a5d6ff">1010</span>,  <span style="color:#a5d6ff">0</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P03&#34;</span>,        <span style="color:#a5d6ff">47</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;I&#34;</span>,      <span style="color:#a5d6ff">5.3</span>,       <span style="color:#79c0ff">NA</span>,    <span style="color:#a5d6ff">0</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P04&#34;</span>,        <span style="color:#a5d6ff">71</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;IV&#34;</span>,    <span style="color:#a5d6ff">15.9</span>,       <span style="color:#a5d6ff">210</span>,   <span style="color:#a5d6ff">1</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P05&#34;</span>,        <span style="color:#a5d6ff">55</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;II&#34;</span>,     <span style="color:#a5d6ff">7.7</span>,       <span style="color:#a5d6ff">883</span>,   <span style="color:#a5d6ff">0</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P06&#34;</span>,        <span style="color:#a5d6ff">68</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;III&#34;</span>,   <span style="color:#a5d6ff">13.2</span>,       <span style="color:#a5d6ff">310</span>,   <span style="color:#a5d6ff">1</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P07&#34;</span>,        <span style="color:#a5d6ff">49</span>,  <span style="color:#a5d6ff">&#34;Female&#34;</span>, <span style="color:#a5d6ff">&#34;I&#34;</span>,      <span style="color:#a5d6ff">4.8</span>,       <span style="color:#a5d6ff">1220</span>,  <span style="color:#a5d6ff">0</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P08&#34;</span>,        <span style="color:#a5d6ff">60</span>,  <span style="color:#a5d6ff">&#34;Male&#34;</span>,   <span style="color:#a5d6ff">&#34;IV&#34;</span>,    <span style="color:#a5d6ff">16.5</span>,       <span style="color:#a5d6ff">145</span>,   <span style="color:#a5d6ff">1</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>clinical
+</span></span></code></pre></div><blockquote>
+<p><strong>tibble</strong> 是 tidyverse 版的 data.frame,打印更友好、行为更可控。<code>status</code>:1=事件(死亡/复发),0=删失(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p></blockquote>
+<h2 id="2-管道符-把然后连起来">2. 管道符 <code>%&gt;%</code>:把&quot;然后&quot;连起来</h2>
+<p>管道符 <code>%&gt;%</code>(或 R 自带的 <code>|&gt;</code>)把左边的结果&quot;喂&quot;给右边的函数,读作&quot;然后&quot;。下面两种写法等价:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">summary</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>age)            <span style="color:#8b949e;font-style:italic"># 传统写法,从里往外读</span>
+</span></span><span style="display:flex;"><span>clinical<span style="color:#ff7b72;font-weight:bold">$</span>age <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">summary</span>()       <span style="color:#8b949e;font-style:italic"># 管道写法,从左往右读:age,然后求概况</span>
+</span></span></code></pre></div><p>管道的好处是能把多步操作串成一条自然的句子,后面你会一直用到。</p>
+<h2 id="3-dplyr-五个核心动词">3. dplyr 五个核心动词</h2>
+<p>整理数据 90% 靠这五个动词:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># filter:按条件筛行</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">filter</span>(stage <span style="color:#ff7b72;font-weight:bold">==</span> <span style="color:#a5d6ff">&#34;IV&#34;</span>)              <span style="color:#8b949e;font-style:italic"># 只要 IV 期</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># select:挑列</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">select</span>(patient_id, age, gene_expr) <span style="color:#8b949e;font-style:italic"># 只看这几列</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># mutate:加新列 / 改列</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">mutate</span>(expr_high <span style="color:#ff7b72;font-weight:bold">=</span> gene_expr <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#a5d6ff">10</span>) <span style="color:#8b949e;font-style:italic"># 加一列&#34;是否高表达&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># arrange:排序</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">arrange</span>(<span style="color:#d2a8ff;font-weight:bold">desc</span>(gene_expr))           <span style="color:#8b949e;font-style:italic"># 按表达量从高到低</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># group_by + summarise:分组统计</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">group_by</span>(stage) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">summarise</span>(n <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">n</span>(), mean_age <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">mean</span>(age))      <span style="color:#8b949e;font-style:italic"># 每个分期的人数与平均年龄</span>
+</span></span></code></pre></div><blockquote>
+<p>🔬 &ldquo;按基因表达高/低分组、再比较两组&rdquo; 是肿瘤研究的常见操作。但 ⚠️ 别随手按中位数二分——代价见 <a href="../04-stats-concepts/">Lesson 4</a>。</p></blockquote>
+<h2 id="4-处理缺失值-na">4. 处理缺失值 NA</h2>
+<p><code>P03</code> 的 <code>time</code> 是 <code>NA</code>(缺失)。缺失值不处理会让很多计算直接返回 <code>NA</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">mean</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>time)                 <span style="color:#8b949e;font-style:italic"># 结果是 NA!</span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">mean</span>(clinical<span style="color:#ff7b72;font-weight:bold">$</span>time, na.rm <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#79c0ff">TRUE</span>)   <span style="color:#8b949e;font-style:italic"># 加 na.rm=TRUE 才会忽略缺失</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">filter</span>(<span style="color:#d2a8ff;font-weight:bold">is.na</span>(time))    <span style="color:#8b949e;font-style:italic"># 找出哪些行缺失</span>
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">drop_na</span>(time)          <span style="color:#8b949e;font-style:italic"># 丢掉 time 缺失的行</span>
+</span></span></code></pre></div><blockquote>
+<p>⚠️ 别盲目删缺失值——先搞清楚为什么缺。删之前最好统计一下缺多少、缺在哪。</p></blockquote>
+<h2 id="5-合并两张表-left_join">5. 合并两张表 <code>left_join</code></h2>
+<p>真实场景:临床信息在一张表,疗效/分子数据在另一张表,靠<strong>病人 ID</strong> 对应。先造第二张表:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>response <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">tribble</span>(
+</span></span><span style="display:flex;"><span>  <span style="color:#ff7b72;font-weight:bold">~</span>patient_id, <span style="color:#ff7b72;font-weight:bold">~</span>response,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P01&#34;</span>,       <span style="color:#a5d6ff">&#34;PR&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P02&#34;</span>,       <span style="color:#a5d6ff">&#34;CR&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P04&#34;</span>,       <span style="color:#a5d6ff">&#34;PD&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a5d6ff">&#34;P05&#34;</span>,       <span style="color:#a5d6ff">&#34;SD&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>merged <span style="color:#ff7b72;font-weight:bold">&lt;-</span> clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#d2a8ff;font-weight:bold">left_join</span>(response, by <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;patient_id&#34;</span>)
+</span></span><span style="display:flex;"><span>merged
+</span></span></code></pre></div><p><code>left_join</code> 以左表(clinical)为准,把 response 按 <code>patient_id</code> 贴上来;左表里没有匹配的病人,response 列填 <code>NA</code>。</p>
+<blockquote>
+<p>🔬 把&quot;临床表 + 表达矩阵 + 疗效&quot;合并成一张分析表,是动手分析前的标准准备步骤。</p></blockquote>
+<h2 id="6-串成一条流水线">6. 串成一条流水线</h2>
+<p>把上面几步用管道连起来,就是一句完整的&quot;数据整理&quot;:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>analysis_tbl <span style="color:#ff7b72;font-weight:bold">&lt;-</span> clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">filter</span>(<span style="color:#ff7b72;font-weight:bold">!</span><span style="color:#d2a8ff;font-weight:bold">is.na</span>(time)) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>                       <span style="color:#8b949e;font-style:italic"># 去掉生存时间缺失的</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">mutate</span>(expr_group <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">if_else</span>(gene_expr <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#d2a8ff;font-weight:bold">median</span>(gene_expr),
+</span></span><span style="display:flex;"><span>                              <span style="color:#a5d6ff">&#34;High&#34;</span>, <span style="color:#a5d6ff">&#34;Low&#34;</span>)) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span> <span style="color:#8b949e;font-style:italic"># 加分组列</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">left_join</span>(response, by <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;patient_id&#34;</span>) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>      <span style="color:#8b949e;font-style:italic"># 合并疗效</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">arrange</span>(stage)                                  <span style="color:#8b949e;font-style:italic"># 按分期排序</span>
+</span></span><span style="display:flex;"><span>analysis_tbl
+</span></span></code></pre></div><h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>你想做</th>
+          <th>用什么</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>按条件筛行</td>
+          <td><code>filter()</code></td>
+      </tr>
+      <tr>
+          <td>挑/去列</td>
+          <td><code>select()</code></td>
+      </tr>
+      <tr>
+          <td>加列/改列</td>
+          <td><code>mutate()</code></td>
+      </tr>
+      <tr>
+          <td>排序</td>
+          <td><code>arrange()</code> / <code>arrange(desc())</code></td>
+      </tr>
+      <tr>
+          <td>分组统计</td>
+          <td><code>group_by() %&gt;% summarise()</code></td>
+      </tr>
+      <tr>
+          <td>处理缺失</td>
+          <td><code>is.na()</code> / <code>na.rm = TRUE</code> / <code>drop_na()</code></td>
+      </tr>
+      <tr>
+          <td>合并两张表</td>
+          <td><code>left_join(by = &quot;id&quot;)</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>下一课 <a href="../03-ggplot/">Lesson 3 · ggplot2</a>,把整理好的数据画成图。</p>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li>R for Data Science(免费在线书):<a href="https://r4ds.hadley.nz/">https://r4ds.hadley.nz/</a>,tidyverse 作者写的权威入门。</li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li><code>could not find function &quot;%&gt;%&quot;</code> 或 <code>filter()</code> → 没 <code>library(tidyverse)</code>。</li>
+<li><code>Error: object 'gene_expr' not found</code> → 在 <code>filter()</code>/<code>mutate()</code> 里要直接写列名(不加引号、不加 <code>clinical$</code>)。</li>
+<li>结果全是 <code>NA</code> → 多半是没加 <code>na.rm = TRUE</code>,见第 4 步。</li>
+<li><code>filter()</code> 没筛出东西 → 判断相等要用 <code>==</code>(两个等号),写成 <code>=</code> 会报错。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/01-setup/">← Lesson 1 · 环境搭建 Setup</a>
+      <a class="next" href="/r-course/03-ggplot/">Lesson 3 · 可视化基础 ggplot2 →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

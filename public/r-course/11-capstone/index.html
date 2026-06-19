@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 11 · 用自己的数据发论文 Capstone — Yiming Xu</title>
+<meta name="description" content="把前面所有技能用到你自己的真实数据上,走完整流程并产出可投稿的图表与可复现脚本。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="Lesson 11 · 用自己的数据发论文 Capstone — Yiming Xu" />
+<meta property="og:description" content="把前面所有技能用到你自己的真实数据上,走完整流程并产出可投稿的图表与可复现脚本。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/11-capstone/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 11 · 用自己的数据发论文 Capstone</h1>
+      <p class="page-sub">把前面所有技能用到你自己的真实数据上,走完整流程并产出可投稿的图表与可复现脚本。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#1-先想清楚研究问题与队列">1. 先想清楚:研究问题与队列</a></li>
+    <li><a href="#2--整理你自己的数据最难的一步">2. ⚠️🔬 整理你自己的数据(最难的一步)</a></li>
+    <li><a href="#3-分析流水线把各课串起来">3. 分析流水线:把各课串起来</a></li>
+    <li><a href="#4-统计把关别让分析翻车">4. 统计把关:别让分析&quot;翻车&quot;</a></li>
+    <li><a href="#5-发表级报告">5. 发表级报告</a></li>
+    <li><a href="#6-可复现用-quarto-封装">6. 可复现:用 Quarto 封装</a></li>
+    <li><a href="#交付物-deliverable">交付物 Deliverable</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p>前面十课每课练一个技能,都用的是干净的示例数据。这一课的目标完全不同:<strong>把你自己的真实数据,从一张 Excel 走到能投稿的结果</strong>。真正的难点不在 R 语法,而在这一课讲的判断和流程。</p>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>一份把全流程串起来的、可一键重跑的 Quarto 分析文档</li>
+<li>一组可直接放进论文的图与表</li>
+</ul>
+<h2 id="1-先想清楚研究问题与队列">1. 先想清楚:研究问题与队列</h2>
+<p>动手前先写下三句话:</p>
+<ul>
+<li><strong>研究问题</strong>:比如&quot;基因 X 高表达是否与肺腺癌患者更差的预后相关?&quot;</li>
+<li><strong>纳入/排除标准</strong>:哪些病人算数,哪些剔除(缺关键随访、非目标亚型……)</li>
+<li><strong>样本量</strong>:有多少例、事件(死亡/复发)有多少个。⚠️ 生存分析里<strong>事件数</strong>比总人数更决定统计效力,几十个事件起步才比较稳。</li>
+</ul>
+<blockquote>
+<p>没有清晰的问题,再花哨的图也没用。这一步决定后面所有分析。</p></blockquote>
+<h2 id="2--整理你自己的数据最难的一步">2. ⚠️🔬 整理你自己的数据(最难的一步)</h2>
+<p>示例数据是干净的,你的数据不是。这一步最花时间,也最容易出错:</p>
+<ul>
+<li><strong>从日期算生存时间</strong>:<code>time</code> 很少现成,通常 = 末次随访/死亡日期 − 诊断/入组日期(用 <a href="../02-data-wrangling/">L2</a> 的整理 + <code>lubridate</code>,见 <a href="../09-survival/">L9 第 9 节</a>)</li>
+<li><strong>定义 event</strong>:死亡/复发记 <code>1</code>,随访结束仍存活/失访记 <code>0</code>(回顾 <a href="../04-stats-concepts/">L4</a> 删失)</li>
+<li><strong>编码分组与协变量</strong>:基因高低、分期、年龄、性别,整理成规范的列</li>
+<li><strong>处理缺失</strong>:统计缺多少、缺在哪,再决定怎么处理(别盲删,<a href="../02-data-wrangling/">L2</a>)</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(tidyverse); <span style="color:#d2a8ff;font-weight:bold">library</span>(lubridate)
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">read.csv</span>(<span style="color:#a5d6ff">&#34;my_clinical.csv&#34;</span>) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">mutate</span>(
+</span></span><span style="display:flex;"><span>    time   <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">as.numeric</span>(<span style="color:#d2a8ff;font-weight:bold">as_date</span>(last_followup) <span style="color:#ff7b72;font-weight:bold">-</span> <span style="color:#d2a8ff;font-weight:bold">as_date</span>(dx_date)),  <span style="color:#8b949e;font-style:italic"># 随访天数</span>
+</span></span><span style="display:flex;"><span>    status <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#d2a8ff;font-weight:bold">if_else</span>(vital_status <span style="color:#ff7b72;font-weight:bold">==</span> <span style="color:#a5d6ff">&#34;Dead&#34;</span>, <span style="color:#a5d6ff">1</span>, <span style="color:#a5d6ff">0</span>)                   <span style="color:#8b949e;font-style:italic"># 事件指示</span>
+</span></span><span style="display:flex;"><span>  ) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">drop_na</span>(time, status)
+</span></span></code></pre></div><h2 id="3-分析流水线把各课串起来">3. 分析流水线:把各课串起来</h2>
+<p>按研究问题选用前面的模块,典型一条龙:</p>
+<table>
+  <thead>
+      <tr>
+          <th>步骤</th>
+          <th>用哪一课</th>
+          <th>产出</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>差异表达(肿瘤 vs 正常)</td>
+          <td><a href="../06-deseq2/">L6 DESeq2</a></td>
+          <td>DEG 表</td>
+      </tr>
+      <tr>
+          <td>可视化 DEG</td>
+          <td><a href="../07-volcano-heatmap/">L7 火山图/热图</a></td>
+          <td>火山图、热图</td>
+      </tr>
+      <tr>
+          <td>通路解释</td>
+          <td><a href="../08-enrichment/">L8 富集</a></td>
+          <td>GO/KEGG/GSEA</td>
+      </tr>
+      <tr>
+          <td>预后关联</td>
+          <td><a href="../09-survival/">L9 生存分析</a></td>
+          <td>KM 曲线、Cox HR 表</td>
+      </tr>
+      <tr>
+          <td>(可选)外部验证</td>
+          <td><a href="../10-tcga/">L10 TCGA</a></td>
+          <td>大队列复现</td>
+      </tr>
+  </tbody>
+</table>
+<blockquote>
+<p>不是每篇论文都要全跑。围绕你第 1 步的问题,挑必要的模块即可。</p></blockquote>
+<h2 id="4-统计把关别让分析翻车">4. 统计把关:别让分析&quot;翻车&quot;</h2>
+<p>出图容易,出<strong>对</strong>的结论难。投稿前自查:</p>
+<ul>
+<li>Cox 模型查了<strong>比例风险假设</strong>吗?(<code>cox.zph()</code>,<a href="../09-survival/">L9</a> / <a href="../04-stats-concepts/">L4</a>)</li>
+<li>单因素显著的变量,放进<strong>多因素</strong>校正后还成立吗?</li>
+<li>基因表达是不是被你按中位数粗暴二分了?能否当连续变量?(<a href="../04-stats-concepts/">L4 第 7 节</a>)</li>
+<li>p 值是不是和<strong>效应大小 + 置信区间</strong>一起报告的?</li>
+</ul>
+<h2 id="5-发表级报告">5. 发表级报告</h2>
+<ul>
+<li><strong>Table 1(患者特征表)</strong> 和 <strong>回归结果表</strong>:用 <code>gtsummary</code>(<code>tbl_summary()</code> / <code>tbl_regression()</code>),一行生成、直接复制进论文</li>
+<li><strong>KM 曲线</strong>:用 <code>ggsurvfit</code> 出带**风险表(risk table)**的图(<a href="../09-survival/">L9</a>)</li>
+<li><strong>方法部分怎么写</strong>:写清楚软件与版本(<code>sessionInfo()</code>)、统计方法、阈值、检验、校正方式——审稿人会看可复现性</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(gtsummary)
+</span></span><span style="display:flex;"><span>clinical <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">select</span>(age, sex, stage, expr_group) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">tbl_summary</span>(by <span style="color:#ff7b72;font-weight:bold">=</span> expr_group) <span style="color:#ff7b72;font-weight:bold">%&gt;%</span>       <span style="color:#8b949e;font-style:italic"># 按高/低表达分组的 Table 1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#d2a8ff;font-weight:bold">add_p</span>()                                <span style="color:#8b949e;font-style:italic"># 加组间比较 p 值</span>
+</span></span></code></pre></div><h2 id="6-可复现用-quarto-封装">6. 可复现:用 Quarto 封装</h2>
+<p>把&quot;数据 → 分析 → 图表&quot;写进一个 <strong>Quarto 文档(<code>.qmd</code>)</strong>,而不是一堆零散脚本。好处:一键重跑、图表自动更新、审稿人/合作者要数据时直接给整份文档。</p>
+<p><code>.qmd</code> 文件的骨架长这样:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>title: &#34;Gene X and prognosis in LUAD&#34;
+</span></span><span style="display:flex;"><span>author: &#34;Your Name&#34;
+</span></span><span style="display:flex;"><span>format: html
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#79c0ff">## Setup
+</span></span></span><span style="display:flex;"><span><span style="color:#79c0ff"></span>``<span style="color:#a5d6ff">`{r}
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">library(tidyverse); library(DESeq2); library(survival); library(ggsurvfit); library(gtsummary)
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">## 1. Data preparation
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`{r}
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">clinical &lt;- read.csv(&#34;my_clinical.csv&#34;) %&gt;% mutate(...)   # 见第 2 节
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">## 2. Differential expression
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`{r}
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff"># DESeq2 流程(L6)
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">## 3. Survival analysis
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`{r}
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff"># KM + Cox(L9)
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">## 4. Session info
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>`<span style="color:#a5d6ff">`{r}
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">sessionInfo()    # 记录所有包版本,可复现的关键
+</span></span></span><span style="display:flex;"><span><span style="color:#a5d6ff">`</span>``
+</span></span></code></pre></div><p>渲染成报告:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># 在 RStudio 点 &#34;Render&#34; 按钮,或命令行:</span>
+</span></span><span style="display:flex;"><span><span style="color:#8b949e;font-style:italic"># quarto render analysis.qmd</span>
+</span></span></code></pre></div><blockquote>
+<p>Quarto 是 R Markdown 的现代继任者,RStudio 自带支持。把分析写成 <code>.qmd</code>,你交出去的就不只是&quot;几张图&quot;,而是&quot;可被重跑、可被检验的完整证据链&quot;。</p></blockquote>
+<h2 id="交付物-deliverable">交付物 Deliverable</h2>
+<ul>
+<li>一份可复现的 <code>analysis.qmd</code> + 渲染出的 HTML/PDF 报告</li>
+<li>一组可投稿的图(火山图/热图/KM 曲线)和表(Table 1 / HR 表)</li>
+<li>方法部分草稿 + <code>sessionInfo()</code> 记录的版本信息</li>
+</ul>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>阶段</th>
+          <th>关键</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>设计</td>
+          <td>研究问题、纳排标准、事件数</td>
+      </tr>
+      <tr>
+          <td>整理</td>
+          <td>算 time/status、编码、处理缺失</td>
+      </tr>
+      <tr>
+          <td>分析</td>
+          <td>串起 L6→L7→L8→L9(按需)</td>
+      </tr>
+      <tr>
+          <td>把关</td>
+          <td>假设检验、多因素、效应+CI</td>
+      </tr>
+      <tr>
+          <td>报告</td>
+          <td>gtsummary 表、ggsurvfit 图、方法写清</td>
+      </tr>
+      <tr>
+          <td>复现</td>
+          <td>Quarto <code>.qmd</code> + sessionInfo</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li>Quarto 官网:<a href="https://quarto.org/">https://quarto.org/</a></li>
+<li>gtsummary:<a href="https://www.danieldsjoberg.com/gtsummary/">https://www.danieldsjoberg.com/gtsummary/</a></li>
+<li>回到起点,把这套流程套到你自己的第一个真实问题上——这才是这门课真正的&quot;毕业作业&quot;。</li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li>Quarto 渲染失败 → 先确认每个代码块能单独跑通;看报错定位到具体哪块。</li>
+<li>报告里图缺失 → 确认产生图的代码块没设 <code>eval: false</code>,且图被打印出来。</li>
+<li>数据路径在别人电脑上失效 → 用相对路径、把数据和 <code>.qmd</code> 放一起,别用绝对路径。</li>
+<li>结果无法复现 → 一定保留 <code>sessionInfo()</code>;随机过程加 <code>set.seed()</code>。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/10-tcga/">← Lesson 10 · 公共数据 TCGA</a>
+      
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

@@ -1,1 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Vlm on Yiming Xu</title><link>https://ym-xu.github.io/tags/vlm/</link><description>Recent content in Vlm on Yiming Xu</description><generator>Hugo</generator><language>en</language><lastBuildDate>Thu, 14 Aug 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://ym-xu.github.io/tags/vlm/index.xml" rel="self" type="application/rss+xml"/><item><title>DocLens</title><link>https://ym-xu.github.io/posts/2025/08/doclens/</link><pubDate>Thu, 14 Aug 2025 00:00:00 +0000</pubDate><guid>https://ym-xu.github.io/posts/2025/08/doclens/</guid><description>A layout-aware observer for structured document understanding.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Vlm on Yiming Xu</title>
+    <link>https://ym-xu.github.io/tags/vlm/</link>
+    <description>Recent content in Vlm on Yiming Xu</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Thu, 14 Aug 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://ym-xu.github.io/tags/vlm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>DocLens</title>
+      <link>https://ym-xu.github.io/posts/2025/08/doclens/</link>
+      <pubDate>Thu, 14 Aug 2025 00:00:00 +0000</pubDate>
+      <guid>https://ym-xu.github.io/posts/2025/08/doclens/</guid>
+      <description>A layout-aware observer for structured document understanding.</description>
+    </item>
+  </channel>
+</rss>

@@ -1,13 +1,121 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Planner design — Yiming Xu</title><meta name=description content="Hierarchical + leaf embeddings for navigation, not naive top-k retrieval."><link rel=alternate type=application/rss+xml href=/index.xml title="Yiming Xu"><link rel=stylesheet href="/css/styles.css?v=1781873131"><link rel=stylesheet href="/css/custom.css?v=1781873131"><meta property="og:title" content="Planner design — Yiming Xu"><meta property="og:description" content="Hierarchical + leaf embeddings for navigation, not naive top-k retrieval."><meta property="og:type" content="website"><meta property="og:url" content="https://ym-xu.github.io/posts/2025/10/planner-design/"></head><body class="kind-page section-posts"><header class=site-header><div class="container header"><div class=brand><a href=/>Yiming Xu</a></div><nav class=nav><a class=nav-item href=/>Home</a>
-<a class=nav-item href=/projects/>Projects</a>
-<a class=nav-item href=/publications/>Publications</a>
-<a class="nav-item active" aria-current=page href=/posts/>Writing</a>
-<button id=theme-toggle aria-label="Toggle theme">🌓</button></nav></div></header><main id=content class=container><article><header class=post-header><h1>Planner design</h1><div class=meta><span>2025-10-07</span>
-· <span>1 min read</span>
-· <span><a href=/tags/planner>#planner</a>, <a href=/tags/rag>#rag</a></span></div></header><aside class=toc><nav id=TableOfContents><ul><li><a href=#embedding-覆盖策略>Embedding 覆盖策略</a></li></ul></nav></aside><div class=content><p>我们会给"层次节点 + 叶子节点"都建 embedding（分层、分模态），不是只嵌入中间节点，也不是只嵌入叶子。</p><p>为什么不直接像 RAG 一样"扔进向量库 → 取前 k 段就回答"？因为我们的任务大量涉及版面结构、跨页聚合、图表计数/读数、多模态对齐与可解释路径。</p><h2 id=embedding-覆盖策略>Embedding 覆盖策略</h2><p>L1/L2/L3 section：对每个章节节点生成 summary（80–150 token），再对 summary 做 embedding。用途：Planner 的第一跳定向。</p><div class=highlight><div style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
-</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#cf222e>def</span> <span style=color:#6639ba>expand</span><span style=color:#1f2328>(</span>passage<span style=color:#1f2328>,</span> kg<span style=color:#1f2328>):</span>
-</span></span><span style=display:flex><span>    neighbors <span style=color:#0550ae>=</span> salient_neighbors<span style=color:#1f2328>(</span>kg<span style=color:#1f2328>,</span> budget<span style=color:#0550ae>=</span><span style=color:#0550ae>8</span><span style=color:#1f2328>)</span>
-</span></span><span style=display:flex><span>    <span style=color:#cf222e>return</span> passage <span style=color:#0550ae>+</span> <span style=color:#0a3069>&#34; &#34;</span><span style=color:#0550ae>.</span>join<span style=color:#1f2328>(</span>neighbors<span style=color:#1f2328>)</span>
-</span></span></code></pre></td></tr></table></div></div></div><nav class=pager><a class=prev href=/posts/2025/09/context-engineering/>← Context engineering</a></nav></article></main><footer><div class="container footer"><div class=left><small>© 2026 Yiming Xu</small></div><div class=right><a href=/index.xml>RSS</a></div></div></footer><script>(function(){const e="prefers-color-scheme",t=document.getElementById("theme-toggle"),n=document.documentElement;function s(e){n.setAttribute("data-theme",e)}function o(){return localStorage.getItem(e)||"auto"}function i(){const i=o();(i==="dark"||i==="auto"&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&s("dark"),t&&t.addEventListener("click",()=>{const t=n.getAttribute("data-theme")==="dark"?"light":"dark";s(t),localStorage.setItem(e,t)})}document.addEventListener("DOMContentLoaded",i)})()</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Planner design — Yiming Xu</title>
+<meta name="description" content="Hierarchical &#43; leaf embeddings for navigation, not naive top-k retrieval." />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="Planner design — Yiming Xu" />
+<meta property="og:description" content="Hierarchical &#43; leaf embeddings for navigation, not naive top-k retrieval." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/posts/2025/10/planner-design/" />
+
+  </head>
+  <body class="kind-page section-posts">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item active" aria-current="page" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <h1>Planner design</h1>
+      
+      
+        <div class="meta">
+          <span>2025-10-07</span>
+           · <span>1 min read</span>
+           · <span>
+            <a href="/tags/planner">#planner</a>, <a href="/tags/rag">#rag</a>
+          </span>
+        </div>
+      
+    </header>
+
+    
+    
+      
+        <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#embedding-覆盖策略">Embedding 覆盖策略</a></li>
+  </ul>
+</nav></aside>
+      
+    
+
+    <div class="content"><p>我们会给&quot;层次节点 + 叶子节点&quot;都建 embedding（分层、分模态），不是只嵌入中间节点，也不是只嵌入叶子。</p>
+<p>为什么不直接像 RAG 一样&quot;扔进向量库 → 取前 k 段就回答&quot;？因为我们的任务大量涉及版面结构、跨页聚合、图表计数/读数、多模态对齐与可解释路径。</p>
+<h2 id="embedding-覆盖策略">Embedding 覆盖策略</h2>
+<p>L1/L2/L3 section：对每个章节节点生成 summary（80–150 token），再对 summary 做 embedding。用途：Planner 的第一跳定向。</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ff7b72">def</span> <span style="color:#d2a8ff;font-weight:bold">expand</span>(passage, kg):
+</span></span><span style="display:flex;"><span>    neighbors <span style="color:#ff7b72;font-weight:bold">=</span> salient_neighbors(kg, budget<span style="color:#ff7b72;font-weight:bold">=</span><span style="color:#a5d6ff">8</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#ff7b72">return</span> passage <span style="color:#ff7b72;font-weight:bold">+</span> <span style="color:#a5d6ff">&#34; &#34;</span><span style="color:#ff7b72;font-weight:bold">.</span>join(neighbors)
+</span></span></code></pre></div></div>
+
+    <nav class="pager">
+      <a class="prev" href="/posts/2025/09/context-engineering/">← Context engineering</a>
+      
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 4 · 统计概念入门 Stats You Need First — Yiming Xu</title>
+<meta name="description" content="学分析之前先建立直觉:删失、生存函数、风险比、p值与置信区间、为什么要检验假设。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="Lesson 4 · 统计概念入门 Stats You Need First — Yiming Xu" />
+<meta property="og:description" content="学分析之前先建立直觉:删失、生存函数、风险比、p值与置信区间、为什么要检验假设。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/04-stats-concepts/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 4 · 统计概念入门 Stats You Need First</h1>
+      <p class="page-sub">学分析之前先建立直觉:删失、生存函数、风险比、p值与置信区间、为什么要检验假设。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会搞懂">这一课你会搞懂</a></li>
+    <li><a href="#1-为什么不能直接算平均生存时间">1. 为什么不能直接算&quot;平均生存时间&quot;</a></li>
+    <li><a href="#2-删失-censoring">2. 删失 Censoring</a></li>
+    <li><a href="#3-生存函数-st中位生存期x-年生存率">3. 生存函数 S(t)、中位生存期、x 年生存率</a></li>
+    <li><a href="#4-风险-hazard-与风险比-hr">4. 风险 Hazard 与风险比 HR</a></li>
+    <li><a href="#5-p-值与-95-置信区间">5. p 值与 95% 置信区间</a></li>
+    <li><a href="#6-比例风险假设-proportional-hazards">6. 比例风险假设 Proportional Hazards</a></li>
+    <li><a href="#7--肿瘤研究常见坑把表达量按中位数二分">7. 🔬 肿瘤研究常见坑:把表达量按中位数二分</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见误解-common-misconceptions">常见误解 Common misconceptions</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p>这一课<strong>不写代码</strong>,只建立做生存分析必须先有的统计直觉。没有这些概念,后面跑得出 <code>coxph()</code> 也读不懂结果。这正是 <a href="https://www.emilyzabor.com/survival-analysis-in-r.html">Emily Zabor 教程</a> 假设你&quot;已经熟悉回归概念&quot;的那部分前提,也是 <a href="../09-survival/">Lesson 9 生存分析</a> 的前置。</p>
+<h2 id="这一课你会搞懂">这一课你会搞懂</h2>
+<ul>
+<li>为什么生存数据不能用&quot;平均存活时间&quot;来算</li>
+<li>删失 censoring 是什么、什么时候会出问题</li>
+<li>风险比 HR、p 值、置信区间分别在说什么</li>
+<li>为什么统计模型有&quot;假设&quot;,不检验会怎样</li>
+</ul>
+<h2 id="1-为什么不能直接算平均生存时间">1. 为什么不能直接算&quot;平均生存时间&quot;</h2>
+<p>假设你随访 100 个肺癌病人,研究结束时还有 40 个活着。这 40 个人的真实生存时间你<strong>根本不知道</strong>——只知道&quot;至少活了这么久&quot;。如果你只拿已经去世的 60 个人算平均,会严重<strong>低估</strong>生存时间,因为活得久的那批被你扔掉了。</p>
+<p>生存分析就是为了解决这个问题:它能同时利用&quot;已发生事件&quot;和&quot;还没发生事件&quot;的信息。</p>
+<h2 id="2-删失-censoring">2. 删失 Censoring</h2>
+<p>上面那 40 个&quot;研究结束仍存活&quot;的人,就是<strong>删失(censored)</strong>。删失有几种来源:</p>
+<ul>
+<li>研究结束时事件还没发生(还活着 / 还没复发)</li>
+<li>中途失访(搬走、退出)</li>
+<li>死于和研究无关的原因</li>
+</ul>
+<p>删失不是&quot;缺失数据&quot;,而是<strong>部分信息</strong>:我们知道这个人&quot;至少活过了 T 时间&quot;。生存分析专门设计来用好这部分信息。</p>
+<blockquote>
+<p>⚠️ 关键假设:<strong>非信息删失 non-informative censoring</strong>——被删失的人,其后续风险和继续随访的人没有系统差异。如果&quot;快不行的病人更容易失访&quot;,这个假设就被破坏了,结论会有偏。设计研究和解读结果时要警惕。</p></blockquote>
+<h2 id="3-生存函数-st中位生存期x-年生存率">3. 生存函数 S(t)、中位生存期、x 年生存率</h2>
+<ul>
+<li><strong>生存函数 S(t)</strong>:活过时间 t 的概率。t=0 时 S=1(都还活着),随时间下降。Kaplan-Meier 曲线画的就是它。</li>
+<li><strong>中位生存期 median survival</strong>:生存概率降到 0.5 的时间点,即&quot;一半病人已发生事件&quot;的时刻。比&quot;平均&quot;更稳健,是生存研究最常报的指标。</li>
+<li><strong>x 年生存率</strong>:S(t) 在某个时间点的取值,如&quot;1 年生存率 = 73%&quot;。</li>
+</ul>
+<blockquote>
+<p>这三个都直接来自同一条 KM 曲线,<a href="../09-survival/">Lesson 9</a> 会动手画。</p></blockquote>
+<h2 id="4-风险-hazard-与风险比-hr">4. 风险 Hazard 与风险比 HR</h2>
+<p><strong>风险 hazard</strong> 直觉上是&quot;此刻还活着的人,在下一瞬间发生事件的速率&quot;。</p>
+<p><strong>风险比 HR(Hazard Ratio)</strong> 是两组风险的比值,是 Cox 回归的核心输出:</p>
+<table>
+  <thead>
+      <tr>
+          <th>HR</th>
+          <th>含义</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>HR &lt; 1</td>
+          <td>该因素<strong>降低</strong>风险(保护性)。如 HR=0.6,风险约为对照的 60%</td>
+      </tr>
+      <tr>
+          <td>HR = 1</td>
+          <td>没有影响</td>
+      </tr>
+      <tr>
+          <td>HR &gt; 1</td>
+          <td>该因素<strong>增加</strong>风险。如 HR=2,风险翻倍</td>
+      </tr>
+  </tbody>
+</table>
+<blockquote>
+<p>别和这两个混了:<strong>fold-change / log2FC</strong>(<a href="../06-deseq2/">Lesson 6</a>)说的是基因表达量差几倍;<strong>odds ratio (OR)</strong> 说的是&quot;发生 vs 不发生&quot;的比值比,用于逻辑回归。HR 说的是&quot;事件发生的速率&quot;之比,带时间维度。</p></blockquote>
+<h2 id="5-p-值与-95-置信区间">5. p 值与 95% 置信区间</h2>
+<ul>
+<li><strong>p 值</strong>:假如&quot;两组其实没差别&quot;,观察到当前(或更极端)结果的概率。p 越小,越不像是偶然。常用 0.05 当门槛。</li>
+<li><strong>95% 置信区间 CI</strong>:对真实效应大小的一个区间估计。对 HR 来说,<strong>如果 95% CI 跨过了 1</strong>(如 0.7–1.4),通常就认为不显著。</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>显著 ≠ 重要</strong>。样本量足够大时,一个微不足道的差异也能 p&lt;0.05;反过来,样本太小时,真实存在的效应也可能测不出显著。永远把 p 值和<strong>效应大小(HR、生存率差)+ 置信区间</strong>一起看。</p></blockquote>
+<h2 id="6-比例风险假设-proportional-hazards">6. 比例风险假设 Proportional Hazards</h2>
+<p>Cox 模型有个核心前提:<strong>两组的风险比 HR 不随时间变化</strong>(始终保持比例)。比如&quot;治疗组风险一直是对照组的 0.6 倍&quot;,而不是&quot;前期 0.3、后期 1.5&quot;。</p>
+<p>如果这个假设被破坏(例如两条生存曲线中途交叉),Cox 给出的那个&quot;单一 HR&quot;就没意义了。所以用完 Cox <strong>一定要检验</strong>这个假设(<a href="../09-survival/">Lesson 9</a> 用 <code>cox.zph()</code>),不能默认它成立。</p>
+<h2 id="7--肿瘤研究常见坑把表达量按中位数二分">7. 🔬 肿瘤研究常见坑:把表达量按中位数二分</h2>
+<p>肿瘤研究里特别常见的做法:把连续的基因表达量按<strong>中位数</strong>切成&quot;高表达 / 低表达&quot;两组,再画 KM 曲线。它直观、好画,但代价不小:</p>
+<ul>
+<li><strong>丢信息</strong>:把连续变量压成两类,统计效力下降。</li>
+<li><strong>结果不稳</strong>:换个切点(中位数 vs 三分位 vs 最优切点)结论可能就变了——这也是&quot;最优切点&quot;被批评为容易制造假阳性的原因。</li>
+<li><strong>更稳妥的做法</strong>:尽量把表达量当连续变量放进 Cox 模型;若一定要分组,预先定好切点并说明理由,别在看完数据后挑一个最&quot;显著&quot;的切点。</li>
+</ul>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>概念</th>
+          <th>一句话直觉</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>删失</td>
+          <td>&ldquo;至少活过了 T&rdquo;,是部分信息不是缺失</td>
+      </tr>
+      <tr>
+          <td>生存函数 S(t)</td>
+          <td>活过 t 的概率,KM 曲线画的就是它</td>
+      </tr>
+      <tr>
+          <td>中位生存期</td>
+          <td>一半人已发生事件的时间点</td>
+      </tr>
+      <tr>
+          <td>风险比 HR</td>
+          <td>两组事件发生速率之比,&lt;1 保护 / &gt;1 有害</td>
+      </tr>
+      <tr>
+          <td>p 值</td>
+          <td>结果像不像偶然;小=不像</td>
+      </tr>
+      <tr>
+          <td>95% CI</td>
+          <td>真实效应的区间;HR 的 CI 跨过 1 即不显著</td>
+      </tr>
+      <tr>
+          <td>比例风险假设</td>
+          <td>HR 不随时间变;用完 Cox 必检验</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li><a href="https://www.emilyzabor.com/survival-analysis-in-r.html">Emily Zabor《Survival Analysis in R》</a> Part 1 开头的 <em>The basics</em>,把删失讲得很清楚。</li>
+</ul>
+<h2 id="常见误解-common-misconceptions">常见误解 Common misconceptions</h2>
+<ul>
+<li>&ldquo;删失的人就是数据缺失,删掉就行&rdquo; → 错。删失含信息,删掉会引入偏倚,见第 2 节。</li>
+<li>&ldquo;p&lt;0.05 就说明差异很大 / 很重要&rdquo; → 错。p 只说&quot;像不像偶然&quot;,大小看 HR 和 CI,见第 5 节。</li>
+<li>&ldquo;HR=1.2 和 HR=5 都显著,所以差不多&rdquo; → 错。两者效应大小天差地别,显著只是第一关。</li>
+<li>&ldquo;Cox 模型跑出来有个 HR 就能用&rdquo; → 错。先确认比例风险假设没被破坏,见第 6 节。</li>
+<li>&ldquo;按中位数分高低组是标准做法,肯定没问题&rdquo; → 要警惕,见第 7 节。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/03-ggplot/">← Lesson 3 · 可视化基础 ggplot2</a>
+      <a class="next" href="/r-course/05-bioconductor/">Lesson 5 · 进入 Bioconductor →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

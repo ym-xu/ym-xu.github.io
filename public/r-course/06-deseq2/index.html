@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 6 · 差异表达分析 DESeq2 — Yiming Xu</title>
+<meta name="description" content="RNA-seq 找肿瘤 vs 正常的差异基因:从 counts 到差异表达结果表。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781878535" />
+<link rel="stylesheet" href="/css/custom.css?v=1781878535" />
+
+
+<meta property="og:title" content="Lesson 6 · 差异表达分析 DESeq2 — Yiming Xu" />
+<meta property="og:description" content="RNA-seq 找肿瘤 vs 正常的差异基因:从 counts 到差异表达结果表。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/06-deseq2/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 6 · 差异表达分析 DESeq2</h1>
+      <p class="page-sub">RNA-seq 找肿瘤 vs 正常的差异基因:从 counts 到差异表达结果表。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#0-准备加载包">0. 准备:加载包</a></li>
+    <li><a href="#1-差异表达在问什么">1. 差异表达在问什么</a></li>
+    <li><a href="#2-设定分组的参照水平">2. 设定分组的参照水平</a></li>
+    <li><a href="#3-构建-deseq2-数据对象">3. 构建 DESeq2 数据对象</a></li>
+    <li><a href="#4-预过滤低表达基因">4. 预过滤低表达基因</a></li>
+    <li><a href="#5-一键运行">5. 一键运行</a></li>
+    <li><a href="#6-筛出差异基因-degs-并导出">6. 筛出差异基因 DEGs 并导出</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p><strong>差异表达分析(Differential Expression)</strong> 回答一个核心问题:<strong>哪些基因在两组之间表达量不同?</strong>(比如肿瘤 vs 正常)。<code>DESeq2</code> 是 RNA-seq 计数数据做这件事的金标准。这一课用 <a href="../05-bioconductor/">L5</a> 的 <code>airway</code> 数据走一遍完整流程。</p>
+<blockquote>
+<p>airway 的分组是&quot;地塞米松处理 vs 未处理&quot;。在你自己的数据里,把这个分组换成 <strong>肿瘤 vs 正常</strong> 即可,流程一字不改。</p></blockquote>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>从 counts 矩阵跑出一张差异表达结果表(log2FC + 校正 p 值)</li>
+<li>按阈值筛出显著差异基因(DEGs),导出成表</li>
+</ul>
+<h2 id="0-准备加载包">0. 准备:加载包</h2>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(DESeq2)
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">library</span>(airway)
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">data</span>(airway)
+</span></span></code></pre></div><h2 id="1-差异表达在问什么">1. 差异表达在问什么</h2>
+<p>每个基因在两组里都有一组表达值。差异表达就是逐个基因检验&quot;两组均值是否不同&quot;,并给两个关键数:</p>
+<ul>
+<li><strong>log2FoldChange(log2FC)</strong>:两组表达量之比取以 2 为底的对数。+1 = 处理组高一倍,−1 = 低一半。</li>
+<li><strong>padj</strong>:多重检验校正后的 p 值(见第 5 步)。</li>
+</ul>
+<blockquote>
+<p>🔬 这是几乎所有&quot;找肿瘤标志基因&quot;分析的第一步。</p></blockquote>
+<h2 id="2-设定分组的参照水平">2. 设定分组的参照水平</h2>
+<p>⚠️ 一定要先告诉 DESeq2 <strong>谁是对照组</strong>,否则 log2FC 的正负方向可能反掉:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>airway<span style="color:#ff7b72;font-weight:bold">$</span>dex <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">relevel</span>(airway<span style="color:#ff7b72;font-weight:bold">$</span>dex, ref <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;untrt&#34;</span>)  <span style="color:#8b949e;font-style:italic"># 以 &#34;未处理&#34; 为参照</span>
+</span></span></code></pre></div><blockquote>
+<p>在你的数据里就是 <code>relevel(condition, ref = &quot;Normal&quot;)</code>,让&quot;正常&quot;当参照,这样正的 log2FC = 肿瘤里上调。</p></blockquote>
+<h2 id="3-构建-deseq2-数据对象">3. 构建 DESeq2 数据对象</h2>
+<p><code>airway</code> 本身就是个 <code>SummarizedExperiment</code>(<a href="../05-bioconductor/">L5</a>),直接喂进去,并用 <code>design</code> 写明实验设计:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">DESeqDataSet</span>(airway, design <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#ff7b72;font-weight:bold">~</span> cell <span style="color:#ff7b72;font-weight:bold">+</span> dex)
+</span></span></code></pre></div><blockquote>
+<p><code>design = ~ cell + dex</code> 表示:在校正了细胞系 <code>cell</code> 的影响后,看处理 <code>dex</code> 的效应。<code>~</code> 右边最后一项通常是你关心的分组。你自己的数据若只有分组,写 <code>~ condition</code> 即可。</p></blockquote>
+<h2 id="4-预过滤低表达基因">4. 预过滤低表达基因</h2>
+<p>几乎不表达的基因是噪音,先去掉,能加速并提高检验效力:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>keep <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">rowSums</span>(<span style="color:#d2a8ff;font-weight:bold">counts</span>(dds)) <span style="color:#ff7b72;font-weight:bold">&gt;=</span> <span style="color:#a5d6ff">10</span>   <span style="color:#8b949e;font-style:italic"># 总 counts 太低的基因丢掉</span>
+</span></span><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> dds[keep, ]
+</span></span></code></pre></div><h2 id="5-一键运行">5. 一键运行</h2>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>dds <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">DESeq</span>(dds)     <span style="color:#8b949e;font-style:italic"># 核心:归一化 + 估计离散度 + 负二项检验,一步到位</span>
+</span></span><span style="display:flex;"><span>res <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">results</span>(dds)   <span style="color:#8b949e;font-style:italic"># 取出结果</span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">summary</span>(res)          <span style="color:#8b949e;font-style:italic"># 概览:多少上调、下调、被过滤</span>
+</span></span></code></pre></div><p><code>results()</code> 默认给 design 里最后一个变量的最末水平 vs 参照。要明确指定可以用:</p>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>res <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">results</span>(dds, name <span style="color:#ff7b72;font-weight:bold">=</span> <span style="color:#a5d6ff">&#34;dex_trt_vs_untrt&#34;</span>)  <span style="color:#8b949e;font-style:italic"># 处理 vs 未处理</span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">resultsNames</span>(dds)                               <span style="color:#8b949e;font-style:italic"># 看有哪些可选的比较名</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>padj 为什么重要</strong>:几万个基因同时检验,光看原始 p&lt;0.05 会有大量假阳性。<code>padj</code>(BH 法校正)控制的是错误发现率,<strong>筛 DEG 一定用 padj 而不是 p</strong>(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p></blockquote>
+<h2 id="6-筛出差异基因-degs-并导出">6. 筛出差异基因 DEGs 并导出</h2>
+<div class="highlight"><pre tabindex="0" style="color:#e6edf3;background-color:#0d1117;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-r" data-lang="r"><span style="display:flex;"><span>res <span style="color:#ff7b72;font-weight:bold">&lt;-</span> res<span style="color:#d2a8ff;font-weight:bold">[order</span>(res<span style="color:#ff7b72;font-weight:bold">$</span>padj), ]                    <span style="color:#8b949e;font-style:italic"># 按显著性排序</span>
+</span></span><span style="display:flex;"><span>deg <span style="color:#ff7b72;font-weight:bold">&lt;-</span> <span style="color:#d2a8ff;font-weight:bold">subset</span>(res, padj <span style="color:#ff7b72;font-weight:bold">&lt;</span> <span style="color:#a5d6ff">0.05</span> <span style="color:#ff7b72;font-weight:bold">&amp;</span> <span style="color:#d2a8ff;font-weight:bold">abs</span>(log2FoldChange) <span style="color:#ff7b72;font-weight:bold">&gt;</span> <span style="color:#a5d6ff">1</span>)  <span style="color:#8b949e;font-style:italic"># 常用阈值</span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">nrow</span>(deg)                                        <span style="color:#8b949e;font-style:italic"># 有多少个 DEG</span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">head</span>(<span style="color:#d2a8ff;font-weight:bold">as.data.frame</span>(deg))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#d2a8ff;font-weight:bold">write.csv</span>(<span style="color:#d2a8ff;font-weight:bold">as.data.frame</span>(deg), <span style="color:#a5d6ff">&#34;DEGs.csv&#34;</span>)        <span style="color:#8b949e;font-style:italic"># 导出</span>
+</span></span></code></pre></div><blockquote>
+<p>阈值不是铁律:<code>padj &lt; 0.05</code>、<code>|log2FC| &gt; 1</code>(即变化 2 倍)是常用起点,可按数据和领域惯例调整,但<strong>要在文中写清楚你用了什么阈值</strong>。</p></blockquote>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>你想做</th>
+          <th>用什么</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>设参照组</td>
+          <td><code>relevel(分组, ref = &quot;Normal&quot;)</code></td>
+      </tr>
+      <tr>
+          <td>建对象</td>
+          <td><code>DESeqDataSet(se, design = ~ condition)</code></td>
+      </tr>
+      <tr>
+          <td>预过滤</td>
+          <td><code>rowSums(counts(dds)) &gt;= 10</code></td>
+      </tr>
+      <tr>
+          <td>跑分析</td>
+          <td><code>DESeq(dds)</code></td>
+      </tr>
+      <tr>
+          <td>取结果</td>
+          <td><code>results(dds)</code> / <code>summary(res)</code></td>
+      </tr>
+      <tr>
+          <td>筛 DEG</td>
+          <td><code>subset(res, padj &lt; 0.05 &amp; abs(log2FoldChange) &gt; 1)</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>下一课 <a href="../07-volcano-heatmap/">Lesson 7 · 火山图与热图</a>,把这张 DEG 结果可视化;<a href="../08-enrichment/">Lesson 8</a> 再做功能富集。</p>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li>DESeq2 官方 vignette(最权威):<a href="https://bioconductor.org/packages/DESeq2/">https://bioconductor.org/packages/DESeq2/</a></li>
+<li>配套教程 RNA-seq workflow:<a href="https://bioconductor.org/packages/rnaseqGene/">https://bioconductor.org/packages/rnaseqGene/</a></li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li><code>some values in assay are not integers</code> → DESeq2 要原始整数 counts,不能用 TPM/FPKM/已归一化的值。</li>
+<li>log2FC 方向反了 → 没设 <code>relevel()</code> 参照组,见第 2 步。</li>
+<li><code>every gene contains at least one zero</code> → 预过滤太松或数据问题,先按第 4 步过滤。</li>
+<li>结果里很多 <code>NA</code> 的 padj → 是 DESeq2 的独立过滤和离群点处理所致,属正常。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/05-bioconductor/">← Lesson 5 · 进入 Bioconductor</a>
+      <a class="next" href="/r-course/07-volcano-heatmap/">Lesson 7 · 火山图与热图 Volcano &amp; Heatmap →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

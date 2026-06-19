@@ -197,3 +197,35 @@ body.kind-section.section-projects #content.container { max-width: 980px; }
 .intro-media .icon-github { color: #24292f; border-color: #24292f33; }
 .intro-media .icon-scholar { color: #4285f4; border-color: #4285f433; }
 .intro-media .icon-twitter { color: #1d9bf0; border-color: #1d9bf033; }
+
+/* ---- Markdown tables in prose (lessons, posts) ---- */
+.content table { width: 100%; border-collapse: collapse; margin: 1.1rem 0; font-size: .9rem; line-height: 1.45; }
+.content table th, .content table td { border: 1px solid var(--border); padding: .45rem .7rem; text-align: left; vertical-align: top; }
+.content table thead th { background: var(--surface-card-hover); font-weight: 600; color: var(--fg); }
+.content table tbody tr:nth-child(even) { background: var(--surface-card); }
+.content table code { font-size: .92em; }
+/* Narrow screens: let wide tables scroll instead of overflowing the page */
+@media (max-width: 720px) {
+  .content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ---- Blockquotes / callouts in prose ---- */
+.content blockquote {
+  margin: 1.1rem 0;
+  padding: .55rem .9rem;
+  border-left: 3px solid color-mix(in oklab, var(--link) 45%, var(--border));
+  background: var(--surface-card);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--muted);
+}
+.content blockquote > :first-child { margin-top: 0; }
+.content blockquote > :last-child { margin-bottom: 0; }
+.content blockquote p { margin: .3rem 0; }
+
+/* ---- Inline code chip (not code blocks) ---- */
+.content :not(pre) > code {
+  background: var(--surface-card-hover);
+  padding: .08em .36em;
+  border-radius: var(--radius-sm);
+  font-size: .9em;
+}

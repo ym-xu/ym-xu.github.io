@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 4 · 进入 Bioconductor — Yiming Xu</title>
+<meta name="description" content="认识组学数据的标准容器 SummarizedExperiment,装好分析全家桶。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781874819" />
+<link rel="stylesheet" href="/css/custom.css?v=1781874819" />
+
+
+<meta property="og:title" content="Lesson 4 · 进入 Bioconductor — Yiming Xu" />
+<meta property="og:description" content="认识组学数据的标准容器 SummarizedExperiment,装好分析全家桶。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/04-bioconductor/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 4 · 进入 Bioconductor</h1>
+      <p class="page-sub">认识组学数据的标准容器 SummarizedExperiment,装好分析全家桶。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#学习目标-goals">学习目标 Goals</a></li>
+    <li><a href="#大纲-outline">大纲 Outline</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><blockquote>
+<p>🚧 占位:本课内容待补充。</p></blockquote>
+<h2 id="学习目标-goals">学习目标 Goals</h2>
+<ul>
+<li>理解 Bioconductor 与 CRAN 的区别</li>
+<li>用 <code>BiocManager::install()</code> 安装生信包</li>
+<li>理解 <code>SummarizedExperiment</code>:表达矩阵 + 样本信息 + 基因信息三合一</li>
+</ul>
+<h2 id="大纲-outline">大纲 Outline</h2>
+<ol>
+<li><code>install.packages(&quot;BiocManager&quot;)</code></li>
+<li>安装本课程后续要用的包(DESeq2 / clusterProfiler / &hellip;)</li>
+<li>assay / colData / rowData 的概念</li>
+<li>把自己的 counts 矩阵 + 临床表组装成一个对象</li>
+</ol>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/03-ggplot/">← Lesson 3 · 可视化基础 ggplot2</a>
+      <a class="next" href="/r-course/05-deseq2/">Lesson 5 · 差异表达分析 DESeq2 →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

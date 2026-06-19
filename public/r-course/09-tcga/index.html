@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 9 · 公共数据 TCGA — Yiming Xu</title>
+<meta name="description" content="用 TCGAbiolinks 直接下载 TCGA 数据,复现或对照自己的结果。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781874819" />
+<link rel="stylesheet" href="/css/custom.css?v=1781874819" />
+
+
+<meta property="og:title" content="Lesson 9 · 公共数据 TCGA — Yiming Xu" />
+<meta property="og:description" content="用 TCGAbiolinks 直接下载 TCGA 数据,复现或对照自己的结果。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/09-tcga/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 9 · 公共数据 TCGA</h1>
+      <p class="page-sub">用 TCGAbiolinks 直接下载 TCGA 数据,复现或对照自己的结果。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#学习目标-goals">学习目标 Goals</a></li>
+    <li><a href="#大纲-outline">大纲 Outline</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><blockquote>
+<p>🚧 占位:本课内容待补充。</p></blockquote>
+<h2 id="学习目标-goals">学习目标 Goals</h2>
+<ul>
+<li>了解 TCGA / GDC 数据结构</li>
+<li>用 TCGAbiolinks 查询、下载、整理某一癌种的数据</li>
+<li>把公共数据接入前面学过的差异表达 / 生存分析流程</li>
+</ul>
+<h2 id="大纲-outline">大纲 Outline</h2>
+<ol>
+<li><code>GDCquery()</code> 选癌种、数据类型、平台</li>
+<li><code>GDCdownload()</code> + <code>GDCprepare()</code></li>
+<li>提取表达矩阵与临床信息</li>
+<li>用 TCGA 验证自己数据里发现的基因</li>
+<li>数据使用与引用规范</li>
+</ol>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/08-survival/">← Lesson 8 · 生存分析 Survival Analysis</a>
+      <a class="next" href="/r-course/10-capstone/">Lesson 10 · 综合实战 Capstone →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

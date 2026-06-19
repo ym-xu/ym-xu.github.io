@@ -1,0 +1,16 @@
+{{ define "main" }}
+  <h1>{{ .Title }}</h1>
+  {{ with .Params.subtitle }}<p class="page-sub">{{ . }}</p>{{ end }}
+  <div class="content">{{ .Content }}</div>
+  <div class="post-rows">
+    {{ range $i, $p := .Pages.ByWeight }}
+      <article class="post-row">
+        <div class="post-row-date">{{ printf "%02d" (add $i 1) }}</div>
+        <div class="post-row-body">
+          <h3 class="post-row-title"><a href="{{ $p.RelPermalink }}">{{ $p.Title }}</a></h3>
+          {{ with $p.Params.summary }}<p class="post-row-sum">{{ . }}</p>{{ end }}
+        </div>
+      </article>
+    {{ end }}
+  </div>
+{{ end }}
