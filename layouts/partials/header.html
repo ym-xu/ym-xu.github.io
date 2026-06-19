@@ -1,0 +1,16 @@
+<div class="container header">
+  <div class="brand">
+    <a href="{{ "/" | relURL }}">{{ site.Title }}</a>
+  </div>
+  <nav class="nav">
+    {{- $cur := strings.TrimSuffix "/" .RelPermalink -}}
+    {{ range site.Menus.main }}
+      {{- $u := strings.TrimSuffix "/" (.URL | relLangURL) -}}
+      {{- $active := or (eq $cur $u) (and (ne $u "") (hasPrefix $cur (print $u "/"))) -}}
+      <a class="nav-item{{ if $active }} active{{ end }}"{{ if $active }} aria-current="page"{{ end }} href="{{ .URL | relURL }}">{{ .Name }}</a>
+    {{ end }}
+    {{ if site.Params.enableDarkMode }}
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    {{ end }}
+  </nav>
+</div>
