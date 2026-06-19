@@ -268,3 +268,32 @@ body.kind-section.section-projects #content.container { max-width: 980px; }
   overflow-x: auto; font-size: .86rem; line-height: 1.5;
 }
 .content .code-card code { background: transparent; padding: 0; font-size: inherit; }
+
+/* ---- WebR run button + output ---- */
+.content .code-actions { display: inline-flex; gap: .4rem; align-items: center; }
+.content .code-run {
+  font-family: var(--font-mono); font-size: .7rem; line-height: 1; cursor: pointer;
+  color: var(--link); background: transparent;
+  border: 1px solid color-mix(in oklab, var(--link) 55%, var(--code-border));
+  border-radius: var(--radius-sm); padding: .22rem .55rem;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.content .code-run:hover { background: color-mix(in oklab, var(--link) 12%, transparent); }
+.content .code-run:disabled { opacity: .6; cursor: progress; }
+.content .code-runnable pre { outline: none; }
+.content .code-runnable pre:focus { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--link) 40%, transparent); }
+.content .code-output { border-top: 1px solid var(--code-border); padding: .6rem .9rem; background: color-mix(in oklab, var(--code-bar-bg) 60%, transparent); }
+.content .code-output > * { margin: 0; }
+.content .code-output > * + * { margin-top: .5rem; }
+.content .code-output-text { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; white-space: pre-wrap; color: var(--code-fg); background: transparent; padding: 0; }
+.content .code-output-status { color: var(--muted); }
+.content .code-output-err { font-family: var(--font-mono); font-size: .82rem; white-space: pre-wrap; color: #cf222e; background: transparent; padding: 0; }
+[data-theme='dark'] .content .code-output-err { color: #ff7b72; }
+.content .code-output-plot { max-width: 100%; height: auto; display: block; background: #fff; border-radius: var(--radius-sm); }
+/* gt / gtsummary tables render as self-contained HTML (always light) */
+.content .code-output-html { overflow-x: auto; background: #fff; border-radius: var(--radius-sm); padding: .2rem; }
+.content .code-output-html table { width: auto; font-size: .82rem; }
+/* don't let the course's own markdown-table styling bleed into gt output */
+.content .code-output-html table th,
+.content .code-output-html table td { border: 0; }
+.content .code-output-html tbody tr:nth-child(even) { background: transparent; }

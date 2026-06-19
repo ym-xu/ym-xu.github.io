@@ -7,9 +7,9 @@
 <meta name="description" content="预测一个“是/否”结局(如晚期毒性):优势比 OR、单/多因素、ROC 曲线。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Lesson 7 · 逻辑回归 Logistic Regression — Yiming Xu" />
@@ -73,10 +73,13 @@
 <li>画 ROC 曲线、算 AUC,评估模型区分能力</li>
 </ul>
 <h2 id="0-准备加载包--造数据">0. 准备:加载包 + 造数据</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># install.packages(c(&#34;gtsummary&#34;, &#34;pROC&#34;, &#34;broom&#34;))</span>
 </span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">pROC</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">broom</span><span class="p">)</span>
@@ -91,44 +94,57 @@
 </span></span><span class="line"><span class="cl"><span class="c1"># 毒性概率随 D2cc 升高而升高(造一个有信号的结局)</span>
 </span></span><span class="line"><span class="cl"><span class="n">lp</span> <span class="o">&lt;-</span> <span class="m">-10</span> <span class="o">+</span> <span class="m">0.11</span> <span class="o">*</span> <span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span> <span class="o">+</span> <span class="m">0.5</span> <span class="o">*</span> <span class="n">dat</span><span class="o">$</span><span class="n">ebrt</span>
 </span></span><span class="line"><span class="cl"><span class="n">dat</span><span class="o">$</span><span class="n">late_tox</span> <span class="o">&lt;-</span> <span class="nf">rbinom</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="nf">plogis</span><span class="p">(</span><span class="n">lp</span><span class="p">))</span>         <span class="c1"># 0/1 结局</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <h2 id="1-为什么不能用线性回归">1. 为什么不能用线性回归</h2>
 <p>结局只有 0/1,线性回归会预测出 &lt;0 或 &gt;1 的&quot;概率&quot;,没意义。逻辑回归把概率经 logit 变换后再建线性模型,保证预测落在 0–1 之间,并天然输出<strong>优势比</strong>。</p>
 <h2 id="2-单因素逻辑回归">2. 单因素逻辑回归</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit1</span> <span class="o">&lt;-</span> <span class="nf">glm</span><span class="p">(</span><span class="n">late_tox</span> <span class="o">~</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">,</span> <span class="n">family</span> <span class="o">=</span> <span class="n">binomial</span><span class="p">)</span>  <span class="c1"># family=binomial 是关键</span>
 </span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">fit1</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">exp</span><span class="p">(</span><span class="nf">cbind</span><span class="p">(</span><span class="n">OR</span> <span class="o">=</span> <span class="nf">coef</span><span class="p">(</span><span class="n">fit1</span><span class="p">),</span> <span class="nf">confint</span><span class="p">(</span><span class="n">fit1</span><span class="p">)))</span>                    <span class="c1"># 系数取指数 → OR + 95%CI</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p><strong>怎么读 OR</strong>(回顾 <a href="../04-stats-concepts/">Lesson 4</a>):<code>d2cc</code> 的 OR ≈ 1.12 表示 <strong>D2cc 每升高 1 Gy,毒性的优势增加约 12%</strong>。OR&gt;1 风险升高,&lt;1 降低,95% CI 跨过 1 即不显著。</p>
 <h2 id="3-多因素同时校正">3. 多因素:同时校正</h2>
 <p>单因素显著的因素,放进多因素模型看是否依然成立(排除混杂):</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit2</span> <span class="o">&lt;-</span> <span class="nf">glm</span><span class="p">(</span><span class="n">late_tox</span> <span class="o">~</span> <span class="n">d2cc</span> <span class="o">+</span> <span class="n">age</span> <span class="o">+</span> <span class="n">ebrt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">,</span> <span class="n">family</span> <span class="o">=</span> <span class="n">binomial</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="nf">tbl_regression</span><span class="p">(</span><span class="n">fit2</span><span class="p">,</span> <span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span> <span class="o">%&gt;%</span>  <span class="c1"># exponentiate=TRUE 直接出 OR 表</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">bold_p</span><span class="p">()</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p><code>tbl_regression(exponentiate = TRUE)</code> 出的就是论文里那张标准的&quot;多因素逻辑回归 OR 表&quot;(变量、OR、95%CI、p)。</p>
 <h2 id="4-模型能区分吗roc-与-auc">4. 模型能区分吗:ROC 与 AUC</h2>
 <p>OR 显著不代表模型预测得准。用 ROC 曲线 / AUC 评估区分能力:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">dat</span><span class="o">$</span><span class="n">prob</span> <span class="o">&lt;-</span> <span class="nf">predict</span><span class="p">(</span><span class="n">fit2</span><span class="p">,</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&#34;response&#34;</span><span class="p">)</span>   <span class="c1"># 每个病人的预测概率</span>
 </span></span><span class="line"><span class="cl"><span class="n">roc_obj</span> <span class="o">&lt;-</span> <span class="nf">roc</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">late_tox</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">prob</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">auc</span><span class="p">(</span><span class="n">roc_obj</span><span class="p">)</span>                                    <span class="c1"># AUC:0.5=瞎猜,1=完美;0.7–0.8 还行</span>
 </span></span><span class="line"><span class="cl"><span class="nf">plot</span><span class="p">(</span><span class="n">roc_obj</span><span class="p">,</span> <span class="n">print.auc</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>🔬 剂量学预测毒性的论文里,常用 ROC 找一个<strong>剂量阈值</strong>(如 D2cc 的最佳切点)。可用 <code>coords(roc_obj, &quot;best&quot;)</code> 取最佳阈值——但 ⚠️ 数据驱动的&quot;最佳切点&quot;容易过拟合,需在独立数据验证(同 <a href="../04-stats-concepts/">Lesson 4</a> 对&quot;最优切点&quot;的提醒)。</p></blockquote>
@@ -266,6 +282,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 

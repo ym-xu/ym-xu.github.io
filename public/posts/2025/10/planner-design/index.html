@@ -7,9 +7,9 @@
 <meta name="description" content="Hierarchical &#43; leaf embeddings for navigation, not naive top-k retrieval." />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Planner design — Yiming Xu" />
@@ -71,11 +71,15 @@
 <div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">python</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="n">passage</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
 </span></span><span class="line"><span class="cl">    <span class="n">neighbors</span> <span class="o">=</span> <span class="n">salient_neighbors</span><span class="p">(</span><span class="n">kg</span><span class="p">,</span> <span class="n">budget</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">passage</span> <span class="o">+</span> <span class="s2">&#34; &#34;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span></span></span></code></pre></div>
+  
 </div>
 </div>
 
@@ -136,6 +140,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 

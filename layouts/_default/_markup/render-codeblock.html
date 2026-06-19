@@ -1,8 +1,13 @@
 {{- $lang := .Type | default "text" -}}
-<div class="code-card">
+{{- $runnable := in (slice "r" "R") $lang -}}
+<div class="code-card{{ if $runnable }} code-runnable{{ end }}">
   <div class="code-card-bar">
     <span class="code-lang">{{ $lang }}</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      {{ if $runnable }}<button class="code-run" type="button" aria-label="Run code">▶ Run</button>{{ end }}
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   {{ highlight .Inner $lang "" }}
+  {{ if $runnable }}<div class="code-output" hidden></div>{{ end }}
 </div>

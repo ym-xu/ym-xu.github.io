@@ -7,9 +7,9 @@
 <meta name="description" content="Notes on shaping the context window as a first-class design surface." />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Context engineering — Yiming Xu" />
@@ -70,12 +70,16 @@
 <div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">python</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">budget</span> <span class="o">=</span> <span class="n">Budget</span><span class="p">(</span><span class="n">tokens</span><span class="o">=</span><span class="mi">8_000</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">planner</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="n">budget</span><span class="o">.</span><span class="n">fits</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
 </span></span><span class="line"><span class="cl">        <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></span></span></code></pre></div>
+  
 </div>
 </div>
 
@@ -136,6 +140,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 

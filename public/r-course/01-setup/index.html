@@ -7,9 +7,9 @@
 <meta name="description" content="安装 R 与 RStudio,认识工作界面,把第一个 CSV 读进来。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Lesson 1 · 环境搭建 Setup — Yiming Xu" />
@@ -118,51 +118,67 @@
 <p>新手建议:<strong>代码写在 Source 面板</strong>(菜单 File → New File → R Script),把光标放在某一行按 <code>Ctrl/Cmd + Enter</code> 就能把这行送到 Console 运行。</p>
 <h2 id="4-第一行代码">4. 第一行代码</h2>
 <p>在 Console 里(或 Source 里运行)试试:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="m">1</span> <span class="o">+</span> <span class="m">1</span>
 </span></span><span class="line"><span class="cl"><span class="nf">print</span><span class="p">(</span><span class="s">&#34;hello, R&#34;</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p>第一行会返回 <code>[1] 2</code>,第二行会打印那串字。能看到结果,说明环境正常。</p>
 <h2 id="5-变量与向量">5. 变量与向量</h2>
 <p>R 用 <code>&lt;-</code> 把右边的值&quot;存进&quot;左边的名字(也可以用 <code>=</code>,但社区习惯 <code>&lt;-</code>):</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">age</span> <span class="o">&lt;-</span> <span class="m">58</span>           <span class="c1"># 存一个数</span>
 </span></span><span class="line"><span class="cl"><span class="n">age</span>                 <span class="c1"># 直接打名字就能看到它</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="n">ages</span> <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="m">58</span><span class="p">,</span> <span class="m">63</span><span class="p">,</span> <span class="m">47</span><span class="p">,</span> <span class="m">71</span><span class="p">)</span>   <span class="c1"># c() 把多个值拼成一个&#34;向量&#34;</span>
 </span></span><span class="line"><span class="cl"><span class="nf">mean</span><span class="p">(</span><span class="n">ages</span><span class="p">)</span>                  <span class="c1"># 求平均</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>向量(vector)= 一串同类型的值。R 里几乎所有东西都是从向量开始的。</p></blockquote>
 <h2 id="6-dataframer-里的表格">6. data.frame:R 里的&quot;表格&quot;</h2>
 <p>真实数据是带行列的表。R 里管它叫 <strong>data.frame</strong>,和 Excel 的一张表一样:行是样本,列是变量。先看一个内置例子:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span>        <span class="c1"># 看前 6 行</span>
 </span></span><span class="line"><span class="cl"><span class="nf">str</span><span class="p">(</span><span class="n">mtcars</span><span class="p">)</span>         <span class="c1"># 看每列的类型和概况</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <h2 id="7-读入你自己的-csv">7. 读入你自己的 CSV</h2>
 <p>把你的数据从 Excel 另存为 <code>.csv</code>,然后:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">clinical</span> <span class="o">&lt;-</span> <span class="nf">read.csv</span><span class="p">(</span><span class="s">&#34;clinical.csv&#34;</span><span class="p">)</span>   <span class="c1"># 读进来,存成 clinical</span>
 </span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>      <span class="c1"># 看前几行</span>
 </span></span><span class="line"><span class="cl"><span class="nf">str</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>       <span class="c1"># 每列是什么类型(数字?文字?)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>   <span class="c1"># 每列的统计概况</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>⚠️ <strong>新手最常卡的点:工作目录</strong>。<code>read.csv(&quot;clinical.csv&quot;)</code> 只会在&quot;当前工作目录&quot;里找这个文件。用 <code>getwd()</code> 看当前目录,用 <code>setwd(&quot;你的路径&quot;)</code> 切换;或者在 RStudio 里 Session → Set Working Directory → Choose Directory 点一下。找不到文件报 <code>cannot open file</code> 基本都是这个原因。</p></blockquote>
@@ -290,6 +306,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 

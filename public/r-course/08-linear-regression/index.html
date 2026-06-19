@@ -7,9 +7,9 @@
 <meta name="description" content="连续结局的建模:相关系数、散点&#43;拟合线、线性回归与剂量-反应关系。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Lesson 8 · 相关与线性回归 Correlation &amp; Linear Regression — Yiming Xu" />
@@ -71,10 +71,13 @@
 <li>用线性回归量化关系、并校正其他变量</li>
 </ul>
 <h2 id="0-准备加载包--造数据">0. 准备:加载包 + 造数据</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">ggplot2</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">broom</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
@@ -85,42 +88,55 @@
 </span></span><span class="line"><span class="cl">  <span class="n">age</span> <span class="o">=</span> <span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">66</span><span class="p">,</span> <span class="m">8</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="n">dat</span><span class="o">$</span><span class="n">d90</span> <span class="o">&lt;-</span> <span class="m">1.4</span> <span class="o">*</span> <span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span> <span class="o">+</span> <span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>  <span class="c1"># D90 随处方剂量上升(造关系)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <h2 id="1-相关pearson-vs-spearman">1. 相关:Pearson vs Spearman</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">cor</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">)</span>                              <span class="c1"># Pearson(线性、要求近似正态)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">cor</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s">&#34;spearman&#34;</span><span class="p">)</span>         <span class="c1"># Spearman(秩相关,抗偏态/非线性)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">cor.test</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">)</span>                         <span class="c1"># 带 p 值和置信区间</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p>相关系数 r 在 −1~1 之间:接近 ±1 强相关,接近 0 无线性关系。</p>
 <blockquote>
 <p>⚠️ <strong>相关 ≠ 因果</strong>,而且相关只衡量<strong>线性</strong>关系——明显弯曲的关系 Pearson 会低估,先画散点图看形状。</p></blockquote>
 <h2 id="2-散点图--拟合线">2. 散点图 + 拟合线</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">brachy_dose</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d90</span><span class="p">))</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_point</span><span class="p">(</span><span class="n">alpha</span> <span class="o">=</span> <span class="m">.6</span><span class="p">)</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_smooth</span><span class="p">(</span><span class="n">method</span> <span class="o">=</span> <span class="s">&#34;lm&#34;</span><span class="p">)</span> <span class="o">+</span>          <span class="c1"># 线性拟合 + 置信带</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;Brachy dose (Gy)&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;D90 (Gy)&#34;</span><span class="p">)</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">theme_classic</span><span class="p">()</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>用了 <a href="../03-ggplot/">Lesson 3</a> 的 ggplot;<code>method = &quot;lm&quot;</code> 画的就是下面线性回归的那条线。</p></blockquote>
 <h2 id="3-线性回归">3. 线性回归</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">d90</span> <span class="o">~</span> <span class="n">brachy_dose</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p>输出里重点看:</p>
 <ul>
@@ -128,32 +144,44 @@
 <li><strong>p 值</strong>:斜率是否显著不为 0</li>
 <li><strong>R²(Multiple R-squared)</strong>:模型解释了 y 多少比例的变异(0~1)</li>
 </ul>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">tidy</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">conf.int</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># broom:整洁的系数表(含 95%CI)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <h2 id="4-多元线性回归校正其他变量">4. 多元线性回归:校正其他变量</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit2</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">d90</span> <span class="o">~</span> <span class="n">brachy_dose</span> <span class="o">+</span> <span class="n">age</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">tbl_regression</span><span class="p">(</span><span class="n">fit2</span><span class="p">)</span>         <span class="c1"># 论文级回归表(连续结局不用 exponentiate)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>🔬 这就是剂量学论文里&quot;在校正年龄后,处方剂量仍与 D90 显著相关&quot;那类结论的来源。</p></blockquote>
 <h2 id="5-检查模型假设">5. 检查模型假设</h2>
 <p>线性回归有前提(残差正态、等方差、线性)。一行画四张诊断图:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">par</span><span class="p">(</span><span class="n">mfrow</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">));</span> <span class="nf">plot</span><span class="p">(</span><span class="n">fit2</span><span class="p">);</span> <span class="nf">par</span><span class="p">(</span><span class="n">mfrow</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">))</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <ul>
 <li>左上 <em>Residuals vs Fitted</em>:点应随机散布,无明显弯曲(线性 &amp; 等方差)</li>
@@ -292,6 +320,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 

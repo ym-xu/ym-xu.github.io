@@ -7,9 +7,9 @@
 <meta name="description" content="比较两组或多组:t 检验、Wilcoxon、卡方/Fisher、ANOVA,以及什么时候用哪个。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
-<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+<link rel="stylesheet" href="/css/styles.css?v=1781882340" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781882340" />
+<link rel="stylesheet" href="/css/custom.css?v=1781882340" />
 
 
 <meta property="og:title" content="Lesson 6 · 组间比较 Group Comparisons — Yiming Xu" />
@@ -71,10 +71,13 @@
 <li>知道每种检验的适用前提</li>
 </ul>
 <h2 id="0-准备加载包--造数据">0. 准备:加载包 + 造数据</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">dplyr</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
@@ -84,55 +87,71 @@
 </span></span><span class="line"><span class="cl">  <span class="n">figo</span> <span class="o">=</span> <span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;I&#34;</span><span class="p">,</span><span class="s">&#34;II&#34;</span><span class="p">,</span><span class="s">&#34;III&#34;</span><span class="p">),</span> <span class="m">50</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">),</span> <span class="c1"># 分期</span>
 </span></span><span class="line"><span class="cl">  <span class="n">late_tox</span> <span class="o">=</span> <span class="nf">rbinom</span><span class="p">(</span><span class="m">50</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">.4</span><span class="p">,</span> <span class="m">.15</span><span class="p">),</span> <span class="n">each</span> <span class="o">=</span> <span class="m">25</span><span class="p">))</span>  <span class="c1"># 晚期毒性 0/1</span>
 </span></span><span class="line"><span class="cl"><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <h2 id="1-先看分布选检验的前提">1. 先看分布:选检验的前提</h2>
 <p>连续变量该用 t 检验(要求近似正态)还是 Wilcoxon(不要求),先看分布:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">hist</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>                       <span class="c1"># 直方图看形状</span>
 </span></span><span class="line"><span class="cl"><span class="nf">qqnorm</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">);</span> <span class="nf">qqline</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>   <span class="c1"># Q-Q 图,点贴直线≈正态</span>
 </span></span><span class="line"><span class="cl"><span class="nf">shapiro.test</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>               <span class="c1"># 正态性检验:p&gt;0.05 ≈ 不违反正态</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>⚠️ 小样本时正态性检验不敏感,<strong>图比检验更可靠</strong>。拿不准时优先选不要求正态的非参数检验更稳。</p></blockquote>
 <h2 id="2-两组连续变量t-检验-vs-wilcoxon">2. 两组连续变量:t 检验 vs Wilcoxon</h2>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 近似正态 → 两样本 t 检验(默认 Welch,不假设方差相等,更稳)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">t.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">arm</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1"># 偏态 / 小样本 / 有序 → Mann-Whitney(Wilcoxon 秩和)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">wilcox.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">arm</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <p>看输出的 <code>p-value</code> 和<strong>置信区间</strong>(t 检验给均值差的 CI)。报告时别只报 p,把效应大小一起报(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p>
 <blockquote>
 <p>配对数据(同一批病人前后、左右配对)用 <code>t.test(..., paired = TRUE)</code> 或 <code>wilcox.test(..., paired = TRUE)</code>。</p></blockquote>
 <h2 id="3-分类变量卡方-vs-fisher">3. 分类变量:卡方 vs Fisher</h2>
 <p>比较两组的毒性发生率(都是分类):</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">tab</span> <span class="o">&lt;-</span> <span class="nf">table</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">arm</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">late_tox</span><span class="p">)</span>   <span class="c1"># 2×2 列联表</span>
 </span></span><span class="line"><span class="cl"><span class="n">tab</span>
 </span></span><span class="line"><span class="cl"><span class="nf">chisq.test</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span>                       <span class="c1"># 卡方检验</span>
 </span></span><span class="line"><span class="cl"><span class="nf">fisher.test</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span>                      <span class="c1"># 期望计数 &lt;5 的格子多时,用 Fisher 精确检验</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>⚠️ 规则:任何格子的<strong>期望计数 &lt; 5</strong> 时,卡方不可靠,改用 <code>fisher.test()</code>。卡方若想看校正,<code>chisq.test(tab, correct = TRUE)</code>。</p></blockquote>
 <h2 id="4-多于两组anova--kruskal">4. 多于两组:ANOVA / Kruskal</h2>
 <p>比较三个分期组的 D2cc:</p>
-<div class="code-card">
+<div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
-    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 近似正态 → 单因素方差分析 ANOVA</span>
 </span></span><span class="line"><span class="cl"><span class="n">fit</span> <span class="o">&lt;-</span> <span class="nf">aov</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">figo</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
@@ -141,6 +160,7 @@
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1"># 偏态 → Kruskal-Wallis(非参数版 ANOVA)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">kruskal.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">figo</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
 </div>
 <blockquote>
 <p>⚠️ <strong>别用多次 t 检验代替 ANOVA</strong>:做的比较越多,假阳性越容易堆积。先用 ANOVA 看整体,再用 TukeyHSD 做校正后的两两比较。</p></blockquote>
@@ -303,6 +323,9 @@
   });
 })();
 </script>
+
+
+<script type="module" src="/js/webr-run.js?v=1781882340"></script>
 
 
 
