@@ -7,9 +7,9 @@
 <meta name="description" content="学分析之前先建立直觉:删失、生存函数、风险比、p值与置信区间、为什么要检验假设。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
-<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
 
 
 <meta property="og:title" content="Lesson 4 · 统计概念入门 Stats You Need First — Yiming Xu" />
@@ -56,7 +56,7 @@
     <li><a href="#4-风险-hazard-与风险比-hr">4. 风险 Hazard 与风险比 HR</a></li>
     <li><a href="#5-p-值与-95-置信区间">5. p 值与 95% 置信区间</a></li>
     <li><a href="#6-比例风险假设-proportional-hazards">6. 比例风险假设 Proportional Hazards</a></li>
-    <li><a href="#7--肿瘤研究常见坑把表达量按中位数二分">7. 🔬 肿瘤研究常见坑:把表达量按中位数二分</a></li>
+    <li><a href="#7--常见坑把连续变量按中位数二分">7. 🔬 常见坑:把连续变量按中位数二分</a></li>
     <li><a href="#小结">小结</a></li>
     <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
     <li><a href="#常见误解-common-misconceptions">常见误解 Common misconceptions</a></li>
@@ -119,7 +119,7 @@
   </tbody>
 </table>
 <blockquote>
-<p>别和这两个混了:<strong>fold-change / log2FC</strong>(<a href="../06-deseq2/">Lesson 6</a>)说的是基因表达量差几倍;<strong>odds ratio (OR)</strong> 说的是&quot;发生 vs 不发生&quot;的比值比,用于逻辑回归。HR 说的是&quot;事件发生的速率&quot;之比,带时间维度。</p></blockquote>
+<p>别把它和 <strong>odds ratio(OR)</strong> 混了:OR(<a href="../07-logistic-regression/">Lesson 7 逻辑回归</a>)说的是&quot;发生 vs 不发生&quot;的<strong>比值比</strong>(如是否出现毒性);HR 说的是事件发生的<strong>速率</strong>之比,带时间维度。两者 &gt;1 都表示风险升高,但一个不含时间、一个含时间。</p></blockquote>
 <h2 id="5-p-值与-95-置信区间">5. p 值与 95% 置信区间</h2>
 <ul>
 <li><strong>p 值</strong>:假如&quot;两组其实没差别&quot;,观察到当前(或更极端)结果的概率。p 越小,越不像是偶然。常用 0.05 当门槛。</li>
@@ -130,12 +130,12 @@
 <h2 id="6-比例风险假设-proportional-hazards">6. 比例风险假设 Proportional Hazards</h2>
 <p>Cox 模型有个核心前提:<strong>两组的风险比 HR 不随时间变化</strong>(始终保持比例)。比如&quot;治疗组风险一直是对照组的 0.6 倍&quot;,而不是&quot;前期 0.3、后期 1.5&quot;。</p>
 <p>如果这个假设被破坏(例如两条生存曲线中途交叉),Cox 给出的那个&quot;单一 HR&quot;就没意义了。所以用完 Cox <strong>一定要检验</strong>这个假设(<a href="../09-survival/">Lesson 9</a> 用 <code>cox.zph()</code>),不能默认它成立。</p>
-<h2 id="7--肿瘤研究常见坑把表达量按中位数二分">7. 🔬 肿瘤研究常见坑:把表达量按中位数二分</h2>
-<p>肿瘤研究里特别常见的做法:把连续的基因表达量按<strong>中位数</strong>切成&quot;高表达 / 低表达&quot;两组,再画 KM 曲线。它直观、好画,但代价不小:</p>
+<h2 id="7--常见坑把连续变量按中位数二分">7. 🔬 常见坑:把连续变量按中位数二分</h2>
+<p>临床研究里特别常见的做法:把一个连续变量(如剂量 D2cc、年龄、某指标)按<strong>中位数</strong>切成&quot;高 / 低&quot;两组,再画 KM 曲线或做比较。它直观、好画,但代价不小:</p>
 <ul>
 <li><strong>丢信息</strong>:把连续变量压成两类,统计效力下降。</li>
-<li><strong>结果不稳</strong>:换个切点(中位数 vs 三分位 vs 最优切点)结论可能就变了——这也是&quot;最优切点&quot;被批评为容易制造假阳性的原因。</li>
-<li><strong>更稳妥的做法</strong>:尽量把表达量当连续变量放进 Cox 模型;若一定要分组,预先定好切点并说明理由,别在看完数据后挑一个最&quot;显著&quot;的切点。</li>
+<li><strong>结果不稳</strong>:换个切点(中位数 vs 三分位 vs 最优切点)结论可能就变了——这也是&quot;最优切点&quot;被批评为容易制造假阳性的原因(<a href="../07-logistic-regression/">Lesson 7</a> 用 ROC 找剂量阈值时也要警惕这一点)。</li>
+<li><strong>更稳妥的做法</strong>:尽量把它当<strong>连续变量</strong>放进 Cox / 回归模型;若一定要分组,预先定好切点并说明理由,别在看完数据后挑一个最&quot;显著&quot;的切点。</li>
 </ul>
 <h2 id="小结">小结</h2>
 <table>
@@ -222,7 +222,7 @@
     
     <nav class="pager">
       <a class="prev" href="/r-course/03-ggplot/">← Lesson 3 · 可视化基础 ggplot2</a>
-      <a class="next" href="/r-course/05-bioconductor/">Lesson 5 · 进入 Bioconductor →</a>
+      <a class="next" href="/r-course/05-table-one/">Lesson 5 · 描述性统计与基线表 Table 1 →</a>
     </nav>
   </article>
 

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 6 · 组间比较 Group Comparisons — Yiming Xu</title>
+<meta name="description" content="比较两组或多组:t 检验、Wilcoxon、卡方/Fisher、ANOVA,以及什么时候用哪个。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+
+
+<meta property="og:title" content="Lesson 6 · 组间比较 Group Comparisons — Yiming Xu" />
+<meta property="og:description" content="比较两组或多组:t 检验、Wilcoxon、卡方/Fisher、ANOVA,以及什么时候用哪个。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/06-group-comparisons/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 6 · 组间比较 Group Comparisons</h1>
+      <p class="page-sub">比较两组或多组:t 检验、Wilcoxon、卡方/Fisher、ANOVA,以及什么时候用哪个。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#0-准备加载包--造数据">0. 准备:加载包 + 造数据</a></li>
+    <li><a href="#1-先看分布选检验的前提">1. 先看分布:选检验的前提</a></li>
+    <li><a href="#2-两组连续变量t-检验-vs-wilcoxon">2. 两组连续变量:t 检验 vs Wilcoxon</a></li>
+    <li><a href="#3-分类变量卡方-vs-fisher">3. 分类变量:卡方 vs Fisher</a></li>
+    <li><a href="#4-多于两组anova--kruskal">4. 多于两组:ANOVA / Kruskal</a></li>
+    <li><a href="#5-速查什么时候用哪个">5. 速查:什么时候用哪个</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p>临床研究里最常问的一类问题:<strong>这个指标在两组之间有没有差别?</strong>(比如两种放疗方案的膀胱 D2cc 是否不同、两组的毒性发生率是否不同)。这一课讲清楚常用的组间比较检验,以及<strong>什么情况用哪个</strong>——也就是 <a href="../05-table-one/">Lesson 5</a> 里 <code>add_p()</code> 背后到底在做什么。</p>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>判断一个连续变量是否近似正态,从而选对检验</li>
+<li>比较两组(t 检验 / Wilcoxon)、多组(ANOVA / Kruskal)、分类变量(卡方 / Fisher)</li>
+<li>知道每种检验的适用前提</li>
+</ul>
+<h2 id="0-准备加载包--造数据">0. 准备:加载包 + 造数据</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">dplyr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">dat</span> <span class="o">&lt;-</span> <span class="nf">tibble</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">arm</span> <span class="o">=</span> <span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;EBRT+BT&#34;</span><span class="p">,</span> <span class="s">&#34;BT only&#34;</span><span class="p">),</span> <span class="n">each</span> <span class="o">=</span> <span class="m">25</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="n">d2cc</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="nf">rnorm</span><span class="p">(</span><span class="m">25</span><span class="p">,</span> <span class="m">82</span><span class="p">,</span> <span class="m">6</span><span class="p">),</span> <span class="nf">rnorm</span><span class="p">(</span><span class="m">25</span><span class="p">,</span> <span class="m">72</span><span class="p">,</span> <span class="m">6</span><span class="p">)),</span>         <span class="c1"># 膀胱 D2cc(连续)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">figo</span> <span class="o">=</span> <span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;I&#34;</span><span class="p">,</span><span class="s">&#34;II&#34;</span><span class="p">,</span><span class="s">&#34;III&#34;</span><span class="p">),</span> <span class="m">50</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">),</span> <span class="c1"># 分期</span>
+</span></span><span class="line"><span class="cl">  <span class="n">late_tox</span> <span class="o">=</span> <span class="nf">rbinom</span><span class="p">(</span><span class="m">50</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">.4</span><span class="p">,</span> <span class="m">.15</span><span class="p">),</span> <span class="n">each</span> <span class="o">=</span> <span class="m">25</span><span class="p">))</span>  <span class="c1"># 晚期毒性 0/1</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span></span></span></code></pre></div>
+</div>
+<h2 id="1-先看分布选检验的前提">1. 先看分布:选检验的前提</h2>
+<p>连续变量该用 t 检验(要求近似正态)还是 Wilcoxon(不要求),先看分布:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">hist</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>                       <span class="c1"># 直方图看形状</span>
+</span></span><span class="line"><span class="cl"><span class="nf">qqnorm</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">);</span> <span class="nf">qqline</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>   <span class="c1"># Q-Q 图,点贴直线≈正态</span>
+</span></span><span class="line"><span class="cl"><span class="nf">shapiro.test</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>               <span class="c1"># 正态性检验:p&gt;0.05 ≈ 不违反正态</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p>⚠️ 小样本时正态性检验不敏感,<strong>图比检验更可靠</strong>。拿不准时优先选不要求正态的非参数检验更稳。</p></blockquote>
+<h2 id="2-两组连续变量t-检验-vs-wilcoxon">2. 两组连续变量:t 检验 vs Wilcoxon</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 近似正态 → 两样本 t 检验(默认 Welch,不假设方差相等,更稳)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">t.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">arm</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 偏态 / 小样本 / 有序 → Mann-Whitney(Wilcoxon 秩和)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">wilcox.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">arm</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>看输出的 <code>p-value</code> 和<strong>置信区间</strong>(t 检验给均值差的 CI)。报告时别只报 p,把效应大小一起报(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p>
+<blockquote>
+<p>配对数据(同一批病人前后、左右配对)用 <code>t.test(..., paired = TRUE)</code> 或 <code>wilcox.test(..., paired = TRUE)</code>。</p></blockquote>
+<h2 id="3-分类变量卡方-vs-fisher">3. 分类变量:卡方 vs Fisher</h2>
+<p>比较两组的毒性发生率(都是分类):</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">tab</span> <span class="o">&lt;-</span> <span class="nf">table</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">arm</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">late_tox</span><span class="p">)</span>   <span class="c1"># 2×2 列联表</span>
+</span></span><span class="line"><span class="cl"><span class="n">tab</span>
+</span></span><span class="line"><span class="cl"><span class="nf">chisq.test</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span>                       <span class="c1"># 卡方检验</span>
+</span></span><span class="line"><span class="cl"><span class="nf">fisher.test</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span>                      <span class="c1"># 期望计数 &lt;5 的格子多时,用 Fisher 精确检验</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p>⚠️ 规则:任何格子的<strong>期望计数 &lt; 5</strong> 时,卡方不可靠,改用 <code>fisher.test()</code>。卡方若想看校正,<code>chisq.test(tab, correct = TRUE)</code>。</p></blockquote>
+<h2 id="4-多于两组anova--kruskal">4. 多于两组:ANOVA / Kruskal</h2>
+<p>比较三个分期组的 D2cc:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 近似正态 → 单因素方差分析 ANOVA</span>
+</span></span><span class="line"><span class="cl"><span class="n">fit</span> <span class="o">&lt;-</span> <span class="nf">aov</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">figo</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">TukeyHSD</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>          <span class="c1"># 显著后,两两比较看是哪几组不同</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 偏态 → Kruskal-Wallis(非参数版 ANOVA)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">kruskal.test</span><span class="p">(</span><span class="n">d2cc</span> <span class="o">~</span> <span class="n">figo</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p>⚠️ <strong>别用多次 t 检验代替 ANOVA</strong>:做的比较越多,假阳性越容易堆积。先用 ANOVA 看整体,再用 TukeyHSD 做校正后的两两比较。</p></blockquote>
+<h2 id="5-速查什么时候用哪个">5. 速查:什么时候用哪个</h2>
+<table>
+  <thead>
+      <tr>
+          <th>数据</th>
+          <th>两组</th>
+          <th>多组(&gt;2)</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>连续 · 近似正态</td>
+          <td>t 检验 <code>t.test</code></td>
+          <td>ANOVA <code>aov</code> + <code>TukeyHSD</code></td>
+      </tr>
+      <tr>
+          <td>连续 · 偏态/小样本/有序</td>
+          <td>Wilcoxon <code>wilcox.test</code></td>
+          <td>Kruskal <code>kruskal.test</code></td>
+      </tr>
+      <tr>
+          <td>分类</td>
+          <td>卡方 <code>chisq.test</code>(或 Fisher)</td>
+          <td>卡方 <code>chisq.test</code></td>
+      </tr>
+      <tr>
+          <td>配对</td>
+          <td>加 <code>paired = TRUE</code></td>
+          <td>重复测量(进阶)</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>你想比较</th>
+          <th>用什么</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>看是否正态</td>
+          <td><code>hist()</code> / <code>qqnorm()</code> / <code>shapiro.test()</code></td>
+      </tr>
+      <tr>
+          <td>两组连续</td>
+          <td><code>t.test()</code> / <code>wilcox.test()</code></td>
+      </tr>
+      <tr>
+          <td>分类(率)</td>
+          <td><code>chisq.test()</code> / <code>fisher.test()</code></td>
+      </tr>
+      <tr>
+          <td>多组连续</td>
+          <td><code>aov()</code>+<code>TukeyHSD()</code> / <code>kruskal.test()</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>下一课 <a href="../07-logistic-regression/">Lesson 7 · 逻辑回归</a>:当你想同时校正多个因素来预测一个&quot;是/否&quot;结局(如毒性)时,组间比较就不够了,需要回归。</p>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li>这些都是 base R <code>stats</code> 自带的函数,<code>?t.test</code> 等可直接看帮助。</li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li><code>grouping factor must have exactly 2 levels</code>(t.test) → 分组列多于两组,改用 ANOVA,或先筛成两组。</li>
+<li><code>Chi-squared approximation may be incorrect</code> → 期望计数太小,改用 <code>fisher.test()</code>。</li>
+<li>公式 <code>y ~ group</code> 报错 → 确认 <code>group</code> 是因子或字符,且 <code>data =</code> 指对了数据框。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/05-table-one/">← Lesson 5 · 描述性统计与基线表 Table 1</a>
+      <a class="next" href="/r-course/07-logistic-regression/">Lesson 7 · 逻辑回归 Logistic Regression →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

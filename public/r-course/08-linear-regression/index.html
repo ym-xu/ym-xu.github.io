@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 8 · 相关与线性回归 Correlation &amp; Linear Regression — Yiming Xu</title>
+<meta name="description" content="连续结局的建模:相关系数、散点&#43;拟合线、线性回归与剂量-反应关系。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+
+
+<meta property="og:title" content="Lesson 8 · 相关与线性回归 Correlation &amp; Linear Regression — Yiming Xu" />
+<meta property="og:description" content="连续结局的建模:相关系数、散点&#43;拟合线、线性回归与剂量-反应关系。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/08-linear-regression/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 8 · 相关与线性回归 Correlation &amp; Linear Regression</h1>
+      <p class="page-sub">连续结局的建模:相关系数、散点&#43;拟合线、线性回归与剂量-反应关系。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#0-准备加载包--造数据">0. 准备:加载包 + 造数据</a></li>
+    <li><a href="#1-相关pearson-vs-spearman">1. 相关:Pearson vs Spearman</a></li>
+    <li><a href="#2-散点图--拟合线">2. 散点图 + 拟合线</a></li>
+    <li><a href="#3-线性回归">3. 线性回归</a></li>
+    <li><a href="#4-多元线性回归校正其他变量">4. 多元线性回归:校正其他变量</a></li>
+    <li><a href="#5-检查模型假设">5. 检查模型假设</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p><a href="../07-logistic-regression/">Lesson 7</a> 处理&quot;是/否&quot;结局;这一课处理<strong>连续结局</strong>——比如某个剂量学指标和另一个连续量之间的关系,或<strong>剂量-反应</strong>趋势。核心工具是相关分析和线性回归。</p>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>算两个连续变量的相关系数并检验</li>
+<li>画散点图 + 拟合线</li>
+<li>用线性回归量化关系、并校正其他变量</li>
+</ul>
+<h2 id="0-准备加载包--造数据">0. 准备:加载包 + 造数据</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">ggplot2</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">broom</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">n</span> <span class="o">&lt;-</span> <span class="m">80</span>
+</span></span><span class="line"><span class="cl"><span class="n">dat</span> <span class="o">&lt;-</span> <span class="nf">data.frame</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">brachy_dose</span> <span class="o">=</span> <span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">25</span><span class="p">,</span> <span class="m">4</span><span class="p">),</span>                 <span class="c1"># 近距离放疗剂量(Gy)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">age</span> <span class="o">=</span> <span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">66</span><span class="p">,</span> <span class="m">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">dat</span><span class="o">$</span><span class="n">d90</span> <span class="o">&lt;-</span> <span class="m">1.4</span> <span class="o">*</span> <span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span> <span class="o">+</span> <span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>  <span class="c1"># D90 随处方剂量上升(造关系)</span></span></span></code></pre></div>
+</div>
+<h2 id="1-相关pearson-vs-spearman">1. 相关:Pearson vs Spearman</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">cor</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">)</span>                              <span class="c1"># Pearson(线性、要求近似正态)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">cor</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s">&#34;spearman&#34;</span><span class="p">)</span>         <span class="c1"># Spearman(秩相关,抗偏态/非线性)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">cor.test</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">brachy_dose</span><span class="p">,</span> <span class="n">dat</span><span class="o">$</span><span class="n">d90</span><span class="p">)</span>                         <span class="c1"># 带 p 值和置信区间</span></span></span></code></pre></div>
+</div>
+<p>相关系数 r 在 −1~1 之间:接近 ±1 强相关,接近 0 无线性关系。</p>
+<blockquote>
+<p>⚠️ <strong>相关 ≠ 因果</strong>,而且相关只衡量<strong>线性</strong>关系——明显弯曲的关系 Pearson 会低估,先画散点图看形状。</p></blockquote>
+<h2 id="2-散点图--拟合线">2. 散点图 + 拟合线</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">brachy_dose</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d90</span><span class="p">))</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">geom_point</span><span class="p">(</span><span class="n">alpha</span> <span class="o">=</span> <span class="m">.6</span><span class="p">)</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">geom_smooth</span><span class="p">(</span><span class="n">method</span> <span class="o">=</span> <span class="s">&#34;lm&#34;</span><span class="p">)</span> <span class="o">+</span>          <span class="c1"># 线性拟合 + 置信带</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;Brachy dose (Gy)&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;D90 (Gy)&#34;</span><span class="p">)</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">theme_classic</span><span class="p">()</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p>用了 <a href="../03-ggplot/">Lesson 3</a> 的 ggplot;<code>method = &quot;lm&quot;</code> 画的就是下面线性回归的那条线。</p></blockquote>
+<h2 id="3-线性回归">3. 线性回归</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">d90</span> <span class="o">~</span> <span class="n">brachy_dose</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>输出里重点看:</p>
+<ul>
+<li><strong>斜率(brachy_dose 的 Estimate)</strong>:处方剂量每升高 1 Gy,D90 平均升高多少 Gy</li>
+<li><strong>p 值</strong>:斜率是否显著不为 0</li>
+<li><strong>R²(Multiple R-squared)</strong>:模型解释了 y 多少比例的变异(0~1)</li>
+</ul>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">tidy</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">conf.int</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># broom:整洁的系数表(含 95%CI)</span></span></span></code></pre></div>
+</div>
+<h2 id="4-多元线性回归校正其他变量">4. 多元线性回归:校正其他变量</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">fit2</span> <span class="o">&lt;-</span> <span class="nf">lm</span><span class="p">(</span><span class="n">d90</span> <span class="o">~</span> <span class="n">brachy_dose</span> <span class="o">+</span> <span class="n">age</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">dat</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">tbl_regression</span><span class="p">(</span><span class="n">fit2</span><span class="p">)</span>         <span class="c1"># 论文级回归表(连续结局不用 exponentiate)</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p>🔬 这就是剂量学论文里&quot;在校正年龄后,处方剂量仍与 D90 显著相关&quot;那类结论的来源。</p></blockquote>
+<h2 id="5-检查模型假设">5. 检查模型假设</h2>
+<p>线性回归有前提(残差正态、等方差、线性)。一行画四张诊断图:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">par</span><span class="p">(</span><span class="n">mfrow</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">2</span><span class="p">));</span> <span class="nf">plot</span><span class="p">(</span><span class="n">fit2</span><span class="p">);</span> <span class="nf">par</span><span class="p">(</span><span class="n">mfrow</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">))</span></span></span></code></pre></div>
+</div>
+<ul>
+<li>左上 <em>Residuals vs Fitted</em>:点应随机散布,无明显弯曲(线性 &amp; 等方差)</li>
+<li>右上 <em>Q-Q</em>:点贴直线(残差正态)</li>
+<li>⚠️ 若残差呈漏斗形或弯曲,说明关系非线性或方差不齐,结论要打折扣</li>
+</ul>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>你想做</th>
+          <th>用什么</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>相关系数 + 检验</td>
+          <td><code>cor()</code> / <code>cor.test()</code>(Pearson/Spearman)</td>
+      </tr>
+      <tr>
+          <td>散点 + 拟合线</td>
+          <td><code>geom_point()</code> + <code>geom_smooth(method=&quot;lm&quot;)</code></td>
+      </tr>
+      <tr>
+          <td>线性回归</td>
+          <td><code>lm(y ~ x)</code> + <code>summary()</code></td>
+      </tr>
+      <tr>
+          <td>整洁系数表</td>
+          <td><code>broom::tidy()</code> / <code>tbl_regression()</code></td>
+      </tr>
+      <tr>
+          <td>检查假设</td>
+          <td><code>plot(fit)</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>下一课 <a href="../09-survival/">Lesson 9 · 生存分析</a>:当结局是&quot;发生事件的时间&quot;(生存、复发)时,需要专门的生存模型。</p>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li><code>?lm</code>、<code>?cor.test</code> 自带帮助;broom 让模型输出可直接进表格/绘图。</li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li>散点拟合线没出现 → <code>geom_smooth(method = &quot;lm&quot;)</code> 拼写;数据点太少也可能不画置信带。</li>
+<li>R² 很低但 p 显著 → 关系真实但很弱,样本大也能显著;别只看 p,看效应大小。</li>
+<li>残差图明显弯曲 → 关系非线性,考虑对变量取对数或加二次项。</li>
+<li><code>cor()</code> 返回 <code>NA</code> → 有缺失值,加 <code>use = &quot;complete.obs&quot;</code>。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/07-logistic-regression/">← Lesson 7 · 逻辑回归 Logistic Regression</a>
+      <a class="next" href="/r-course/09-survival/">Lesson 9 · 生存分析 Survival Analysis →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

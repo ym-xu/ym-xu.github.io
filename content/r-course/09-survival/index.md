@@ -111,7 +111,7 @@ survfit2(Surv(time, status) ~ sex, data = lung2) %>%
 
 你会看到女性(Female)的曲线在男性上方——女性生存更好。但**光看图不够,得做统计检验**(下一步)。
 
-> 🔬 在你自己的肿瘤数据里,这里最常见的不是 `sex`,而是"某基因高表达 vs 低表达"。怎么分组、为什么别随便按中位数二分,回顾 Lesson 4。
+> 🔬 在你自己的数据里,这里的分组常常是治疗方案、FIGO 分期、或某个剂量学指标的高/低。怎么分组、为什么别随便按中位数二分,回顾 [Lesson 4](../04-stats-concepts/)。
 
 ---
 
@@ -199,7 +199,7 @@ cox.zph(fit)
    mydata <- mydata %>%
      mutate(time = as.numeric(as_date(last_date) - as_date(dx_date)))  # 天数
    ```
-3. **分组/协变量**:基因高低、分期、年龄等,整理成列(回顾 Lesson 2)。
+3. **分组/协变量**:治疗方案、FIGO 分期、年龄、剂量等,整理成列(回顾 [Lesson 2](../02-data-wrangling/))。
 
 整理好后,把上面所有代码里的 `lung2` 换成你的数据、列名换成你的列名,就能跑通整套流程。
 
@@ -218,7 +218,8 @@ cox.zph(fit)
 ## 延伸 Further reading
 
 - 本课对标 **Zabor 教程 Part 1**,强烈建议照着原文再走一遍。
-- **Part 2** 时间依赖协变量、**Part 3** 竞争风险(Fine-Gray,肿瘤研究常见:患者可能死于非癌原因)、**Part 4** 假设诊断——需要时再学。
+- **竞争风险**(患者可能死于非肿瘤原因、cause-specific survival)是放疗/高龄人群的常见问题,单独放在 [Lesson 10](../10-competing-risks/) 讲(对应 Zabor Part 3)。
+- Zabor **Part 2** 时间依赖协变量、**Part 4** 假设诊断——需要时再学。
 
 ## 常见报错 Troubleshooting
 

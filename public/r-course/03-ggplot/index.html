@@ -7,9 +7,9 @@
 <meta name="description" content="用图层语法画箱线图、散点图、柱状图,导出投稿质量的图片。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
-<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
 
 
 <meta property="og:title" content="Lesson 3 · 可视化基础 ggplot2 — Yiming Xu" />
@@ -53,7 +53,7 @@
     <li><a href="#0-准备加载包">0. 准备:加载包</a></li>
     <li><a href="#1-先造一张练习数据">1. 先造一张练习数据</a></li>
     <li><a href="#2-图层语法三件套">2. 图层语法:三件套</a></li>
-    <li><a href="#3-箱线图比较两组表达">3. 箱线图:比较两组表达</a></li>
+    <li><a href="#3-箱线图比较两组">3. 箱线图:比较两组</a></li>
     <li><a href="#4-用颜色区分分组">4. 用颜色区分分组</a></li>
     <li><a href="#5-分面一张拆成多张">5. 分面:一张拆成多张</a></li>
     <li><a href="#6-主题与标注让图能见人">6. 主题与标注:让图能见人</a></li>
@@ -67,10 +67,10 @@
 
     <div class="content"><p><code>ggplot2</code> 是 R 画图的事实标准,论文里的图大多用它做。它的核心是<strong>图层语法</strong>:一张图 = 数据 + 映射(aes)+ 几何对象(geom),像搭积木一样一层层叠。学会这套心智模型,什么图都能画。</p>
 <blockquote>
-<p>接着 <a href="../02-data-wrangling/">Lesson 2</a>。后面的火山图(<a href="../07-volcano-heatmap/">Lesson 7</a>)、生存曲线(<a href="../09-survival/">Lesson 9</a>)也都是 ggplot 风格。</p></blockquote>
+<p>接着 <a href="../02-data-wrangling/">Lesson 2</a>。后面的生存曲线(<a href="../09-survival/">Lesson 9</a>)、回归诊断图(<a href="../08-linear-regression/">Lesson 8</a>)也都是 ggplot 风格。</p></blockquote>
 <h2 id="这一课你会做出什么">这一课你会做出什么</h2>
 <ul>
-<li>一张比较两组基因表达的箱线图</li>
+<li>一张比较两组(如两种放疗方案)某指标的箱线图</li>
 <li>加上分组配色、分面、标题</li>
 <li>导出一张 300 dpi、投稿能用的图片</li>
 </ul>
@@ -84,23 +84,23 @@
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">ggplot2</span><span class="p">)</span>   <span class="c1"># 或 library(tidyverse),一起把 dplyr 也加载了</span></span></span></code></pre></div>
 </div>
 <h2 id="1-先造一张练习数据">1. 先造一张练习数据</h2>
-<p>模拟一份&quot;肿瘤 vs 正常&quot;的基因表达数据,让你能直接跑:</p>
+<p>模拟一份&quot;两种放疗方案&quot;的膀胱 D2cc 剂量数据,让你能直接跑:</p>
 <div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="n">expr</span> <span class="o">&lt;-</span> <span class="nf">data.frame</span><span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="n">group</span>    <span class="o">=</span> <span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;Tumor&#34;</span><span class="p">,</span> <span class="s">&#34;Normal&#34;</span><span class="p">),</span> <span class="n">each</span> <span class="o">=</span> <span class="m">30</span><span class="p">),</span>
-</span></span><span class="line"><span class="cl">  <span class="n">gene_expr</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="nf">rnorm</span><span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="m">12</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="m">2</span><span class="p">),</span>   <span class="c1"># 肿瘤组表达偏高</span>
-</span></span><span class="line"><span class="cl">                <span class="nf">rnorm</span><span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="m">8</span><span class="p">,</span>  <span class="n">sd</span> <span class="o">=</span> <span class="m">2</span><span class="p">)),</span>  <span class="c1"># 正常组偏低</span>
-</span></span><span class="line"><span class="cl">  <span class="n">stage</span>    <span class="o">=</span> <span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;Early&#34;</span><span class="p">,</span> <span class="s">&#34;Late&#34;</span><span class="p">),</span> <span class="m">60</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">dat</span> <span class="o">&lt;-</span> <span class="nf">data.frame</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">arm</span>   <span class="o">=</span> <span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;EBRT+BT&#34;</span><span class="p">,</span> <span class="s">&#34;BT only&#34;</span><span class="p">),</span> <span class="n">each</span> <span class="o">=</span> <span class="m">30</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">  <span class="n">d2cc</span>  <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="nf">rnorm</span><span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="m">82</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="m">6</span><span class="p">),</span>    <span class="c1"># 联合组剂量偏高</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">rnorm</span><span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="m">72</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="m">6</span><span class="p">)),</span>   <span class="c1"># 单纯近距离组偏低</span>
+</span></span><span class="line"><span class="cl">  <span class="n">figo</span>  <span class="o">=</span> <span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;I/II&#34;</span><span class="p">,</span> <span class="s">&#34;III&#34;</span><span class="p">),</span> <span class="m">60</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">dat</span><span class="p">)</span></span></span></code></pre></div>
 </div>
 <blockquote>
-<p><code>set.seed(1)</code> 固定随机数,保证你跑出来的图和这里一样。</p></blockquote>
+<p><code>set.seed(1)</code> 固定随机数,保证你跑出来的图和这里一样。<code>d2cc</code> = 膀胱 2cc 剂量。</p></blockquote>
 <h2 id="2-图层语法三件套">2. 图层语法:三件套</h2>
 <p>每张 ggplot 都从这个模板起步——<strong>数据 → 映射 <code>aes()</code> → 几何对象 <code>geom_*()</code></strong>:</p>
 <div class="code-card">
@@ -108,24 +108,24 @@
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">group</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">gene_expr</span><span class="p">))</span> <span class="o">+</span>   <span class="c1"># 数据 + 把 group/expr 映射到 x/y</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">geom_point</span><span class="p">()</span>                                  <span class="c1"># 用点把它画出来</span></span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d2cc</span><span class="p">))</span> <span class="o">+</span>   <span class="c1"># 数据 + 把 arm/d2cc 映射到 x/y</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">geom_point</span><span class="p">()</span>                          <span class="c1"># 用点把它画出来</span></span></span></code></pre></div>
 </div>
 <blockquote>
 <p>⚠️ ggplot 用 <code>+</code> 连接图层(不是管道 <code>%&gt;%</code>)。这是新手最常混的一点。</p></blockquote>
-<h2 id="3-箱线图比较两组表达">3. 箱线图:比较两组表达</h2>
-<p>比较分组最常用箱线图,再叠一层抖动点看清每个样本:</p>
+<h2 id="3-箱线图比较两组">3. 箱线图:比较两组</h2>
+<p>比较分组最常用箱线图,再叠一层抖动点看清每个病人:</p>
 <div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">group</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">gene_expr</span><span class="p">))</span> <span class="o">+</span>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d2cc</span><span class="p">))</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_boxplot</span><span class="p">(</span><span class="n">outlier.shape</span> <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span> <span class="o">+</span>     <span class="c1"># 箱线图(先不画离群点,避免和下面的点重复)</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_jitter</span><span class="p">(</span><span class="n">width</span> <span class="o">=</span> <span class="m">0.15</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="m">0.5</span><span class="p">)</span> <span class="c1"># 抖动散点,alpha 设透明度</span></span></span></code></pre></div>
 </div>
 <blockquote>
-<p>🔬 这就是论文里&quot;基因 X 在肿瘤组显著高表达&quot;那类图的雏形。</p></blockquote>
+<p>🔬 这就是论文里&quot;两种方案的膀胱受量是否不同&quot;那类图的雏形(检验见 <a href="../06-group-comparisons/">Lesson 6</a>)。</p></blockquote>
 <h2 id="4-用颜色区分分组">4. 用颜色区分分组</h2>
 <p>把分组映射到 <code>fill</code>(填充色),图例会自动生成:</p>
 <div class="code-card">
@@ -133,7 +133,7 @@
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">group</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">gene_expr</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">group</span><span class="p">))</span> <span class="o">+</span>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">arm</span><span class="p">))</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_boxplot</span><span class="p">()</span></span></span></code></pre></div>
 </div>
 <blockquote>
@@ -145,9 +145,9 @@
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">group</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">gene_expr</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">group</span><span class="p">))</span> <span class="o">+</span>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">arm</span><span class="p">))</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_boxplot</span><span class="p">()</span> <span class="o">+</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">facet_wrap</span><span class="p">(</span><span class="o">~</span> <span class="n">stage</span><span class="p">)</span>        <span class="c1"># 按 stage 拆成 Early / Late 两块</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl">  <span class="nf">facet_wrap</span><span class="p">(</span><span class="o">~</span> <span class="n">figo</span><span class="p">)</span>        <span class="c1"># 按 FIGO 分期拆成 I/II 与 III 两块</span></span></span></code></pre></div>
 </div>
 <h2 id="6-主题与标注让图能见人">6. 主题与标注:让图能见人</h2>
 <div class="code-card">
@@ -155,10 +155,10 @@
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">p</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">group</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">gene_expr</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">group</span><span class="p">))</span> <span class="o">+</span>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">p</span> <span class="o">&lt;-</span> <span class="nf">ggplot</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">fill</span> <span class="o">=</span> <span class="n">arm</span><span class="p">))</span> <span class="o">+</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">geom_boxplot</span><span class="p">()</span> <span class="o">+</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">title</span> <span class="o">=</span> <span class="s">&#34;Gene X expression&#34;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">       <span class="n">x</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;Expression (log2)&#34;</span><span class="p">)</span> <span class="o">+</span>   <span class="c1"># 标题与轴标签</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">title</span> <span class="o">=</span> <span class="s">&#34;Bladder D2cc by treatment&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">       <span class="n">x</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;Bladder D2cc (Gy)&#34;</span><span class="p">)</span> <span class="o">+</span>   <span class="c1"># 标题与轴标签</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">theme_classic</span><span class="p">(</span><span class="n">base_size</span> <span class="o">=</span> <span class="m">14</span><span class="p">)</span> <span class="o">+</span>             <span class="c1"># 干净的经典主题,字号 14</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">theme</span><span class="p">(</span><span class="n">legend.position</span> <span class="o">=</span> <span class="s">&#34;none&#34;</span><span class="p">)</span>             <span class="c1"># 分组已在 x 轴,隐藏图例</span>
 </span></span><span class="line"><span class="cl"><span class="n">p</span></span></span></code></pre></div>
@@ -170,8 +170,8 @@
     <span class="code-lang">r</span>
     <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggsave</span><span class="p">(</span><span class="s">&#34;gene_x_boxplot.pdf&#34;</span><span class="p">,</span> <span class="n">plot</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">4</span><span class="p">)</span>            <span class="c1"># 矢量,首选</span>
-</span></span><span class="line"><span class="cl"><span class="nf">ggsave</span><span class="p">(</span><span class="s">&#34;gene_x_boxplot.png&#34;</span><span class="p">,</span> <span class="n">plot</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">4</span><span class="p">,</span> <span class="n">dpi</span> <span class="o">=</span> <span class="m">300</span><span class="p">)</span> <span class="c1"># 位图,投稿要 300 dpi</span></span></span></code></pre></div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">ggsave</span><span class="p">(</span><span class="s">&#34;d2cc_boxplot.pdf&#34;</span><span class="p">,</span> <span class="n">plot</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">4</span><span class="p">)</span>            <span class="c1"># 矢量,首选</span>
+</span></span><span class="line"><span class="cl"><span class="nf">ggsave</span><span class="p">(</span><span class="s">&#34;d2cc_boxplot.png&#34;</span><span class="p">,</span> <span class="n">plot</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">4</span><span class="p">,</span> <span class="n">dpi</span> <span class="o">=</span> <span class="m">300</span><span class="p">)</span> <span class="c1"># 位图,投稿要 300 dpi</span></span></span></code></pre></div>
 </div>
 <blockquote>
 <p>⚠️ <strong>投稿尽量用 PDF 等矢量格式</strong>:放大不糊,期刊也偏好。要 PNG 时务必 <code>dpi = 300</code>,默认 72 会被审稿人嫌糊。</p></blockquote>
@@ -214,7 +214,7 @@
       </tr>
   </tbody>
 </table>
-<p>下一课 <a href="../04-stats-concepts/">Lesson 4 · 统计概念入门</a>,在动手做生信分析前补上必须的统计直觉。</p>
+<p>下一课 <a href="../04-stats-concepts/">Lesson 4 · 统计概念入门</a>,在动手做统计分析前补上必须的统计直觉。</p>
 <h2 id="延伸-further-reading">延伸 Further reading</h2>
 <ul>
 <li>ggplot2 官方速查表(Cheatsheet):<a href="https://rstudio.github.io/cheatsheets/data-visualization.pdf">https://rstudio.github.io/cheatsheets/data-visualization.pdf</a></li>
@@ -222,7 +222,7 @@
 <h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
 <ul>
 <li>图层之间用了 <code>%&gt;%</code> 而不是 <code>+</code> → ggplot 必须用 <code>+</code> 连接。</li>
-<li>颜色没变 / 没出图例 → 颜色要写在 <code>aes()</code> 里(<code>aes(fill = group)</code>)才会按数据上色;写在 <code>aes()</code> 外是固定颜色。</li>
+<li>颜色没变 / 没出图例 → 颜色要写在 <code>aes()</code> 里(<code>aes(fill = arm)</code>)才会按数据上色;写在 <code>aes()</code> 外是固定颜色。</li>
 <li>图不显示 → 在脚本里要把图对象打印出来(单独写一行 <code>p</code>),或确认 RStudio 右下 Plots 面板。</li>
 <li>中文标题变方框 → 需要设置支持中文的字体(如 <code>theme(text = element_text(family = &quot;PingFang SC&quot;))</code>)。</li>
 </ul>

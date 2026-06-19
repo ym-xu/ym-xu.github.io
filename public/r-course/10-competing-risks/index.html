@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lesson 10 · 竞争风险 Competing Risks — Yiming Xu</title>
+<meta name="description" content="当患者可能死于其他原因:cause-specific survival、累积发生率与 Fine-Gray 回归。" /><meta name="robots" content="noindex, nofollow" />
+<link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
+
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
+
+
+<meta property="og:title" content="Lesson 10 · 竞争风险 Competing Risks — Yiming Xu" />
+<meta property="og:description" content="当患者可能死于其他原因:cause-specific survival、累积发生率与 Fine-Gray 回归。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ym-xu.github.io/r-course/10-competing-risks/" />
+
+  </head>
+  <body class="kind-page section-r-course">
+    <header class="site-header">
+      <div class="container header">
+  <div class="brand">
+    <a href="/">Yiming Xu</a>
+  </div>
+  <nav class="nav"><a class="nav-item" href="/">Home</a>
+    <a class="nav-item" href="/projects/">Projects</a>
+    <a class="nav-item" href="/publications/">Publications</a>
+    <a class="nav-item" href="/posts/">Writing</a>
+    
+    
+      <button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+    
+  </nav>
+</div>
+
+    </header>
+    <main id="content" class="container">
+      
+  <article>
+    <header class="post-header">
+      <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
+      <h1>Lesson 10 · 竞争风险 Competing Risks</h1>
+      <p class="page-sub">当患者可能死于其他原因:cause-specific survival、累积发生率与 Fine-Gray 回归。</p>
+    </header>
+
+    
+    
+      <aside class="toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#这一课你会做出什么">这一课你会做出什么</a></li>
+    <li><a href="#0-准备加载包--数据">0. 准备:加载包 + 数据</a></li>
+    <li><a href="#1-为什么不能直接用-km">1. 为什么不能直接用 KM</a></li>
+    <li><a href="#2-累积发生率整体">2. 累积发生率(整体)</a></li>
+    <li><a href="#3-分组曲线--gray-检验">3. 分组曲线 + Gray 检验</a></li>
+    <li><a href="#4-fine-gray-回归subdistribution-hazard">4. Fine-Gray 回归(subdistribution hazard)</a></li>
+    <li><a href="#5-cause-specific-cox另一种思路">5. Cause-specific Cox(另一种思路)</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#延伸-further-reading">延伸 Further reading</a></li>
+    <li><a href="#常见报错-troubleshooting">常见报错 Troubleshooting</a></li>
+  </ul>
+</nav></aside>
+    
+
+    <div class="content"><p>肿瘤患者(尤其高龄、放疗人群)可能<strong>死于非肿瘤原因</strong>——这构成一个<strong>竞争事件</strong>。这时普通 Kaplan-Meier 会<strong>高估</strong>你关心的事件(如肿瘤特异性死亡)。这一课讲竞争风险分析,对标 <a href="https://www.emilyzabor.com/survival-analysis-in-r.html">Emily Zabor 教程</a> 的 <strong>Part 3</strong>,衔接 <a href="../09-survival/">Lesson 9</a>。</p>
+<blockquote>
+<p>🔬 当你的论文报告 <strong>cause-specific survival</strong>(肿瘤特异性生存)而不是总生存时,背后就是这套方法。</p></blockquote>
+<h2 id="这一课你会做出什么">这一课你会做出什么</h2>
+<ul>
+<li>用累积发生率(cumulative incidence)正确估计竞争事件下的发生概率</li>
+<li>画分组的累积发生率曲线 + Gray 检验</li>
+<li>用 Fine-Gray 回归估计竞争风险下的效应</li>
+</ul>
+<h2 id="0-准备加载包--数据">0. 准备:加载包 + 数据</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># install.packages(c(&#34;tidycmprsk&#34;, &#34;ggsurvfit&#34;, &#34;gtsummary&#34;))</span>
+</span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">tidycmprsk</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">ggsurvfit</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">data</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>        <span class="c1"># tidycmprsk 自带的示例临床试验数据</span>
+</span></span><span class="line"><span class="cl"><span class="nf">levels</span><span class="p">(</span><span class="n">trial</span><span class="o">$</span><span class="n">death_cr</span><span class="p">)</span>   <span class="c1"># 结局因子:&#34;censor&#34; / &#34;death from cancer&#34; / &#34;death other causes&#34;</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p><code>death_cr</code> 是一个<strong>带竞争事件的因子</strong>:第一层必须是删失(&ldquo;censor&rdquo;),其余是各类事件。你自己的数据要先整理成这种因子(肿瘤死亡 / 他因死亡 / 存活)。</p></blockquote>
+<h2 id="1-为什么不能直接用-km">1. 为什么不能直接用 KM</h2>
+<p>普通 KM 估&quot;肿瘤死亡&quot;时,会把&quot;他因死亡&quot;当成删失——等于假设这些人将来还可能发生肿瘤死亡,于是<strong>高估</strong>肿瘤死亡概率。竞争风险分析改用<strong>累积发生率函数(CIF)</strong>,正确处理&quot;被对手事件抢先&quot;的情况。</p>
+<ul>
+<li><strong>Cause-specific hazard</strong>:在仍存活的人中,某类死亡的瞬时风险(对应 cause-specific Cox)</li>
+<li><strong>Subdistribution hazard(Fine-Gray)</strong>:直接对累积发生率建模(对应 <code>crr</code>)</li>
+</ul>
+<h2 id="2-累积发生率整体">2. 累积发生率(整体)</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">cuminc</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">death_cr</span><span class="p">)</span> <span class="o">~</span> <span class="m">1</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>输出给出各时点&quot;肿瘤死亡&quot;和&quot;他因死亡&quot;的累积发生率(带 95%CI)。</p>
+<h2 id="3-分组曲线--gray-检验">3. 分组曲线 + Gray 检验</h2>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">cuminc</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">death_cr</span><span class="p">)</span> <span class="o">~</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">ggcuminc</span><span class="p">(</span><span class="n">outcome</span> <span class="o">=</span> <span class="s">&#34;death from cancer&#34;</span><span class="p">)</span> <span class="o">+</span>     <span class="c1"># 画&#34;肿瘤死亡&#34;这一事件</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_confidence_interval</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_risktable</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;Months&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;Cumulative incidence of cancer death&#34;</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<p>组间差异检验(Gray&rsquo;s test,竞争风险版的 log-rank):</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">cuminc</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">death_cr</span><span class="p">)</span> <span class="o">~</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_cuminc</span><span class="p">(</span><span class="n">times</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="m">24</span><span class="p">),</span> <span class="n">outcome</span> <span class="o">=</span> <span class="s">&#34;death from cancer&#34;</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_p</span><span class="p">()</span>        <span class="c1"># Gray 检验的 p 值</span></span></span></code></pre></div>
+</div>
+<h2 id="4-fine-gray-回归subdistribution-hazard">4. Fine-Gray 回归(subdistribution hazard)</h2>
+<p>校正多个因素、估计对累积发生率的效应:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">crr</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">death_cr</span><span class="p">)</span> <span class="o">~</span> <span class="n">age</span> <span class="o">+</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># 给出 subdistribution HR + 95%CI</span></span></span></code></pre></div>
+</div>
+<h2 id="5-cause-specific-cox另一种思路">5. Cause-specific Cox(另一种思路)</h2>
+<p>如果你关心的是&quot;病因机制&quot;,而非绝对发生概率,可用 cause-specific Cox:把他因死亡当作删失,套用 <a href="../09-survival/">Lesson 9</a> 的 <code>coxph</code>:</p>
+<div class="code-card">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">survival</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">trial</span><span class="o">$</span><span class="n">cancer_death</span> <span class="o">&lt;-</span> <span class="nf">as.numeric</span><span class="p">(</span><span class="n">trial</span><span class="o">$</span><span class="n">death_cr</span> <span class="o">==</span> <span class="s">&#34;death from cancer&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">cancer_death</span><span class="p">)</span> <span class="o">~</span> <span class="n">age</span> <span class="o">+</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
+</div>
+<blockquote>
+<p><strong>怎么选</strong>:想报告&quot;实际发生概率/做预测&quot; → Fine-Gray;想讲&quot;病因学/机制&quot; → cause-specific Cox。论文里两者常都报,并说明用了哪种。</p></blockquote>
+<h2 id="小结">小结</h2>
+<table>
+  <thead>
+      <tr>
+          <th>你想做</th>
+          <th>用什么</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>累积发生率</td>
+          <td><code>cuminc(Surv(time, status_factor) ~ 1)</code></td>
+      </tr>
+      <tr>
+          <td>分组曲线</td>
+          <td><code>cuminc(~ group) %&gt;% ggcuminc(outcome=)</code></td>
+      </tr>
+      <tr>
+          <td>组间检验(Gray)</td>
+          <td><code>tbl_cuminc() %&gt;% add_p()</code></td>
+      </tr>
+      <tr>
+          <td>Fine-Gray 回归</td>
+          <td><code>crr() %&gt;% tbl_regression(exp = TRUE)</code></td>
+      </tr>
+      <tr>
+          <td>Cause-specific Cox</td>
+          <td>把他因事件当删失,用 <code>coxph()</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>下一课 <a href="../11-capstone/">Lesson 11 · 用自己的数据发论文</a>,把全流程串到你自己的回顾性队列上。</p>
+<h2 id="延伸-further-reading">延伸 Further reading</h2>
+<ul>
+<li>Zabor 教程 <strong>Part 3 · Competing Risks</strong>:<a href="https://www.emilyzabor.com/survival-analysis-in-r.html">https://www.emilyzabor.com/survival-analysis-in-r.html</a></li>
+<li>tidycmprsk:<a href="https://mskcc-epi-bio.github.io/tidycmprsk/">https://mskcc-epi-bio.github.io/tidycmprsk/</a></li>
+</ul>
+<h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
+<ul>
+<li><code>death_cr</code> 不是因子 / 第一层不是删失 → 整理成因子,删失放第一层:<code>factor(x, levels = c(&quot;censor&quot;, ...))</code>。</li>
+<li><code>ggcuminc</code> 画出多条线分不清 → 用 <code>outcome =</code> 指定只画某一类事件。</li>
+<li><code>crr</code> 报错 → 确认结局是带竞争事件的因子;协变量无缺失。</li>
+<li>找不到 <code>cuminc</code>/<code>crr</code> → 没 <code>library(tidycmprsk)</code>。</li>
+</ul>
+</div>
+
+    
+    
+    
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+        
+      
+    
+      
+    
+    <nav class="pager">
+      <a class="prev" href="/r-course/09-survival/">← Lesson 9 · 生存分析 Survival Analysis</a>
+      <a class="next" href="/r-course/11-capstone/">Lesson 11 · 用自己的数据发论文 Capstone →</a>
+    </nav>
+  </article>
+
+    </main>
+    <footer>
+      <div class="container footer">
+  <div class="left">
+    <small>© 2026 Yiming Xu</small>
+  </div>
+  <div class="right">
+    <a href="/index.xml">RSS</a>
+  </div>
+</div>
+
+
+    </footer>
+    <script>
+
+(function() {
+  const key = 'prefers-color-scheme';
+  const btn = document.getElementById('theme-toggle');
+  const root = document.documentElement;
+  function applyTheme(t){ root.setAttribute('data-theme', t); }
+  function current(){ return localStorage.getItem(key) || 'auto'; }
+  function init(){
+    const t = current();
+    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
+    if (btn) btn.addEventListener('click', () => {
+      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(now); localStorage.setItem(key, now);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.code-copy');
+    if (!btn) return;
+    var card = btn.closest('.code-card');
+    var pre = card && card.querySelector('pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      var old = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
+    });
+  });
+})();
+</script>
+
+
+
+
+
+
+
+  </body>
+</html>

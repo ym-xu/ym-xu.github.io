@@ -7,9 +7,9 @@
 <meta name="description" content="肿瘤研究最高频的图:Kaplan-Meier 曲线与 Cox 回归,用现代 ggsurvfit &#43; gtsummary 出投稿级图表。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781879796" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781879796" />
-<link rel="stylesheet" href="/css/custom.css?v=1781879796" />
+<link rel="stylesheet" href="/css/styles.css?v=1781881189" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781881189" />
+<link rel="stylesheet" href="/css/custom.css?v=1781881189" />
 
 
 <meta property="og:title" content="Lesson 9 · 生存分析 Survival Analysis — Yiming Xu" />
@@ -195,7 +195,7 @@
 </div>
 <p>你会看到女性(Female)的曲线在男性上方——女性生存更好。但<strong>光看图不够,得做统计检验</strong>(下一步)。</p>
 <blockquote>
-<p>🔬 在你自己的肿瘤数据里,这里最常见的不是 <code>sex</code>,而是&quot;某基因高表达 vs 低表达&quot;。怎么分组、为什么别随便按中位数二分,回顾 Lesson 4。</p></blockquote>
+<p>🔬 在你自己的数据里,这里的分组常常是治疗方案、FIGO 分期、或某个剂量学指标的高/低。怎么分组、为什么别随便按中位数二分,回顾 <a href="../04-stats-concepts/">Lesson 4</a>。</p></blockquote>
 <hr>
 <h2 id="5-x-年生存率-与-中位生存期">5. x 年生存率 与 中位生存期</h2>
 <p>论文里常报&quot;1 年生存率&quot;和&quot;中位生存期&quot;。注意 <code>time</code> 是天,1 年 = <code>365.25</code>:</p>
@@ -285,7 +285,7 @@
 </div>
 </li>
 <li>
-<p><strong>分组/协变量</strong>:基因高低、分期、年龄等,整理成列(回顾 Lesson 2)。</p>
+<p><strong>分组/协变量</strong>:治疗方案、FIGO 分期、年龄、剂量等,整理成列(回顾 <a href="../02-data-wrangling/">Lesson 2</a>)。</p>
 </li>
 </ol>
 <p>整理好后,把上面所有代码里的 <code>lung2</code> 换成你的数据、列名换成你的列名,就能跑通整套流程。</p>
@@ -324,7 +324,8 @@
 <h2 id="延伸-further-reading">延伸 Further reading</h2>
 <ul>
 <li>本课对标 <strong>Zabor 教程 Part 1</strong>,强烈建议照着原文再走一遍。</li>
-<li><strong>Part 2</strong> 时间依赖协变量、<strong>Part 3</strong> 竞争风险(Fine-Gray,肿瘤研究常见:患者可能死于非癌原因)、<strong>Part 4</strong> 假设诊断——需要时再学。</li>
+<li><strong>竞争风险</strong>(患者可能死于非肿瘤原因、cause-specific survival)是放疗/高龄人群的常见问题,单独放在 <a href="../10-competing-risks/">Lesson 10</a> 讲(对应 Zabor Part 3)。</li>
+<li>Zabor <strong>Part 2</strong> 时间依赖协变量、<strong>Part 4</strong> 假设诊断——需要时再学。</li>
 </ul>
 <h2 id="常见报错-troubleshooting">常见报错 Troubleshooting</h2>
 <ul>
@@ -365,8 +366,8 @@
       
     
     <nav class="pager">
-      <a class="prev" href="/r-course/08-enrichment/">← Lesson 8 · 功能富集 Enrichment</a>
-      <a class="next" href="/r-course/10-tcga/">Lesson 10 · 公共数据 TCGA →</a>
+      <a class="prev" href="/r-course/08-linear-regression/">← Lesson 8 · 相关与线性回归 Correlation &amp; Linear Regression</a>
+      <a class="next" href="/r-course/10-competing-risks/">Lesson 10 · 竞争风险 Competing Risks →</a>
     </nav>
   </article>
 
