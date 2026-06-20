@@ -84,6 +84,7 @@ str(mtcars)         # 看每列的类型和概况
 把你的数据从 Excel 另存为 `.csv`,然后:
 
 ```r
+#| norun
 clinical <- read.csv("clinical.csv")   # 读进来,存成 clinical
 head(clinical)      # 看前几行
 str(clinical)       # 每列是什么类型(数字?文字?)

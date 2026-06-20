@@ -30,6 +30,7 @@ toc: true
 - **处理缺失**:统计缺多少、缺在哪,再决定怎么处理(别盲删,[Lesson 2](../02-data-wrangling/))
 
 ```r
+#| norun
 library(tidyverse); library(lubridate)
 cohort <- read.csv("my_cohort.csv") %>%
   mutate(
@@ -39,6 +40,27 @@ cohort <- read.csv("my_cohort.csv") %>%
   ) %>%
   drop_na(time, status)
 ```
+
+> 上面这块读的是**你自己电脑上的文件**,所以网页里没有 Run 按钮。为了能在浏览器里把整条流水线跑通,下面用一份**合成队列**代替——真实分析时把它换成上面的 `read.csv` 即可。
+
+```r
+library(tidyverse)
+set.seed(7)
+n <- 120
+cohort <- tibble(
+  arm    = factor(sample(c("EBRT+BT", "BT only"), n, replace = TRUE)),
+  age    = round(rnorm(n, 66, 9)),
+  figo   = factor(sample(c("I","II","III"), n, replace = TRUE), levels = c("I","II","III")),
+  d2cc   = round(rnorm(n, 80, 8), 1),                 # 膀胱 D2cc(Gy)
+  time   = round(rexp(n, 1/40)) + 1,                  # 随访月数
+  status = rbinom(n, 1, 0.4)                          # 1=事件,0=删失
+)
+cohort$late_tox <- factor(rbinom(n, 1, plogis(-9 + 0.10 * cohort$d2cc)),
+                          levels = c(0, 1), labels = c("No", "Yes"))
+head(cohort)
+```
+
+> ⚠️ 这份合成数据里,只有 `late_tox` 和 `d2cc` 之间有意造了关联;生存(`time`/`status`)和分组是**独立随机**生成的。所以下面 KM 曲线基本重叠、组间 p 值不显著都属正常——这里的目的是**跑通整条流程**,不是看出真实差异。换成你自己的数据,才会看到真实效应。
 
 ## 3. 分析流水线:把各课串起来
 
@@ -71,12 +93,32 @@ cohort <- read.csv("my_cohort.csv") %>%
 - **KM 曲线 / 累积发生率曲线**:用 `ggsurvfit` 出带**风险表(risk table)**的图([L9](../09-survival/) / [L10](../10-competing-risks/))
 - **方法部分怎么写**:写清软件与版本(`sessionInfo()`)、统计方法、检验、阈值、校正方式——审稿人会看可复现性
 
+在前面那份合成队列上,这条流水线的三个关键产出都能直接 **Run**:
+
 ```r
 library(gtsummary)
+# ① 基线表 Table 1(L5)
 cohort %>%
   select(age, figo, d2cc, late_tox, arm) %>%
   tbl_summary(by = arm) %>%      # 按治疗组的 Table 1
   add_p()                        # 组间比较 p 值
+```
+
+```r
+library(survival); library(ggsurvfit)
+# ② 生存曲线 KM(L9)
+survfit2(Surv(time, status) ~ arm, data = cohort) %>%
+  ggsurvfit() +
+  add_confidence_interval() +
+  add_risktable() +
+  labs(x = "Months", y = "Overall survival")
+```
+
+```r
+library(gtsummary)
+# ③ 毒性预测的逻辑回归 OR 表(L7)
+glm(late_tox ~ d2cc + age, data = cohort, family = binomial) %>%
+  tbl_regression(exponentiate = TRUE)
 ```
 
 ## 6. 可复现:用 Quarto 封装
@@ -127,6 +169,7 @@ sessionInfo()    # 记录所有包版本,可复现的关键
 渲染成报告:
 
 ```r
+#| norun
 # 在 RStudio 点 "Render" 按钮,或命令行:
 # quarto render analysis.qmd
 ```

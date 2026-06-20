@@ -31,7 +31,7 @@ library(dplyr)
 
 ```r
 cohort <- tribble(
-  ~id,  ~age, ~figo,  ~ebrt, ~brachy, ~d2cc_bladder, ~late_tox, ~arm,
+  ~id,  ~age, ~figo,  ~ebrt, ~brachy, ~d2cc, ~late_tox, ~arm,
   "P01", 64,  "II",   45,    28,      78,            1,         "EBRT+BT",
   "P02", 71,  "III",  45,    21,      82,            1,         "EBRT+BT",
   "P03", 58,  "I",     0,    28,      71,            0,         "BT only",
@@ -50,7 +50,7 @@ cohort <- tribble(
   )
 ```
 
-> `d2cc_bladder` = 膀胱受到的 2cc 剂量(剂量学常用指标);`late_tox` = 晚期毒性是否发生。
+> `d2cc` = 膀胱受到的 2cc 剂量(剂量学常用指标);`late_tox` = 晚期毒性是否发生。
 
 ## 2. base R 的描述性统计
 
@@ -59,7 +59,7 @@ cohort <- tribble(
 ```r
 summary(cohort$age)                 # 连续变量:最小/四分位/中位/最大
 sd(cohort$age)                      # 标准差
-median(cohort$d2cc_bladder); IQR(cohort$d2cc_bladder)  # 中位数 + 四分位距
+median(cohort$d2cc); IQR(cohort$d2cc)  # 中位数 + 四分位距
 table(cohort$figo)                  # 分类变量计数
 prop.table(table(cohort$late_tox))  # 比例
 ```
@@ -72,7 +72,7 @@ prop.table(table(cohort$late_tox))  # 比例
 
 ```r
 cohort %>%
-  select(age, figo, ebrt, d2cc_bladder, late_tox) %>%
+  select(age, figo, ebrt, d2cc, late_tox) %>%
   tbl_summary()
 ```
 
@@ -84,12 +84,12 @@ cohort %>%
 
 ```r
 cohort %>%
-  select(age, figo, d2cc_bladder, late_tox, arm) %>%
+  select(age, figo, d2cc, late_tox, arm) %>%
   tbl_summary(
     by = arm,                                   # 按治疗组分列
     statistic = list(all_continuous() ~ "{mean} ({sd})")  # 连续变量改成 均值(标准差)
   ) %>%
-  add_p() %>%        # 自动选检验:连续→Wilcoxon/t,分类→卡方/Fisher(详见 L6)
+  add_p() %>%        # 自动选检验:连续→默认 Wilcoxon(可改),分类→卡方/Fisher(详见 L6)
   add_overall() %>%  # 再加一列总体
   bold_labels()
 ```
@@ -99,13 +99,16 @@ cohort %>%
 ## 5. 导出
 
 ```r
-tbl <- cohort %>% select(age, figo, d2cc_bladder, late_tox) %>% tbl_summary()
+#| norun
+tbl <- cohort %>% select(age, figo, d2cc, late_tox) %>% tbl_summary()
 
 # 存成 Word(临床论文最常用)
 tbl %>% as_gt() %>% gt::gtsave("table1.docx")
 # 或转成数据框再写 CSV
 tbl %>% as_tibble() %>% write.csv("table1.csv", row.names = FALSE)
 ```
+
+> ⚠️ 导出 **Word(.docx)** 需要本地的 R/RStudio(底层用到 pandoc),在网页的 **Run** 里跑不了——这一步请在自己电脑上做。在浏览器里想看表格本身,直接运行上一节的 `tbl_summary()` 即可。
 
 ## 小结
 

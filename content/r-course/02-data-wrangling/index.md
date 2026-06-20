@@ -1,6 +1,6 @@
 ---
 title: "Lesson 2 · 数据整理 Data Wrangling"
-summary: "用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。"
+summary: "用 tidyverse 清洗临床表与疗效表:筛选、排序、分组、合并。"
 weight: 20
 toc: true
 ---
@@ -48,7 +48,7 @@ clinical <- tribble(
 clinical
 ```
 
-> **tibble** 是 tidyverse 版的 data.frame,打印更友好、行为更可控。`status`:1=事件(死亡/复发),0=删失(回顾 [Lesson 4](../04-stats-concepts/))。
+> **tibble** 是 tidyverse 版的 data.frame,打印更友好、行为更可控。`status`:1=事件(死亡/复发),0=删失([Lesson 4](../04-stats-concepts/) 会细讲)。
 
 ## 2. 管道符 `%>%`:把"然后"连起来
 
@@ -118,7 +118,7 @@ merged
 
 `left_join` 以左表(clinical)为准,把 response 按 `patient_id` 贴上来;左表里没有匹配的病人,response 列填 `NA`。
 
-> 🔬 把"临床表 + 表达矩阵 + 疗效"合并成一张分析表,是动手分析前的标准准备步骤。
+> 🔬 把"临床表 + 疗效/剂量学数据"合并成一张分析表,是动手分析前的标准准备步骤。
 
 ## 6. 串成一条流水线
 

@@ -7,9 +7,9 @@
 <meta name="description" content="肿瘤研究最高频的图:Kaplan-Meier 曲线与 Cox 回归,用现代 ggsurvfit &#43; gtsummary 出投稿级图表。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 9 · 生存分析 Survival Analysis — Yiming Xu" />
@@ -151,7 +151,7 @@
       </tr>
   </tbody>
 </table>
-<p>⚠️ <strong>最容易踩的坑就是 <code>status</code> 的编码</strong>。<code>lung</code> 里用的是 <code>1/2</code>,但 R 里习惯用 <code>0 = 删失 / 1 = 事件</code>。我们先把它和 <code>sex</code> 一起整理好:</p>
+<p>⚠️ <strong>最容易踩的坑就是 <code>status</code> 的编码</strong>。<code>lung</code> 里用的是 <code>1/2</code>,但 R 里习惯用 <code>0 = 删失 / 1 = 事件</code>。<strong>特别注意:<code>lung</code> 的 <code>1 = 删失</code> 和 <a href="../02-data-wrangling/">Lesson 2</a> / <a href="../04-stats-concepts/">Lesson 4</a> 里的约定(<code>1 = 事件</code>)正好相反</strong>——这正是下面要重新编码的原因,不改的话生存曲线会算反。我们先把它和 <code>sex</code> 一起整理好:</p>
 <div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
@@ -221,7 +221,7 @@
 </span></span><span class="line"><span class="cl">  <span class="nf">add_risktable</span><span class="p">()</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
-<p>你会看到女性(Female)的曲线在男性上方——女性生存更好。但<strong>光看图不够,得做统计检验</strong>(下一步)。</p>
+<p>你会看到女性(Female)的曲线在男性上方,看起来女性生存更好——但<strong>光看图不够,得做统计检验</strong>(下一步)。</p>
 <blockquote>
 <p>🔬 在你自己的数据里,这里的分组常常是治疗方案、FIGO 分期、或某个剂量学指标的高/低。怎么分组、为什么别随便按中位数二分,回顾 <a href="../04-stats-concepts/">Lesson 4</a>。</p></blockquote>
 <hr>
@@ -273,7 +273,7 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># exp=TRUE 把系数转成 HR</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># exponentiate=TRUE 把系数转成 HR</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
 <p>多因素(同时校正年龄、体力评分):</p>
@@ -286,7 +286,7 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">sex</span> <span class="o">+</span> <span class="n">age</span> <span class="o">+</span> <span class="n">ph.ecog</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">lung2</span><span class="p">)</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
 <p><strong>怎么读 HR</strong>(Lesson 4 讲过):</p>
@@ -322,18 +322,18 @@
 </li>
 <li>
 <p><strong><code>time</code>(时间)</strong>:很少现成,通常要从两个日期算。例如随访时长 =(末次随访或死亡日期)−(诊断/入组日期)。用 <code>lubridate</code>:</p>
-<div class="code-card code-runnable">
+<div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <span class="code-actions">
-      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      
       <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">lubridate</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="n">mydata</span> <span class="o">&lt;-</span> <span class="n">mydata</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">mutate</span><span class="p">(</span><span class="n">time</span> <span class="o">=</span> <span class="nf">as.numeric</span><span class="p">(</span><span class="nf">as_date</span><span class="p">(</span><span class="n">last_date</span><span class="p">)</span> <span class="o">-</span> <span class="nf">as_date</span><span class="p">(</span><span class="n">dx_date</span><span class="p">)))</span>  <span class="c1"># 天数</span></span></span></code></pre></div>
-  <div class="code-output" hidden></div>
+  
 </div>
 </li>
 <li>
@@ -365,7 +365,7 @@
       </tr>
       <tr>
           <td>多因素 + 风险比 HR</td>
-          <td><code>coxph() %&gt;% tbl_regression(exp = TRUE)</code></td>
+          <td><code>coxph() %&gt;% tbl_regression(exponentiate = TRUE)</code></td>
       </tr>
       <tr>
           <td>检验模型前提</td>
@@ -383,7 +383,7 @@
 <ul>
 <li><code>could not find function &quot;survfit2&quot;</code> → 没加载 <code>library(ggsurvfit)</code>。</li>
 <li>曲线方向反了 / 事件数对不上 → 八成是 <code>status</code> 编码没整理(回到第 1 步)。</li>
-<li>HR 看起来是反的 → 确认 factor 的参照组(<code>levels</code> 第一个是参照),或 <code>exp = TRUE</code> 忘了写。</li>
+<li>HR 看起来是反的 → 确认 factor 的参照组(<code>levels</code> 第一个是参照),或 <code>exponentiate = TRUE</code> 忘了写。</li>
 </ul>
 </div>
 
@@ -476,7 +476,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

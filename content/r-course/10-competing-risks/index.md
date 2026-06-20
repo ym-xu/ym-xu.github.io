@@ -21,9 +21,11 @@ toc: true
 # install.packages(c("tidycmprsk", "ggsurvfit", "gtsummary"))
 library(tidycmprsk); library(ggsurvfit); library(gtsummary)
 
-data(trial)        # tidycmprsk 自带的示例临床试验数据
-levels(trial$death_cr)   # 结局因子:"censor" / "death from cancer" / "death other causes"
+trial <- tidycmprsk::trial   # 用 tidycmprsk 自带的示例临床试验数据
+levels(trial$death_cr)        # 结局因子:"censor" / "death from cancer" / "death other causes"
 ```
+
+> ⚠️ 这里特意写成 `tidycmprsk::trial` 而不是 `data(trial)`:`gtsummary` 也有一个同名数据集 `trial`(但没有 `death_cr` 列),后加载会把它**屏蔽**掉,导致后面报 `object 'death_cr' not found`。加上 `包名::` 就能精确指定,避免这类命名冲突——这是 R 里常见的坑。
 
 > `death_cr` 是一个**带竞争事件的因子**:第一层必须是删失("censor"),其余是各类事件。你自己的数据要先整理成这种因子(肿瘤死亡 / 他因死亡 / 存活)。
 
@@ -66,7 +68,7 @@ cuminc(Surv(ttdeath, death_cr) ~ trt, data = trial) %>%
 
 ```r
 crr(Surv(ttdeath, death_cr) ~ age + trt, data = trial) %>%
-  tbl_regression(exp = TRUE)   # 给出 subdistribution HR + 95%CI
+  tbl_regression(exponentiate = TRUE)   # 给出 subdistribution HR + 95%CI
 ```
 
 ## 5. Cause-specific Cox(另一种思路)
@@ -77,7 +79,7 @@ crr(Surv(ttdeath, death_cr) ~ age + trt, data = trial) %>%
 library(survival)
 trial$cancer_death <- as.numeric(trial$death_cr == "death from cancer")
 coxph(Surv(ttdeath, cancer_death) ~ age + trt, data = trial) %>%
-  tbl_regression(exp = TRUE)
+  tbl_regression(exponentiate = TRUE)
 ```
 
 > **怎么选**:想报告"实际发生概率/做预测" → Fine-Gray;想讲"病因学/机制" → cause-specific Cox。论文里两者常都报,并说明用了哪种。
@@ -89,7 +91,7 @@ coxph(Surv(ttdeath, cancer_death) ~ age + trt, data = trial) %>%
 | 累积发生率 | `cuminc(Surv(time, status_factor) ~ 1)` |
 | 分组曲线 | `cuminc(~ group) %>% ggcuminc(outcome=)` |
 | 组间检验(Gray) | `tbl_cuminc() %>% add_p()` |
-| Fine-Gray 回归 | `crr() %>% tbl_regression(exp = TRUE)` |
+| Fine-Gray 回归 | `crr() %>% tbl_regression(exponentiate = TRUE)` |
 | Cause-specific Cox | 把他因事件当删失,用 `coxph()` |
 
 下一课 [Lesson 11 · 用自己的数据发论文](../11-capstone/),把全流程串到你自己的回顾性队列上。

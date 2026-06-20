@@ -55,7 +55,7 @@ head(lung)
 | `age` | 年龄 |
 | `ph.ecog` | ECOG 体力评分(0 最好,越大越差) |
 
-⚠️ **最容易踩的坑就是 `status` 的编码**。`lung` 里用的是 `1/2`,但 R 里习惯用 `0 = 删失 / 1 = 事件`。我们先把它和 `sex` 一起整理好:
+⚠️ **最容易踩的坑就是 `status` 的编码**。`lung` 里用的是 `1/2`,但 R 里习惯用 `0 = 删失 / 1 = 事件`。**特别注意:`lung` 的 `1 = 删失` 和 [Lesson 2](../02-data-wrangling/) / [Lesson 4](../04-stats-concepts/) 里的约定(`1 = 事件`)正好相反**——这正是下面要重新编码的原因,不改的话生存曲线会算反。我们先把它和 `sex` 一起整理好:
 
 ```r
 lung2 <- lung %>%
@@ -109,7 +109,7 @@ survfit2(Surv(time, status) ~ sex, data = lung2) %>%
   add_risktable()
 ```
 
-你会看到女性(Female)的曲线在男性上方——女性生存更好。但**光看图不够,得做统计检验**(下一步)。
+你会看到女性(Female)的曲线在男性上方,看起来女性生存更好——但**光看图不够,得做统计检验**(下一步)。
 
 > 🔬 在你自己的数据里,这里的分组常常是治疗方案、FIGO 分期、或某个剂量学指标的高/低。怎么分组、为什么别随便按中位数二分,回顾 [Lesson 4](../04-stats-concepts/)。
 
@@ -153,14 +153,14 @@ KM + log-rank 只能比较分组、且一次只看一个因素。**Cox 比例风
 
 ```r
 coxph(Surv(time, status) ~ sex, data = lung2) %>%
-  tbl_regression(exp = TRUE)   # exp=TRUE 把系数转成 HR
+  tbl_regression(exponentiate = TRUE)   # exponentiate=TRUE 把系数转成 HR
 ```
 
 多因素(同时校正年龄、体力评分):
 
 ```r
 coxph(Surv(time, status) ~ sex + age + ph.ecog, data = lung2) %>%
-  tbl_regression(exp = TRUE)
+  tbl_regression(exponentiate = TRUE)
 ```
 
 **怎么读 HR**(Lesson 4 讲过):
@@ -195,6 +195,7 @@ cox.zph(fit)
 2. **`time`(时间)**:很少现成,通常要从两个日期算。例如随访时长 =(末次随访或死亡日期)−(诊断/入组日期)。用 `lubridate`:
 
    ```r
+   #| norun
    library(lubridate)
    mydata <- mydata %>%
      mutate(time = as.numeric(as_date(last_date) - as_date(dx_date)))  # 天数
@@ -212,7 +213,7 @@ cox.zph(fit)
 | 生存曲线 | `survfit2() %>% ggsurvfit()` |
 | 比较两组 | `survdiff()`(log-rank) |
 | x 年生存率 / 中位生存期 | `tbl_survfit()` |
-| 多因素 + 风险比 HR | `coxph() %>% tbl_regression(exp = TRUE)` |
+| 多因素 + 风险比 HR | `coxph() %>% tbl_regression(exponentiate = TRUE)` |
 | 检验模型前提 | `cox.zph()` |
 
 ## 延伸 Further reading
@@ -225,4 +226,4 @@ cox.zph(fit)
 
 - `could not find function "survfit2"` → 没加载 `library(ggsurvfit)`。
 - 曲线方向反了 / 事件数对不上 → 八成是 `status` 编码没整理(回到第 1 步)。
-- HR 看起来是反的 → 确认 factor 的参照组(`levels` 第一个是参照),或 `exp = TRUE` 忘了写。
+- HR 看起来是反的 → 确认 factor 的参照组(`levels` 第一个是参照),或 `exponentiate = TRUE` 忘了写。

@@ -1,6 +1,6 @@
 ---
 title: "Lesson 7 · 逻辑回归 Logistic Regression"
-summary: "预测一个“是/否”结局(如晚期毒性):优势比 OR、单/多因素、ROC 曲线。"
+summary: "预测一个是/否结局(如晚期毒性):优势比 OR、单/多因素、ROC 曲线。"
 weight: 70
 toc: true
 ---

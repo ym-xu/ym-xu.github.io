@@ -7,9 +7,9 @@
 <meta name="description" content="临床论文的第一张表:用 gtsummary 一行生成患者基线特征表(Table 1)。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 5 · 描述性统计与基线表 Table 1 — Yiming Xu" />
@@ -99,7 +99,7 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">cohort</span> <span class="o">&lt;-</span> <span class="nf">tribble</span><span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="o">~</span><span class="n">id</span><span class="p">,</span>  <span class="o">~</span><span class="n">age</span><span class="p">,</span> <span class="o">~</span><span class="n">figo</span><span class="p">,</span>  <span class="o">~</span><span class="n">ebrt</span><span class="p">,</span> <span class="o">~</span><span class="n">brachy</span><span class="p">,</span> <span class="o">~</span><span class="n">d2cc_bladder</span><span class="p">,</span> <span class="o">~</span><span class="n">late_tox</span><span class="p">,</span> <span class="o">~</span><span class="n">arm</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="o">~</span><span class="n">id</span><span class="p">,</span>  <span class="o">~</span><span class="n">age</span><span class="p">,</span> <span class="o">~</span><span class="n">figo</span><span class="p">,</span>  <span class="o">~</span><span class="n">ebrt</span><span class="p">,</span> <span class="o">~</span><span class="n">brachy</span><span class="p">,</span> <span class="o">~</span><span class="n">d2cc</span><span class="p">,</span> <span class="o">~</span><span class="n">late_tox</span><span class="p">,</span> <span class="o">~</span><span class="n">arm</span><span class="p">,</span>
 </span></span><span class="line"><span class="cl">  <span class="s">&#34;P01&#34;</span><span class="p">,</span> <span class="m">64</span><span class="p">,</span>  <span class="s">&#34;II&#34;</span><span class="p">,</span>   <span class="m">45</span><span class="p">,</span>    <span class="m">28</span><span class="p">,</span>      <span class="m">78</span><span class="p">,</span>            <span class="m">1</span><span class="p">,</span>         <span class="s">&#34;EBRT+BT&#34;</span><span class="p">,</span>
 </span></span><span class="line"><span class="cl">  <span class="s">&#34;P02&#34;</span><span class="p">,</span> <span class="m">71</span><span class="p">,</span>  <span class="s">&#34;III&#34;</span><span class="p">,</span>  <span class="m">45</span><span class="p">,</span>    <span class="m">21</span><span class="p">,</span>      <span class="m">82</span><span class="p">,</span>            <span class="m">1</span><span class="p">,</span>         <span class="s">&#34;EBRT+BT&#34;</span><span class="p">,</span>
 </span></span><span class="line"><span class="cl">  <span class="s">&#34;P03&#34;</span><span class="p">,</span> <span class="m">58</span><span class="p">,</span>  <span class="s">&#34;I&#34;</span><span class="p">,</span>     <span class="m">0</span><span class="p">,</span>    <span class="m">28</span><span class="p">,</span>      <span class="m">71</span><span class="p">,</span>            <span class="m">0</span><span class="p">,</span>         <span class="s">&#34;BT only&#34;</span><span class="p">,</span>
@@ -119,7 +119,7 @@
   <div class="code-output" hidden></div>
 </div>
 <blockquote>
-<p><code>d2cc_bladder</code> = 膀胱受到的 2cc 剂量(剂量学常用指标);<code>late_tox</code> = 晚期毒性是否发生。</p></blockquote>
+<p><code>d2cc</code> = 膀胱受到的 2cc 剂量(剂量学常用指标);<code>late_tox</code> = 晚期毒性是否发生。</p></blockquote>
 <h2 id="2-base-r-的描述性统计">2. base R 的描述性统计</h2>
 <p>先用最基础的方式认识数据:</p>
 <div class="code-card code-runnable">
@@ -132,7 +132,7 @@
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">age</span><span class="p">)</span>                 <span class="c1"># 连续变量:最小/四分位/中位/最大</span>
 </span></span><span class="line"><span class="cl"><span class="nf">sd</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">age</span><span class="p">)</span>                      <span class="c1"># 标准差</span>
-</span></span><span class="line"><span class="cl"><span class="nf">median</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">d2cc_bladder</span><span class="p">);</span> <span class="nf">IQR</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">d2cc_bladder</span><span class="p">)</span>  <span class="c1"># 中位数 + 四分位距</span>
+</span></span><span class="line"><span class="cl"><span class="nf">median</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">d2cc</span><span class="p">);</span> <span class="nf">IQR</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)</span>  <span class="c1"># 中位数 + 四分位距</span>
 </span></span><span class="line"><span class="cl"><span class="nf">table</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">figo</span><span class="p">)</span>                  <span class="c1"># 分类变量计数</span>
 </span></span><span class="line"><span class="cl"><span class="nf">prop.table</span><span class="p">(</span><span class="nf">table</span><span class="p">(</span><span class="n">cohort</span><span class="o">$</span><span class="n">late_tox</span><span class="p">))</span>  <span class="c1"># 比例</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
@@ -150,7 +150,7 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">cohort</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">ebrt</span><span class="p">,</span> <span class="n">d2cc_bladder</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">ebrt</span><span class="p">,</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">)</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">tbl_summary</span><span class="p">()</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
@@ -166,12 +166,12 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">cohort</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">d2cc_bladder</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">,</span> <span class="n">arm</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">,</span> <span class="n">arm</span><span class="p">)</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">tbl_summary</span><span class="p">(</span>
 </span></span><span class="line"><span class="cl">    <span class="n">by</span> <span class="o">=</span> <span class="n">arm</span><span class="p">,</span>                                   <span class="c1"># 按治疗组分列</span>
 </span></span><span class="line"><span class="cl">    <span class="n">statistic</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="nf">all_continuous</span><span class="p">()</span> <span class="o">~</span> <span class="s">&#34;{mean} ({sd})&#34;</span><span class="p">)</span>  <span class="c1"># 连续变量改成 均值(标准差)</span>
 </span></span><span class="line"><span class="cl">  <span class="p">)</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">add_p</span><span class="p">()</span> <span class="o">%&gt;%</span>        <span class="c1"># 自动选检验:连续→Wilcoxon/t,分类→卡方/Fisher(详见 L6)</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_p</span><span class="p">()</span> <span class="o">%&gt;%</span>        <span class="c1"># 自动选检验:连续→默认 Wilcoxon(可改),分类→卡方/Fisher(详见 L6)</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">add_overall</span><span class="p">()</span> <span class="o">%&gt;%</span>  <span class="c1"># 再加一列总体</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">bold_labels</span><span class="p">()</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
@@ -179,22 +179,24 @@
 <blockquote>
 <p><code>add_p()</code> 会自动挑检验方法,但<strong>你要懂它在做什么</strong>——这正是 <a href="../06-group-comparisons/">Lesson 6</a> 的内容。别把 p 值当黑箱。</p></blockquote>
 <h2 id="5-导出">5. 导出</h2>
-<div class="code-card code-runnable">
+<div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <span class="code-actions">
-      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      
       <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
     </span>
   </div>
-  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">tbl</span> <span class="o">&lt;-</span> <span class="n">cohort</span> <span class="o">%&gt;%</span> <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">d2cc_bladder</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="nf">tbl_summary</span><span class="p">()</span>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="n">tbl</span> <span class="o">&lt;-</span> <span class="n">cohort</span> <span class="o">%&gt;%</span> <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="nf">tbl_summary</span><span class="p">()</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1"># 存成 Word(临床论文最常用)</span>
 </span></span><span class="line"><span class="cl"><span class="n">tbl</span> <span class="o">%&gt;%</span> <span class="nf">as_gt</span><span class="p">()</span> <span class="o">%&gt;%</span> <span class="n">gt</span><span class="o">::</span><span class="nf">gtsave</span><span class="p">(</span><span class="s">&#34;table1.docx&#34;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="c1"># 或转成数据框再写 CSV</span>
 </span></span><span class="line"><span class="cl"><span class="n">tbl</span> <span class="o">%&gt;%</span> <span class="nf">as_tibble</span><span class="p">()</span> <span class="o">%&gt;%</span> <span class="nf">write.csv</span><span class="p">(</span><span class="s">&#34;table1.csv&#34;</span><span class="p">,</span> <span class="n">row.names</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span></span></span></code></pre></div>
-  <div class="code-output" hidden></div>
+  
 </div>
+<blockquote>
+<p>⚠️ 导出 <strong>Word(.docx)</strong> 需要本地的 R/RStudio(底层用到 pandoc),在网页的 <strong>Run</strong> 里跑不了——这一步请在自己电脑上做。在浏览器里想看表格本身,直接运行上一节的 <code>tbl_summary()</code> 即可。</p></blockquote>
 <h2 id="小结">小结</h2>
 <table>
   <thead>
@@ -329,7 +331,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

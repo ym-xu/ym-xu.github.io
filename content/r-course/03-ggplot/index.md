@@ -112,7 +112,7 @@ ggsave("d2cc_boxplot.png", plot = p, width = 5, height = 4, dpi = 300) # 位图,
 | 你想做 | 用什么 |
 |--------|--------|
 | 起一张图 | `ggplot(data, aes(x, y))` |
-| 箱线图 / 散点 / 柱状 | `geom_boxplot()` / `geom_point()` / `geom_col()` |
+| 箱线图 / 散点 | `geom_boxplot()` / `geom_point()` |
 | 分组上色 | `aes(fill = 组)` / `aes(color = 组)` |
 | 拆成多张小图 | `facet_wrap(~ 变量)` |
 | 标题/轴标签 | `labs()` |

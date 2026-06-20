@@ -7,9 +7,9 @@
 <meta name="description" content="安装 R 与 RStudio,认识工作界面,把第一个 CSV 读进来。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 1 · 环境搭建 Setup — Yiming Xu" />
@@ -166,11 +166,11 @@
 </div>
 <h2 id="7-读入你自己的-csv">7. 读入你自己的 CSV</h2>
 <p>把你的数据从 Excel 另存为 <code>.csv</code>,然后:</p>
-<div class="code-card code-runnable">
+<div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <span class="code-actions">
-      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      
       <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
     </span>
   </div>
@@ -178,7 +178,7 @@
 </span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>      <span class="c1"># 看前几行</span>
 </span></span><span class="line"><span class="cl"><span class="nf">str</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>       <span class="c1"># 每列是什么类型(数字?文字?)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">summary</span><span class="p">(</span><span class="n">clinical</span><span class="p">)</span>   <span class="c1"># 每列的统计概况</span></span></span></code></pre></div>
-  <div class="code-output" hidden></div>
+  
 </div>
 <blockquote>
 <p>⚠️ <strong>新手最常卡的点:工作目录</strong>。<code>read.csv(&quot;clinical.csv&quot;)</code> 只会在&quot;当前工作目录&quot;里找这个文件。用 <code>getwd()</code> 看当前目录,用 <code>setwd(&quot;你的路径&quot;)</code> 切换;或者在 RStudio 里 Session → Set Working Directory → Choose Directory 点一下。找不到文件报 <code>cannot open file</code> 基本都是这个原因。</p></blockquote>
@@ -308,7 +308,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

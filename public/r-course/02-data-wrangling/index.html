@@ -4,16 +4,16 @@
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lesson 2 · 数据整理 Data Wrangling — Yiming Xu</title>
-<meta name="description" content="用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。" /><meta name="robots" content="noindex, nofollow" />
+<meta name="description" content="用 tidyverse 清洗临床表与疗效表:筛选、排序、分组、合并。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 2 · 数据整理 Data Wrangling — Yiming Xu" />
-<meta property="og:description" content="用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。" />
+<meta property="og:description" content="用 tidyverse 清洗临床表与疗效表:筛选、排序、分组、合并。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ym-xu.github.io/r-course/02-data-wrangling/" />
 
@@ -42,7 +42,7 @@
     <header class="post-header">
       <div class="meta"><a href="/r-course/">← 课程目录 Syllabus</a></div>
       <h1>Lesson 2 · 数据整理 Data Wrangling</h1>
-      <p class="page-sub">用 tidyverse 清洗临床表和表达矩阵:筛选、排序、分组、合并。</p>
+      <p class="page-sub">用 tidyverse 清洗临床表与疗效表:筛选、排序、分组、合并。</p>
     </header>
 
     
@@ -123,7 +123,7 @@
   <div class="code-output" hidden></div>
 </div>
 <blockquote>
-<p><strong>tibble</strong> 是 tidyverse 版的 data.frame,打印更友好、行为更可控。<code>status</code>:1=事件(死亡/复发),0=删失(回顾 <a href="../04-stats-concepts/">Lesson 4</a>)。</p></blockquote>
+<p><strong>tibble</strong> 是 tidyverse 版的 data.frame,打印更友好、行为更可控。<code>status</code>:1=事件(死亡/复发),0=删失(<a href="../04-stats-concepts/">Lesson 4</a> 会细讲)。</p></blockquote>
 <h2 id="2-管道符-把然后连起来">2. 管道符 <code>%&gt;%</code>:把&quot;然后&quot;连起来</h2>
 <p>管道符 <code>%&gt;%</code>(或 R 自带的 <code>|&gt;</code>)把左边的结果&quot;喂&quot;给右边的函数,读作&quot;然后&quot;。下面两种写法等价:</p>
 <div class="code-card code-runnable">
@@ -211,7 +211,7 @@
 </div>
 <p><code>left_join</code> 以左表(clinical)为准,把 response 按 <code>patient_id</code> 贴上来;左表里没有匹配的病人,response 列填 <code>NA</code>。</p>
 <blockquote>
-<p>🔬 把&quot;临床表 + 表达矩阵 + 疗效&quot;合并成一张分析表,是动手分析前的标准准备步骤。</p></blockquote>
+<p>🔬 把&quot;临床表 + 疗效/剂量学数据&quot;合并成一张分析表,是动手分析前的标准准备步骤。</p></blockquote>
 <h2 id="6-串成一条流水线">6. 串成一条流水线</h2>
 <p>把上面几步用管道连起来,就是一句完整的&quot;数据整理&quot;:</p>
 <div class="code-card code-runnable">
@@ -373,7 +373,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

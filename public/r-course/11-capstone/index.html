@@ -7,9 +7,9 @@
 <meta name="description" content="把前面所有技能用到你自己的回顾性临床队列上,走完整流程并产出可投稿的图表与可复现脚本。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 11 · 用自己的数据发论文 Capstone — Yiming Xu" />
@@ -85,11 +85,11 @@
 <li><strong>编码变量</strong>:治疗方案、FIGO 分期、剂量学指标(EBRT、近距离剂量、D90、D2cc)、年龄,整理成规范的列</li>
 <li><strong>处理缺失</strong>:统计缺多少、缺在哪,再决定怎么处理(别盲删,<a href="../02-data-wrangling/">Lesson 2</a>)</li>
 </ul>
-<div class="code-card code-runnable">
+<div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <span class="code-actions">
-      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      
       <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
     </span>
   </div>
@@ -101,8 +101,36 @@
 </span></span><span class="line"><span class="cl">    <span class="n">late_tox</span> <span class="o">=</span> <span class="nf">factor</span><span class="p">(</span><span class="n">late_tox</span><span class="p">,</span> <span class="n">levels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> <span class="n">labels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;No&#34;</span><span class="p">,</span><span class="s">&#34;Yes&#34;</span><span class="p">))</span>
 </span></span><span class="line"><span class="cl">  <span class="p">)</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">drop_na</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span></span></span></code></pre></div>
+  
+</div>
+<blockquote>
+<p>上面这块读的是<strong>你自己电脑上的文件</strong>,所以网页里没有 Run 按钮。为了能在浏览器里把整条流水线跑通,下面用一份<strong>合成队列</strong>代替——真实分析时把它换成上面的 <code>read.csv</code> 即可。</p></blockquote>
+<div class="code-card code-runnable">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">tidyverse</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">set.seed</span><span class="p">(</span><span class="m">7</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">n</span> <span class="o">&lt;-</span> <span class="m">120</span>
+</span></span><span class="line"><span class="cl"><span class="n">cohort</span> <span class="o">&lt;-</span> <span class="nf">tibble</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">  <span class="n">arm</span>    <span class="o">=</span> <span class="nf">factor</span><span class="p">(</span><span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;EBRT+BT&#34;</span><span class="p">,</span> <span class="s">&#34;BT only&#34;</span><span class="p">),</span> <span class="n">n</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)),</span>
+</span></span><span class="line"><span class="cl">  <span class="n">age</span>    <span class="o">=</span> <span class="nf">round</span><span class="p">(</span><span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">66</span><span class="p">,</span> <span class="m">9</span><span class="p">)),</span>
+</span></span><span class="line"><span class="cl">  <span class="n">figo</span>   <span class="o">=</span> <span class="nf">factor</span><span class="p">(</span><span class="nf">sample</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s">&#34;I&#34;</span><span class="p">,</span><span class="s">&#34;II&#34;</span><span class="p">,</span><span class="s">&#34;III&#34;</span><span class="p">),</span> <span class="n">n</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">),</span> <span class="n">levels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;I&#34;</span><span class="p">,</span><span class="s">&#34;II&#34;</span><span class="p">,</span><span class="s">&#34;III&#34;</span><span class="p">)),</span>
+</span></span><span class="line"><span class="cl">  <span class="n">d2cc</span>   <span class="o">=</span> <span class="nf">round</span><span class="p">(</span><span class="nf">rnorm</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">80</span><span class="p">,</span> <span class="m">8</span><span class="p">),</span> <span class="m">1</span><span class="p">),</span>                 <span class="c1"># 膀胱 D2cc(Gy)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">time</span>   <span class="o">=</span> <span class="nf">round</span><span class="p">(</span><span class="nf">rexp</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">1</span><span class="o">/</span><span class="m">40</span><span class="p">))</span> <span class="o">+</span> <span class="m">1</span><span class="p">,</span>                  <span class="c1"># 随访月数</span>
+</span></span><span class="line"><span class="cl">  <span class="n">status</span> <span class="o">=</span> <span class="nf">rbinom</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">0.4</span><span class="p">)</span>                          <span class="c1"># 1=事件,0=删失</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">cohort</span><span class="o">$</span><span class="n">late_tox</span> <span class="o">&lt;-</span> <span class="nf">factor</span><span class="p">(</span><span class="nf">rbinom</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="nf">plogis</span><span class="p">(</span><span class="m">-9</span> <span class="o">+</span> <span class="m">0.10</span> <span class="o">*</span> <span class="n">cohort</span><span class="o">$</span><span class="n">d2cc</span><span class="p">)),</span>
+</span></span><span class="line"><span class="cl">                          <span class="n">levels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">1</span><span class="p">),</span> <span class="n">labels</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&#34;No&#34;</span><span class="p">,</span> <span class="s">&#34;Yes&#34;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="nf">head</span><span class="p">(</span><span class="n">cohort</span><span class="p">)</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
+<blockquote>
+<p>⚠️ 这份合成数据里,只有 <code>late_tox</code> 和 <code>d2cc</code> 之间有意造了关联;生存(<code>time</code>/<code>status</code>)和分组是<strong>独立随机</strong>生成的。所以下面 KM 曲线基本重叠、组间 p 值不显著都属正常——这里的目的是<strong>跑通整条流程</strong>,不是看出真实差异。换成你自己的数据,才会看到真实效应。</p></blockquote>
 <h2 id="3-分析流水线把各课串起来">3. 分析流水线:把各课串起来</h2>
 <p>按研究问题选用前面的模块,临床论文典型一条龙:</p>
 <table>
@@ -163,6 +191,7 @@
 <li><strong>KM 曲线 / 累积发生率曲线</strong>:用 <code>ggsurvfit</code> 出带**风险表(risk table)**的图(<a href="../09-survival/">L9</a> / <a href="../10-competing-risks/">L10</a>)</li>
 <li><strong>方法部分怎么写</strong>:写清软件与版本(<code>sessionInfo()</code>)、统计方法、检验、阈值、校正方式——审稿人会看可复现性</li>
 </ul>
+<p>在前面那份合成队列上,这条流水线的三个关键产出都能直接 <strong>Run</strong>:</p>
 <div class="code-card code-runnable">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
@@ -172,10 +201,42 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ① 基线表 Table 1(L5)</span>
 </span></span><span class="line"><span class="cl"><span class="n">cohort</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">select</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">figo</span><span class="p">,</span> <span class="n">d2cc</span><span class="p">,</span> <span class="n">late_tox</span><span class="p">,</span> <span class="n">arm</span><span class="p">)</span> <span class="o">%&gt;%</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">tbl_summary</span><span class="p">(</span><span class="n">by</span> <span class="o">=</span> <span class="n">arm</span><span class="p">)</span> <span class="o">%&gt;%</span>      <span class="c1"># 按治疗组的 Table 1</span>
 </span></span><span class="line"><span class="cl">  <span class="nf">add_p</span><span class="p">()</span>                        <span class="c1"># 组间比较 p 值</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
+</div>
+<div class="code-card code-runnable">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">survival</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">ggsurvfit</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ② 生存曲线 KM(L9)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">survfit2</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span> <span class="o">~</span> <span class="n">arm</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">ggsurvfit</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_confidence_interval</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">add_risktable</span><span class="p">()</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">labs</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="s">&#34;Months&#34;</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="s">&#34;Overall survival&#34;</span><span class="p">)</span></span></span></code></pre></div>
+  <div class="code-output" hidden></div>
+</div>
+<div class="code-card code-runnable">
+  <div class="code-card-bar">
+    <span class="code-lang">r</span>
+    <span class="code-actions">
+      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
+    </span>
+  </div>
+  <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ③ 毒性预测的逻辑回归 OR 表(L7)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">glm</span><span class="p">(</span><span class="n">late_tox</span> <span class="o">~</span> <span class="n">d2cc</span> <span class="o">+</span> <span class="n">age</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">cohort</span><span class="p">,</span> <span class="n">family</span> <span class="o">=</span> <span class="n">binomial</span><span class="p">)</span> <span class="o">%&gt;%</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
 <h2 id="6-可复现用-quarto-封装">6. 可复现:用 Quarto 封装</h2>
@@ -228,17 +289,17 @@
   
 </div>
 <p>渲染成报告:</p>
-<div class="code-card code-runnable">
+<div class="code-card">
   <div class="code-card-bar">
     <span class="code-lang">r</span>
     <span class="code-actions">
-      <button class="code-run" type="button" aria-label="Run code">▶ Run</button>
+      
       <button class="code-copy" type="button" aria-label="Copy code">Copy</button>
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># 在 RStudio 点 &#34;Render&#34; 按钮,或命令行:</span>
 </span></span><span class="line"><span class="cl"><span class="c1"># quarto render analysis.qmd</span></span></span></code></pre></div>
-  <div class="code-output" hidden></div>
+  
 </div>
 <blockquote>
 <p>Quarto 是 R Markdown 的现代继任者,RStudio 自带支持。把分析写成 <code>.qmd</code>,你交出去的就不只是&quot;几张图&quot;,而是&quot;可被重跑、可被检验的完整证据链&quot;。</p></blockquote>
@@ -387,7 +448,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

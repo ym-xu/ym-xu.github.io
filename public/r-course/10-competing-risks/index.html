@@ -7,9 +7,9 @@
 <meta name="description" content="当患者可能死于其他原因:cause-specific survival、累积发生率与 Fine-Gray 回归。" /><meta name="robots" content="noindex, nofollow" />
 <link rel="alternate" type="application/rss+xml" href="/index.xml" title="Yiming Xu" />
 
-<link rel="stylesheet" href="/css/styles.css?v=1781906352" />
-<link rel="stylesheet" href="/css/syntax.css?v=1781906352" />
-<link rel="stylesheet" href="/css/custom.css?v=1781906352" />
+<link rel="stylesheet" href="/css/styles.css?v=1781949472" />
+<link rel="stylesheet" href="/css/syntax.css?v=1781949472" />
+<link rel="stylesheet" href="/css/custom.css?v=1781949472" />
 
 
 <meta property="og:title" content="Lesson 10 · 竞争风险 Competing Risks — Yiming Xu" />
@@ -84,10 +84,12 @@
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="c1"># install.packages(c(&#34;tidycmprsk&#34;, &#34;ggsurvfit&#34;, &#34;gtsummary&#34;))</span>
 </span></span><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">tidycmprsk</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">ggsurvfit</span><span class="p">);</span> <span class="nf">library</span><span class="p">(</span><span class="n">gtsummary</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nf">data</span><span class="p">(</span><span class="n">trial</span><span class="p">)</span>        <span class="c1"># tidycmprsk 自带的示例临床试验数据</span>
-</span></span><span class="line"><span class="cl"><span class="nf">levels</span><span class="p">(</span><span class="n">trial</span><span class="o">$</span><span class="n">death_cr</span><span class="p">)</span>   <span class="c1"># 结局因子:&#34;censor&#34; / &#34;death from cancer&#34; / &#34;death other causes&#34;</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl"><span class="n">trial</span> <span class="o">&lt;-</span> <span class="n">tidycmprsk</span><span class="o">::</span><span class="n">trial</span>   <span class="c1"># 用 tidycmprsk 自带的示例临床试验数据</span>
+</span></span><span class="line"><span class="cl"><span class="nf">levels</span><span class="p">(</span><span class="n">trial</span><span class="o">$</span><span class="n">death_cr</span><span class="p">)</span>        <span class="c1"># 结局因子:&#34;censor&#34; / &#34;death from cancer&#34; / &#34;death other causes&#34;</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
+<blockquote>
+<p>⚠️ 这里特意写成 <code>tidycmprsk::trial</code> 而不是 <code>data(trial)</code>:<code>gtsummary</code> 也有一个同名数据集 <code>trial</code>(但没有 <code>death_cr</code> 列),后加载会把它<strong>屏蔽</strong>掉,导致后面报 <code>object 'death_cr' not found</code>。加上 <code>包名::</code> 就能精确指定,避免这类命名冲突——这是 R 里常见的坑。</p></blockquote>
 <blockquote>
 <p><code>death_cr</code> 是一个<strong>带竞争事件的因子</strong>:第一层必须是删失(&ldquo;censor&rdquo;),其余是各类事件。你自己的数据要先整理成这种因子(肿瘤死亡 / 他因死亡 / 存活)。</p></blockquote>
 <h2 id="1-为什么不能直接用-km">1. 为什么不能直接用 KM</h2>
@@ -150,7 +152,7 @@
     </span>
   </div>
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">crr</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">death_cr</span><span class="p">)</span> <span class="o">~</span> <span class="n">age</span> <span class="o">+</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># 给出 subdistribution HR + 95%CI</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>   <span class="c1"># 给出 subdistribution HR + 95%CI</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
 <h2 id="5-cause-specific-cox另一种思路">5. Cause-specific Cox(另一种思路)</h2>
@@ -166,7 +168,7 @@
   <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-r" data-lang="r"><span class="line"><span class="cl"><span class="nf">library</span><span class="p">(</span><span class="n">survival</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="n">trial</span><span class="o">$</span><span class="n">cancer_death</span> <span class="o">&lt;-</span> <span class="nf">as.numeric</span><span class="p">(</span><span class="n">trial</span><span class="o">$</span><span class="n">death_cr</span> <span class="o">==</span> <span class="s">&#34;death from cancer&#34;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="nf">coxph</span><span class="p">(</span><span class="nf">Surv</span><span class="p">(</span><span class="n">ttdeath</span><span class="p">,</span> <span class="n">cancer_death</span><span class="p">)</span> <span class="o">~</span> <span class="n">age</span> <span class="o">+</span> <span class="n">trt</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">trial</span><span class="p">)</span> <span class="o">%&gt;%</span>
-</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exp</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
+</span></span><span class="line"><span class="cl">  <span class="nf">tbl_regression</span><span class="p">(</span><span class="n">exponentiate</span> <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span></span></span></code></pre></div>
   <div class="code-output" hidden></div>
 </div>
 <blockquote>
@@ -194,7 +196,7 @@
       </tr>
       <tr>
           <td>Fine-Gray 回归</td>
-          <td><code>crr() %&gt;% tbl_regression(exp = TRUE)</code></td>
+          <td><code>crr() %&gt;% tbl_regression(exponentiate = TRUE)</code></td>
       </tr>
       <tr>
           <td>Cause-specific Cox</td>
@@ -306,7 +308,7 @@
 </script>
 
 
-<script type="module" src="/js/webr-run.js?v=1781906352"></script>
+<script type="module" src="/js/webr-run.js?v=1781949472"></script>
 
 
 

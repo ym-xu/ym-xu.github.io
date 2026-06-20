@@ -87,7 +87,7 @@ kruskal.test(d2cc ~ figo, data = dat)
 |------|------|-----------|
 | 连续 · 近似正态 | t 检验 `t.test` | ANOVA `aov` + `TukeyHSD` |
 | 连续 · 偏态/小样本/有序 | Wilcoxon `wilcox.test` | Kruskal `kruskal.test` |
-| 分类 | 卡方 `chisq.test`(或 Fisher) | 卡方 `chisq.test` |
+| 分类 | 卡方 `chisq.test`(或 Fisher) | 卡方 `chisq.test`(或 Fisher) |
 | 配对 | 加 `paired = TRUE` | 重复测量(进阶) |
 
 ## 小结
