@@ -1,2 +1,7 @@
 /content/posts/template
 .DS_Store
+
+# Hugo build output & cache — GitHub Actions rebuilds and deploys these
+/public/
+/resources/
+.hugo_build.lock
