@@ -1,0 +1,11 @@
+{{- /* r-course 学习阶段定义:按 lesson 的 weight 区间分组。
+       单一事实来源,list.html 与 single.html 共用。
+       区间(开下界, 闭上界):L1-3=(0,30] L4-8=(30,80] L9-10=(80,100]
+       L11-12=(100,108] L13=(108,∞)。新增课时只需让 weight 落入对应区间。 */ -}}
+{{- return slice
+  (dict "title" "编程基础"       "sub" "R · 数据整理 · 画图"          "min" 0   "max" 30)
+  (dict "title" "统计与临床主线"  "sub" "统计直觉 · Table 1 · 回归"     "min" 30  "max" 80)
+  (dict "title" "生存分析"       "sub" "Kaplan-Meier · Cox · 竞争风险"  "min" 80  "max" 100)
+  (dict "title" "放疗研究专题"    "sub" "EQD2/BED · 极小样本"           "min" 100 "max" 108)
+  (dict "title" "实战毕业"       "sub" "用自己的数据走到投稿"          "min" 108 "max" 100000)
+-}}

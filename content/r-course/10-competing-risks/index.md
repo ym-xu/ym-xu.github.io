@@ -94,7 +94,7 @@ coxph(Surv(ttdeath, cancer_death) ~ age + trt, data = trial) %>%
 | Fine-Gray 回归 | `crr() %>% tbl_regression(exponentiate = TRUE)` |
 | Cause-specific Cox | 把他因事件当删失,用 `coxph()` |
 
-下一课 [Lesson 11 · 用自己的数据发论文](../11-capstone/),把全流程串到你自己的回顾性队列上。
+下一课 [Lesson 11 · 放射生物剂量 EQD2/BED](../11-radiobiology-eqd2/):把不同分次方案换到同一把尺子,再接 [L12 极小样本的诚实分析](../12-small-samples/),最后在 [L13 capstone](../13-capstone/) 把全流程串到你自己的回顾性队列上。
 
 ## 延伸 Further reading
 

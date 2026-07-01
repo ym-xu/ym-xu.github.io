@@ -316,3 +316,94 @@ body.kind-section.section-projects #content.container { max-width: 980px; }
 .content .code-output-html table th,
 .content .code-output-html table td { border: 0; }
 .content .code-output-html tbody tr:nth-child(even) { background: transparent; }
+
+/* ============================================================
+   r-course — 目录页(分阶段)+ 课时页(双栏 + 侧边 TOC + 进度条)
+   作用域限定在 .section-r-course,不影响站内其它页面。
+   ============================================================ */
+
+/* ---- 目录页 hero ---- */
+.course-hero { margin: .5rem 0 1.6rem; }
+.course-hero h1 { margin: 0 0 .35rem; }
+.course-hero-sub { color: var(--muted); font-size: 1.1rem; line-height: 1.45; margin: 0 0 .95rem; }
+.course-meta { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 0 .9rem; padding: 0; margin: 0; font-size: .85rem; color: var(--muted); }
+.course-meta li { display: inline-flex; align-items: center; }
+.course-meta li:not(:last-child)::after { content: "·"; margin-left: .9rem; color: var(--muted); opacity: .55; }
+.course-meta strong { font-weight: 700; color: var(--fg); font-family: var(--font-mono); margin-right: .25rem; }
+.course-intro { margin-bottom: 2.2rem; }
+
+/* ---- 目录页:学习阶段分组 ---- */
+.syllabus { display: flex; flex-direction: column; gap: 1.7rem; }
+.phase-head { display: flex; align-items: baseline; gap: .9rem; padding-bottom: .5rem; margin-bottom: .35rem;
+  border-bottom: 1px solid var(--border); }
+/* 阶段用罗马数字(serif·强调色),与课时的阿拉伯等宽数字区分开 */
+.phase-index { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1; color: var(--link);
+  min-width: 1.6rem; }
+.phase-title { margin: 0; font-size: 1.08rem; }
+.phase-sub { margin: .12rem 0 0; font-size: .82rem; color: var(--muted); }
+.phase-lessons { display: flex; flex-direction: column; }
+
+.lesson-row { display: grid; grid-template-columns: 2.3rem minmax(0, 1fr) auto; align-items: baseline; gap: .9rem;
+  padding: .7rem .6rem; border-radius: var(--radius-md); color: inherit; text-decoration: none;
+  transition: background var(--dur-fast) var(--ease); }
+.lesson-row:hover { background: var(--surface-card-hover); text-decoration: none; }
+.lesson-row-num { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
+.lesson-row-body { min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+.lesson-row-title { font-size: 1.05rem; color: var(--fg); line-height: 1.3; }
+.lesson-row-sum { font-size: .88rem; color: var(--muted); line-height: 1.4; }
+.lesson-row-arrow { color: var(--link); opacity: 0; transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.lesson-row:hover .lesson-row-arrow { opacity: 1; transform: translateX(2px); }
+
+/* ---- 课时页:加宽容器 + 双栏 ---- */
+body.section-r-course.kind-page #content.container { max-width: 1060px; }
+body.section-r-course.kind-page { scroll-behavior: smooth; }
+
+.lesson-eyebrow { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .35rem; }
+.lesson-back { font-size: .9rem; color: var(--link); }
+.lesson-locator { font-family: var(--font-mono); font-size: .76rem; letter-spacing: .02em; color: var(--muted); }
+
+.lesson-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 2.4rem; align-items: start; }
+/* 两者都钉在第 1 行:aside 在 DOM 里排第一,若不显式定行,sparse 自动放置会把
+   .lesson-main 挤到第 2 行(正文跑到 TOC 下方)。 */
+.lesson-main { grid-column: 1; grid-row: 1; min-width: 0; }
+.lesson-toc { grid-column: 2; grid-row: 1; }
+.lesson-layout.no-toc { grid-template-columns: minmax(0, 1fr); }
+
+.lesson-toc-inner { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; }
+.lesson-toc-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .5rem; padding-left: .8rem; }
+.lesson-toc #TableOfContents ul { list-style: none; margin: 0; padding: 0; }
+.lesson-toc #TableOfContents ul ul { margin-left: .75rem; }
+.lesson-toc #TableOfContents li { margin: .1rem 0; }
+.lesson-toc #TableOfContents a { display: block; font-size: .84rem; line-height: 1.35; color: var(--muted);
+  border-left: 2px solid var(--border); padding: .14rem 0 .14rem .8rem;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease); }
+.lesson-toc #TableOfContents a:hover { color: var(--fg); text-decoration: none; border-left-color: var(--muted); }
+.lesson-toc #TableOfContents a.active { color: var(--link); border-left-color: var(--link); }
+
+/* 锚点跳转时让标题避开 sticky 顶栏 */
+body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 76px; }
+
+/* ---- 顶部阅读进度条 ---- */
+.reading-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; pointer-events: none; }
+.reading-progress > span { display: block; height: 100%; width: 0; background: var(--link); transition: width .1s linear; }
+
+/* ---- 窄屏:回退单栏,TOC 收成顶部盒子 ---- */
+@media (max-width: 1000px) {
+  body.section-r-course.kind-page #content.container { max-width: 760px; }
+  .lesson-layout, .lesson-layout.no-toc { grid-template-columns: 1fr; gap: 0; }
+  .lesson-main, .lesson-toc { grid-column: auto; grid-row: auto; }
+  .lesson-toc { margin: 0 0 1.5rem; }
+  .lesson-toc-inner { position: static; max-height: none; overflow: visible; padding: .75rem .9rem;
+    border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-card); }
+  .lesson-toc-label { padding-left: 0; }
+  .lesson-toc #TableOfContents a { border-left: 0; padding-left: 0; }
+  .lesson-toc #TableOfContents a.active { border-left: 0; }
+}
+@media (max-width: 600px) {
+  /* 双语长标题在窄屏降一档,避免拥挤 */
+  body.section-r-course .lesson .post-header h1 { font-size: 1.7rem; }
+}
+@media (max-width: 480px) {
+  .lesson-row { grid-template-columns: 1.8rem minmax(0, 1fr); }
+  .lesson-row-arrow { display: none; }
+}

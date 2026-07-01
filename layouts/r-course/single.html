@@ -1,31 +1,52 @@
 {{ define "main" }}
-  <article>
+  {{ $phases := partial "rcourse-phases.html" . }}
+  {{ $sibs := .Parent.Pages.ByWeight }}
+  {{ $total := len $sibs }}
+  {{ $num := add (len (where $sibs "Weight" "lt" .Weight)) 1 }}
+  {{ $phase := index (where $phases "max" "ge" .Weight) 0 }}
+  {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
+
+  <article class="lesson" data-lesson>
+    <div class="lesson-eyebrow">
+      <a class="lesson-back" href="{{ .Parent.RelPermalink }}">← 课程目录 Syllabus</a>
+      <span class="lesson-locator">第 {{ $num }} / {{ $total }} 课{{ with $phase }} · {{ .title }}{{ end }}</span>
+    </div>
+
     <header class="post-header">
-      <div class="meta"><a href="{{ .Parent.RelPermalink }}">← 课程目录 Syllabus</a></div>
       <h1>{{ .Title }}</h1>
       {{ with .Params.summary }}<p class="page-sub">{{ . }}</p>{{ end }}
     </header>
 
-    {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
-    {{ if $showToc }}
-      {{ with .TableOfContents }}<aside class="toc">{{ . }}</aside>{{ end }}
-    {{ end }}
-
-    <div class="content">{{ .Content }}</div>
-
-    {{/* 按 weight 顺序计算上一课 / 下一课,避免 PrevInSection 的方向歧义 */}}
-    {{ $siblings := .Parent.Pages.ByWeight }}
-    {{ $len := len $siblings }}
-    {{ $prev := false }}{{ $next := false }}
-    {{ range $i, $p := $siblings }}
-      {{ if eq $p.RelPermalink $.RelPermalink }}
-        {{ if gt $i 0 }}{{ $prev = index $siblings (sub $i 1) }}{{ end }}
-        {{ if lt (add $i 1) $len }}{{ $next = index $siblings (add $i 1) }}{{ end }}
+    <div class="lesson-layout{{ if not $showToc }} no-toc{{ end }}">
+      {{ if $showToc }}
+        {{ with .TableOfContents }}
+          <aside class="lesson-toc">
+            <div class="lesson-toc-inner">
+              <p class="lesson-toc-label">本课目录</p>
+              {{ . }}
+            </div>
+          </aside>
+        {{ end }}
       {{ end }}
-    {{ end }}
-    <nav class="pager">
-      {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
-      {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
-    </nav>
+
+      <div class="lesson-main">
+        <div class="content">{{ .Content }}</div>
+
+        {{/* 按 weight 顺序计算上一课 / 下一课,避免 PrevInSection 的方向歧义 */}}
+        {{ $prev := false }}{{ $next := false }}
+        {{ range $i, $p := $sibs }}
+          {{ if eq $p.RelPermalink $.RelPermalink }}
+            {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
+            {{ if lt (add $i 1) $total }}{{ $next = index $sibs (add $i 1) }}{{ end }}
+          {{ end }}
+        {{ end }}
+        <nav class="pager">
+          {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+          {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+        </nav>
+      </div>
+    </div>
   </article>
+
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
 {{ end }}

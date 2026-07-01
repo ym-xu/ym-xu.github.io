@@ -1,16 +1,49 @@
 {{ define "main" }}
-  <h1>{{ .Title }}</h1>
-  {{ with .Params.subtitle }}<p class="page-sub">{{ . }}</p>{{ end }}
-  <div class="content">{{ .Content }}</div>
-  <div class="post-rows">
-    {{ range $i, $p := .Pages.ByWeight }}
-      <article class="post-row">
-        <div class="post-row-date">{{ printf "%02d" (add $i 1) }}</div>
-        <div class="post-row-body">
-          <h3 class="post-row-title"><a href="{{ $p.RelPermalink }}">{{ $p.Title }}</a></h3>
-          {{ with $p.Params.summary }}<p class="post-row-sum">{{ . }}</p>{{ end }}
-        </div>
-      </article>
+  {{ $phases := partial "rcourse-phases.html" . }}
+  {{ $pages := .Pages.ByWeight }}
+  {{ $total := len $pages }}
+
+  <header class="course-hero">
+    <h1>{{ .Title }}</h1>
+    {{ with .Params.subtitle }}<p class="course-hero-sub">{{ . }}</p>{{ end }}
+    <ul class="course-meta">
+      <li><strong>{{ $total }}</strong> 节课</li>
+      <li>浏览器里直接运行</li>
+      <li>零基础起步</li>
+      <li>面向临床肿瘤研究</li>
+    </ul>
+  </header>
+
+  <div class="content course-intro">{{ .Content }}</div>
+
+  <div class="syllabus">
+    {{ range $pi, $phase := $phases }}
+      {{ $inPhase := where (where $pages "Weight" "gt" $phase.min) "Weight" "le" $phase.max }}
+      {{ if $inPhase }}
+        <section class="phase">
+          <div class="phase-head">
+            <span class="phase-index">{{ index (slice "I" "II" "III" "IV" "V" "VI" "VII") $pi }}</span>
+            <div>
+              <h2 class="phase-title">{{ $phase.title }}</h2>
+              <p class="phase-sub">{{ $phase.sub }}</p>
+            </div>
+          </div>
+          <div class="phase-lessons">
+            {{ range $p := $inPhase }}
+              {{ $num := add (len (where $pages "Weight" "lt" $p.Weight)) 1 }}
+              {{ $t := replaceRE "^Lesson [0-9]+ · " "" $p.Title }}
+              <a class="lesson-row" href="{{ $p.RelPermalink }}">
+                <span class="lesson-row-num">{{ printf "%02d" $num }}</span>
+                <span class="lesson-row-body">
+                  <span class="lesson-row-title">{{ $t }}</span>
+                  {{ with $p.Params.summary }}<span class="lesson-row-sum">{{ . }}</span>{{ end }}
+                </span>
+                <span class="lesson-row-arrow" aria-hidden="true">→</span>
+              </a>
+            {{ end }}
+          </div>
+        </section>
+      {{ end }}
     {{ end }}
   </div>
 {{ end }}

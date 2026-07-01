@@ -40,6 +40,9 @@
 {{/* WebR in-browser R runner for code blocks (lazy-loaded on first Run) */}}
 <script type="module" src="{{ "js/webr-run.js" | relURL }}?v={{ now.Unix }}"></script>
 
+{{/* Lesson reading UI: progress bar + scroll-spy TOC (self-guards to lesson pages) */}}
+<script defer src="{{ "js/lesson-ui.js" | relURL }}?v={{ now.Unix }}"></script>
+
 {{/* Plausible (optional) */}}
 {{ with site.Params.plausibleDomain }}
 <script defer data-domain="{{ . }}" src="https://plausible.io/js/script.js"></script>
