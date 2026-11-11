@@ -123,7 +123,14 @@ NOT_FIELD = re.compile(
     r"|video (text |subtitle |caption )?overlay|overlay removal|subtitle removal"                            # video editing
     r"|circuit (analysis|diagrams?|simulation)|causal topology"
     r"|navigational charts?|nautical charts?|maritime", re.I)
-BENCH_TITLE = re.compile(r"\b(benchmark|dataset|corpus)s?\b|\bbench\b", re.I)
+# "Using OCR / an LLM for X" papers: listed, but kept out of the field statistics.
+APPLICATION = re.compile(
+    r"\b(medical|clinical|healthcare|health ?care|patients?|radiolog\w+|hospitals?|legal|regulator\w*|compliance[- ](scored|check\w*|verification|review|documents?)"
+    r"|grading|graders?|exams?|examinations?|students?|education\w*|classroom|lectures?"
+    r"|biometric\w*|signature verification|forensic\w*|insurance|agricultur\w+|archaeolog\w+|pottery|accounting)\b", re.I)
+BENCH_TITLE = re.compile(r"\b(benchmark\w*|dataset|corpus)s?\b|\bbench\b|bench\b", re.I)
+# technical reports and versioned model releases ("PP-OCRv6: …", "HunyuanOCR-1.5: …")
+RELEASE = re.compile(r"technical report|^[^:]{0,40}?(v\d+(\.\d+)*|[-\s]\d+(\.\d+)+)\s*:", re.I)
 BENCH_ABS = re.compile(r"\b(introduce|present|release|construct|propose|curate|build|collect)\w*\s+(a|an|the)?\s*((new|novel|large[- ]scale|first|comprehensive|challenging|multilingual|synthetic)\s+)*([\w-]+\s+){0,3}(benchmark|dataset|corpus)\b", re.I)
 COMPILED = [(i, n, desc, re.compile(p, re.I)) for i, n, desc, p in SUBFIELDS]
 NS = {"a": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
@@ -134,7 +141,8 @@ through to toward towards under using via vs we what when where which while with
 paper approach method methods framework model models large language vision visual multimodal multi modal document documents
 understanding learning efficient towards study analysis data task tasks benchmark benchmarking dataset system systems toward
 llm llms mllm mllms vlm vlms lvlm lvlms evaluating evaluation improving improved enhancing robust unified simple
-not no one two more all any only just do does you your why visually rich text image images aware driven guided""".split())
+not no one two more all any only just do does you your why visually rich text image images aware driven guided
+technical report reports survey review case towards""".split())
 
 
 def config_watchlist():
@@ -287,8 +295,13 @@ def venue_of(comment, jref):
     return ""
 
 
+NORMALISE = {"agentic": "agent", "agents": "agent", "charts": "chart", "tables": "table", "benchmarks": "benchmark",
+             "retrievers": "retriever", "parsers": "parser", "forms": "form", "receipts": "receipt", "invoices": "invoice",
+             "manuscripts": "manuscript", "pages": "page", "documents": "document", "embeddings": "embedding"}
+
+
 def terms_of(title):
-    words = [w for w in re.findall(r"[a-z][a-z0-9-]+", title.lower()) if len(w) > 2]
+    words = [NORMALISE.get(w, w) for w in re.findall(r"[a-z][a-z0-9-]+", title.lower()) if len(w) > 2]
     uni = {w for w in words if w not in STOP}
     bi = {f"{a} {b}" for a, b in zip(words, words[1:]) if a not in STOP and b not in STOP}
     return uni | bi
@@ -350,6 +363,9 @@ def main():
                 "bench": bool(BENCH_TITLE.search(title) or BENCH_ABS.search(abstract)),
                 "watch": bool(watch_rx and any(watch_rx.fullmatch(a) for a in authors)),
                 "pick": ((cur["picks"][base] or True) if base in cur["picks"] else None),   # note text, or true
+                "app": bool(APPLICATION.search(title) and not BENCH_TITLE.search(title)) and base not in cur["include"],
+                "report": bool(RELEASE.search(title)),
+                "_sc": sc[tags[0]],
                 "venue": venue_of(comment, jref),
                 "code": code.group(0).rstrip(".,);") if code else "",
                 "abs": abstract[:320] + ("…" if len(abstract) > 320 else ""),
@@ -361,53 +377,6 @@ def main():
         time.sleep(3.5)  # arXiv asks for ≥3 s between calls
 
     papers.sort(key=lambda p: (p["date"], p["id"]), reverse=True)
-
-    # ---- weekly buckets, oldest first; the last bucket ends today ----
-    def week_of(date_iso):
-        return (today - dt.date.fromisoformat(date_iso)).days // 7   # 0 = this week
-    def weekly(ps):
-        w = [0] * WEEKS
-        for p in ps:
-            k = week_of(p["date"])
-            if 0 <= k < WEEKS:
-                w[WEEKS - 1 - k] += 1
-        return w
-    week_starts = [(today - dt.timedelta(days=7 * (WEEKS - 1 - i) + 6)).isoformat() for i in range(WEEKS)]
-
-    def growth(ps):
-        now = sum(1 for p in ps if week_of(p["date"]) < 4)
-        before = sum(1 for p in ps if 4 <= week_of(p["date"]) < 8)
-        return now, before, (None if min(now, before) < MIN_FOR_TREND else round(100 * (now - before) / before))
-
-    total = len(papers) or 1
-    subfields = []
-    for sid, name, desc, _ in COMPILED:
-        mine = [p for p in papers if sid in p["tags"]]
-        primary = [p for p in mine if p["tags"][0] == sid]
-        now, before, g = growth(mine)
-        subfields.append({
-            "id": sid, "name": name, "desc": desc,
-            "count": len(mine), "primary": len(primary),
-            "share": round(100 * len(primary) / total, 1),     # primary shares sum to 100%
-            "last4w": now, "prev4w": before, "trend": g,
-            "weekly": weekly(mine),
-            "latest": [{"id": p["id"], "title": p["title"]} for p in mine[:2]],
-            "featured": [],
-        })
-    subfields.sort(key=lambda s: (-s["primary"], -s["count"]))
-    # hand-picked representative papers (data/survey_curated.toml) replace "latest"
-    by_id = {p["id"]: p for p in papers}
-    want = sorted({i for ids in cur["featured"].values() for i in ids if i not in by_id})
-    extra = arxiv_titles(want)
-    for sf in subfields:
-        for i in cur["featured"].get(sf["id"], []):
-            if i in by_id:
-                sf["featured"].append({"id": i, "title": by_id[i]["title"]})
-            elif i in extra:
-                sf["featured"].append({"id": i, "title": extra[i][0]})
-    names = {sid: name for sid, name, *_ in COMPILED}
-    for p in papers:
-        p["tagnames"] = [names[t] for t in p["tags"]]
 
     # ---- Semantic Scholar: author IDs, citations, venues it knows about ----
     s2 = s2_enrich(papers) if papers else None
@@ -426,27 +395,91 @@ def main():
                     au[a["authorId"]] += 1
                     au_name[a["authorId"]] = a.get("name") or ""
         active = [{"name": au_name[i], "id": i, "n": n} for i, n in au.most_common(12) if n >= 3]
-        cited = sorted((p for p in papers if p.get("cites")), key=lambda p: -p["cites"])[:6]
-        cited = [{"id": p["id"], "title": p["title"], "cites": p["cites"]} for p in cited]
         print(f"  Semantic Scholar: {len(s2)}/{len(papers)} papers matched", file=sys.stderr)
+
+    # ---- weekly buckets, oldest first; the last bucket ends today ----
+    def week_of(date_iso):
+        return (today - dt.date.fromisoformat(date_iso)).days // 7   # 0 = this week
+    def weekly(ps):
+        w = [0] * WEEKS
+        for p in ps:
+            k = week_of(p["date"])
+            if 0 <= k < WEEKS:
+                w[WEEKS - 1 - k] += 1
+        return w
+    week_starts = [(today - dt.timedelta(days=7 * (WEEKS - 1 - i) + 6)).isoformat() for i in range(WEEKS)]
+
+    def growth(ps):
+        now = sum(1 for p in ps if week_of(p["date"]) < 4)
+        before = sum(1 for p in ps if 4 <= week_of(p["date"]) < 8)
+        return now, before, (None if min(now, before) < MIN_FOR_TREND else round(100 * (now - before) / before))
+
+    research = [p for p in papers if not p["app"]]
+    total = len(research) or 1
+    recent8 = (today - dt.timedelta(days=55)).isoformat()
+
+    def representative(ps):
+        """Its own (primary) papers from the last eight weeks, ranked by quality signals:
+        accepted at a venue, citations, public code, then match strength and recency.
+        Technical reports / model releases come after research papers."""
+        pool = [p for p in ps if p["date"] >= recent8] or ps
+        return sorted(pool, key=lambda p: (not p["report"], bool(p["venue"]), p.get("cites") or 0, bool(p["code"]),
+                                           p["_sc"], p["date"]), reverse=True)[:2]
+
+    subfields = []
+    for sid, name, desc, _ in COMPILED:
+        mine = [p for p in research if sid in p["tags"]]
+        primary = [p for p in mine if p["tags"][0] == sid]
+        now, before, g = growth(mine)
+        subfields.append({
+            "id": sid, "name": name, "desc": desc,
+            "count": len(mine), "primary": len(primary),
+            "share": round(100 * len(primary) / total, 1),     # primary shares sum to 100%
+            "last4w": now, "prev4w": before, "trend": g,
+            "weekly": weekly(mine),
+            "latest": [{"id": p["id"], "title": p["title"]} for p in representative(primary)],
+            "featured": [],
+        })
+    subfields.sort(key=lambda s: (-s["primary"], -s["count"]))
+    # hand-picked representative papers (data/survey_curated.toml) replace "latest"
+    by_id = {p["id"]: p for p in papers}
+    want = sorted({i for ids in cur["featured"].values() for i in ids if i not in by_id})
+    extra = arxiv_titles(want)
+    for sf in subfields:
+        for i in cur["featured"].get(sf["id"], []):
+            if i in by_id:
+                sf["featured"].append({"id": i, "title": by_id[i]["title"]})
+            elif i in extra:
+                sf["featured"].append({"id": i, "title": extra[i][0]})
+    names = {sid: name for sid, name, *_ in COMPILED}
+    for p in papers:
+        p["tagnames"] = [names[t] for t in p["tags"]]
+
     ven = collections.Counter(re.sub(r"\s+(20\d\d)", "", p["venue"]).replace(" Findings", "").replace(" Workshop", "")
-                              for p in papers if p["venue"])
+                              for p in research if p["venue"])
+
+    # ---- already being cited, normalised by age; technical reports marked ----
+    def per_week(p):
+        return (p.get("cites") or 0) / max(1, (today - dt.date.fromisoformat(p["date"])).days / 7)
+    cited = sorted((p for p in research if (p.get("cites") or 0) >= 3), key=per_week, reverse=True)[:6]
+    cited = [{"id": p["id"], "title": p["title"], "cites": p["cites"], "rate": round(per_week(p), 1), "report": p["report"]} for p in cited]
     venues = [{"name": v, "n": n} for v, n in ven.most_common(10)]
     for p in papers:
         del p["_all_authors"]
 
     # ---- where subfields meet: most common pairs ----
     pairs = collections.Counter()
-    for p in papers:
+    for p in research:
         t = sorted(p["tags"])
         for i in range(len(t)):
             for j in range(i + 1, len(t)):
                 pairs[(t[i], t[j])] += 1
     top_pairs = [{"a": names[a], "b": names[b], "ida": a, "idb": b, "n": n} for (a, b), n in pairs.most_common(8)]
 
-    # ---- rising terms: title words/bigrams, last 4 weeks vs the 22 before ----
-    recent = [p for p in papers if week_of(p["date"]) < 4]
-    base = [p for p in papers if week_of(p["date"]) >= 4]
+    # ---- rising terms: title words/bigrams, last 8 weeks vs the 18 before ----
+    RISE_WEEKS = 8
+    recent = [p for p in research if week_of(p["date"]) < RISE_WEEKS]
+    base = [p for p in research if week_of(p["date"]) >= RISE_WEEKS]
     rc, bc = collections.Counter(), collections.Counter()
     for p in recent:
         rc.update(terms_of(p["title"]))
@@ -455,9 +488,11 @@ def main():
     nr, nb = max(len(recent), 1), max(len(base), 1)
     rising = []
     for term, c in rc.items():
-        if c < 3:
+        if c < 4:
             continue
         lift = (c / nr) / ((bc[term] + 1) / nb)
+        if lift < 1.3:
+            continue
         rising.append((lift, c, term))
     rising.sort(reverse=True)
     picked, words_used = [], set()
@@ -470,19 +505,23 @@ def main():
         if len(picked) == 10:
             break
 
-    benches = [{"id": p["id"], "title": p["title"], "date": p["date"]} for p in papers if p["bench"]][:6]
+    benches = [{"id": p["id"], "title": p["title"], "date": p["date"]} for p in research if p["bench"]][:6]
+    for p in papers:
+        p.pop("_sc", None)
     list_from = (today - dt.timedelta(days=LIST_DAYS - 1)).isoformat()
     out = {
         "updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "weeks": WEEKS, "since": since.isoformat(), "today": today.isoformat(),
-        "total": len(papers),
-        "last4w": sum(1 for p in papers if week_of(p["date"]) < 4),
-        "this_week": sum(1 for p in papers if week_of(p["date"]) == 0),
-        "benchmarks": sum(1 for p in papers if p["bench"]),
+        "total": len(research),
+        "applications": sum(1 for p in papers if p["app"]),
+        "rise_weeks": RISE_WEEKS,
+        "last4w": sum(1 for p in research if week_of(p["date"]) < 4),
+        "this_week": sum(1 for p in research if week_of(p["date"]) == 0),
+        "benchmarks": sum(1 for p in research if p["bench"]),
         "watch": watch, "watched": sum(1 for p in papers if p["watch"]),
         "week_starts": week_starts,
-        "weekly": weekly(papers),
-        "max_weekly_total": max(weekly(papers) or [0]),
+        "weekly": weekly(research),
+        "max_weekly_total": max(weekly(research) or [0]),
         "max_weekly": max([max(s["weekly"]) for s in subfields] or [0]),
         "max_count": max([s["count"] for s in subfields] or [0]),
         "subfields": subfields,
@@ -494,8 +533,8 @@ def main():
                   for p in papers if p.get("pick") is not None],
         "min_for_trend": MIN_FOR_TREND,
         "venues": venues,
-        "accepted": sum(1 for p in papers if p["venue"]),
-        "with_code": sum(1 for p in papers if p["code"]),
+        "accepted": sum(1 for p in research if p["venue"]),
+        "with_code": sum(1 for p in research if p["code"]),
         "rising": picked,
         "new_benchmarks": benches,
         "list_days": LIST_DAYS,

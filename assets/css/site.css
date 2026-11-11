@@ -540,6 +540,54 @@ table.booktabs td:nth-child(3), table.booktabs td:nth-child(5) { color: var(--mu
 /* the paper list stays readable even before it is revealed (and for tools that read the page) */
 .js .reveal .plist .card { opacity: 1; transition: border-color .25s, box-shadow .25s; }
 
+/* stats: labels on one line, numbers on a common baseline */
+.survey .stats > div { display: flex; flex-direction: column; justify-content: space-between; gap: .15rem; min-width: 0; }
+.survey .stats dt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* subfields as full-width entries, like \subsection blocks */
+.subs { display: flex; flex-direction: column; }
+.subentry { display: grid; grid-template-columns: 12.5rem minmax(0, 1fr); gap: .5rem 1.8rem; padding: 1.15rem .7rem 1.2rem; border-top: .5px solid var(--border); border-radius: 3px; }
+.subentry:first-child { border-top: 0; padding-top: .4rem; }
+.subentry:hover { background: transparent; }
+.sside { min-width: 0; }
+.sname { margin: 0 0 .3rem; font-size: 1.08rem; line-height: 1.3; }
+.sname button { all: unset; cursor: pointer; font-weight: 700; }
+.sname button:hover { color: var(--link); }
+.sname button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.sstat { margin: 0; color: var(--muted); font-size: .88rem; font-variant: small-caps; letter-spacing: .03em; line-height: 1.5; }
+.sside .spark { height: 26px; margin: .55rem 0 0; }
+.smain { min-width: 0; }
+.subentry .ov { margin: 0; line-height: 1.6; text-wrap: pretty; }
+.snew { list-style: none; margin: .55rem 0 0; padding: 0; font-size: .9rem; line-height: 1.45; display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); gap: .2rem .6rem; }
+.snew .lbl { color: var(--muted); font-variant: small-caps; letter-spacing: .05em; }
+.snew a { position: relative; z-index: 2; color: var(--fg); }
+.snew a:hover { color: var(--link); }
+.smeta .lbl { display: inline-block; min-width: 4.6rem; }
+.smeta { margin: .55rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--muted); }
+.smeta .lbl { font-variant: small-caps; letter-spacing: .05em; margin-right: .6em; }
+.smeta a { position: relative; z-index: 2; color: var(--fg); }
+.smeta a:hover { color: var(--link); }
+.smeta .sep { color: var(--muted); }
+@media (max-width: 640px) {
+  .subentry { grid-template-columns: minmax(0, 1fr); gap: .4rem; padding: 1rem .2rem; }
+  .sside { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; column-gap: 1rem; align-items: end; }
+  .sside .sname { grid-column: 1 / -1; }
+  .sside .spark { grid-column: 2; grid-row: 2 / span 2; margin: 0; }
+  .subentry .ov { text-align: left; }
+}
+
+/* benchmarks grouped by subfield */
+table.booktabs.grouped tbody + tbody tr.grp th { padding-top: .9rem; }
+table.booktabs.grouped tr.grp th { font-weight: 400; font-variant: small-caps; letter-spacing: .05em; color: var(--muted); padding-bottom: .1rem; border-bottom: 0; }
+table.booktabs.grouped td:first-child { white-space: nowrap; padding-left: 1.1rem; }
+table.booktabs.grouped td:nth-child(2) { color: var(--muted); font-variant-numeric: lining-nums tabular-nums; }
+table.booktabs.grouped td:nth-child(4) { color: var(--muted); }
+
+/* what's moving: balanced blocks */
+#moving .block { margin: 0 0 1.6rem; }
+#moving .twocol.tight { margin-bottom: 1.6rem; align-items: start; }
+.pair .plabel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* Figure 3 — subfield × week heatmap (one hue; darker = more papers) */
 .heat { display: flex; flex-direction: column; gap: 3px; }
 .hrow, .haxis { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr); gap: .8rem; align-items: center; }
@@ -617,3 +665,8 @@ table.booktabs td:nth-child(3), table.booktabs td:nth-child(5) { color: var(--mu
 /* ---------- 404 ---------- */
 .err { padding: 2rem 0 3rem; }
 .err pre { font-size: .9rem; line-height: 1.5; color: var(--muted); white-space: pre-wrap; }
+
+/* survey v5 details */
+sup.mine { color: var(--link); margin-left: .1em; }
+.subentry .ov a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: .15em; }
+.subentry .ov a:hover { color: var(--link); text-decoration-color: currentColor; }

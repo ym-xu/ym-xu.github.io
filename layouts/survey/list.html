@@ -5,7 +5,7 @@
   <header class="maketitle fx-title">
     <h1>{{ .Title }}</h1>
     <p class="mt-author">Compiled automatically from arXiv every morning, with editor’s notes</p>
-    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} papers over {{ .weeks }} weeks · <a href="{{ "survey/index.xml" | relURL }}">follow via RSS</a></p>{{ end }}
+    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} research papers over {{ .weeks }} weeks{{ with .applications }} (+ {{ . }} applications){{ end }} · <a href="{{ "survey/index.xml" | relURL }}">follow via RSS</a></p>{{ end }}
   </header>
 
   <div class="abstract fx-after">
@@ -20,6 +20,7 @@
   {{ $maxW := $d.max_weekly | default 1 }}
   {{ $maxT := $d.max_weekly_total | default 1 }}
   {{ $minT := $d.min_for_trend | default 10 }}
+  {{ $short := dict "ocr" "OCR" "docvqa" "Document QA" "rag" "Retrieval" "agents" "Agents" "longdoc" "Long documents" "layout" "Layout" "parsing" "Parsing" "tables" "Tables" "charts" "Charts" "kie" "Extraction" "historical" "Handwriting" "imaging" "Imaging" }}
 
   <div class="sections">
     {{/* ---------- 1 · the field at a glance ---------- */}}
@@ -27,11 +28,11 @@
       <div class="section-head"><h2>The field at a glance</h2></div>
 
       <dl class="stats five">
-        <div><dt>papers · {{ $d.weeks }} weeks</dt><dd>{{ $d.total }}</dd></div>
+        <div><dt>papers</dt><dd>{{ $d.total }}</dd></div>
         <div><dt>last 4 weeks</dt><dd>{{ $d.last4w }}</dd></div>
-        <div><dt>new benchmarks</dt><dd>{{ $d.benchmarks }}</dd></div>
-        <div><dt>accepted at a venue</dt><dd>{{ $d.accepted | default 0 }}</dd></div>
-        <div><dt>with public code</dt><dd>{{ $d.with_code | default 0 }}</dd></div>
+        <div><dt>benchmarks</dt><dd>{{ $d.benchmarks }}</dd></div>
+        <div><dt>accepted</dt><dd>{{ $d.accepted | default 0 }}</dd></div>
+        <div><dt>with code</dt><dd>{{ $d.with_code | default 0 }}</dd></div>
       </dl>
       <p class="since" id="survey-since" hidden></p>
 
@@ -46,7 +47,7 @@
                 <span class="p" style="width: {{ printf "%.2f" (div (mul $s.primary 100.0) $maxC) }}%"></span><span class="s" style="width: {{ printf "%.2f" (div (mul (sub $s.count $s.primary) 100.0) $maxC) }}%"></span>
               </span></span>
               <span class="bnum">{{ $s.primary }}<span class="muted"> / {{ $s.count }}</span></span>
-              <span class="btrend"><span class="vs">{{ $s.last4w }} vs {{ $s.prev4w }}</span>{{ with $s.trend }}{{ if gt . 0 }} <span class="up">+{{ . }}%</span>{{ else }} {{ . }}%{{ end }}{{ end }}</span>
+              <span class="btrend"><span class="vs">{{ $s.last4w }} vs {{ $s.prev4w }}</span>{{ if ne $s.trend nil }}{{ if gt $s.trend 0 }} <span class="up">+{{ $s.trend }}%</span>{{ else if lt $s.trend 0 }} {{ $s.trend }}%{{ else }} ±0%{{ end }}{{ end }}</span>
             </button>
           {{ end }}
         </div>
@@ -85,7 +86,7 @@
     {{/* ---------- 2 · subfields, with editor's notes ---------- */}}
     <section class="section reveal" id="subfields">
       <div class="section-head"><h2>Subfields</h2>{{ with $notes }}{{ if not .reviewed }}<span class="muted draft">editor’s notes: draft, {{ dateFormat "January 2006" .updated }}</span>{{ end }}{{ end }}</div>
-      <div class="cards two">
+      <div class="subs">
         {{ range $s := $d.subfields }}
           {{ $pts := slice }}
           {{ $nw := len $s.weekly }}
@@ -96,20 +97,19 @@
           {{ end }}
           {{ $ov := "" }}{{ $cl := slice }}
           {{ with $notes }}{{ with index .overview $s.id }}{{ $ov = . }}{{ end }}{{ with index .classics $s.id }}{{ $cl = . }}{{ end }}{{ end }}
-          <article class="card sub">
-            <div class="card-kicker"><span>{{ $s.primary }} main · {{ $s.count }} in all</span><span class="push">{{ $s.last4w }} vs {{ $s.prev4w }}{{ with $s.trend }} · {{ if gt . 0 }}<span class="up">+{{ . }}%</span>{{ else }}{{ . }}%{{ end }}{{ end }}</span></div>
-            <h3 class="card-title"><button class="stretch" type="button" data-filter="{{ $s.id }}">{{ $s.name }}</button></h3>
-            <p class="card-text">{{ $ov | default $s.desc }}</p>
-            <svg class="spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ delimit $pts " " }}"></polyline></svg>
-            {{ $list := $s.featured | default $s.latest }}
-            {{ with $list }}
-              <p class="sub-label">{{ if $s.featured }}representative, picked{{ else }}newest{{ end }}</p>
-              <ul class="latest">{{ range . }}<li><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a></li>{{ end }}</ul>
-            {{ end }}
-            {{ with $cl }}
-              <p class="sub-label">classics</p>
-              <p class="classics">{{ range $k, $c := . }}{{ if $k }} · {{ end }}<a href="https://arxiv.org/abs/{{ index $c 1 }}" rel="noopener">{{ index $c 0 }}</a>{{ end }}</p>
-            {{ end }}
+          <article class="subentry spot" id="sub-{{ $s.id }}">
+            <div class="sside">
+              <h3 class="sname"><button type="button" data-filter="{{ $s.id }}" title="List its papers">{{ $s.name }}</button></h3>
+              <p class="sstat">{{ $s.primary }} main · {{ $s.count }} in all</p>
+              <p class="sstat">{{ $s.last4w }} vs {{ $s.prev4w }} in 4 wk{{ if ne $s.trend nil }} · {{ if gt $s.trend 0 }}<span class="up">+{{ $s.trend }}%</span>{{ else if lt $s.trend 0 }}{{ $s.trend }}%{{ else }}±0%{{ end }}{{ end }}</p>
+              <svg class="spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ delimit $pts " " }}"></polyline></svg>
+            </div>
+            <div class="smain">
+              <p class="ov">{{ $ov | default $s.desc | markdownify }}</p>
+              {{ with $cl }}<p class="smeta"><span class="lbl">key refs</span>{{ range $k, $c := . }}{{ if $k }}<span class="sep"> · </span>{{ end }}<a href="https://arxiv.org/abs/{{ index $c 1 }}" rel="noopener">{{ index $c 0 }}</a>{{ end }}</p>{{ end }}
+              {{ $list := $s.featured | default $s.latest }}
+              {{ with $list }}<ul class="snew">{{ range $k, $p := . }}<li class="lbl">{{ if not $k }}{{ if $s.featured }}picked{{ else }}recent{{ end }}{{ end }}</li><li><a href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></li>{{ end }}</ul>{{ end }}
+            </div>
           </article>
         {{ end }}
       </div>
@@ -119,65 +119,76 @@
     {{ with $notes }}{{ with .benchmarks }}
     <section class="section reveal" id="benchmarks">
       <div class="section-head"><h2>Core benchmarks</h2></div>
-      {{ $names := dict }}{{ range $d.subfields }}{{ $names = merge $names (dict .id .name) }}{{ end }}
+      {{ $all := . }}
       <div class="content">
-        <table class="booktabs">
-          <thead><tr><th>Benchmark</th><th>Year</th><th>Subfield</th><th>Task</th><th>Metric</th></tr></thead>
-          <tbody>
-            {{ range . }}<tr><td><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .name }}</a></td><td>{{ .year }}</td><td>{{ index $names .sub | default .sub }}</td><td>{{ .task }}</td><td>{{ .metric }}</td></tr>{{ end }}
-          </tbody>
+        <table class="booktabs grouped">
+          <thead><tr><th>Benchmark</th><th>Year</th><th>Task</th><th>Metric</th></tr></thead>
+          {{ range $d.subfields }}
+            {{ $sid := .id }}
+            {{ $rows := where $all "sub" $sid }}
+            {{ with $rows }}
+              <tbody>
+                <tr class="grp"><th colspan="4">{{ index $short $sid }}</th></tr>
+                {{ range . }}<tr><td><a href="{{ with .url }}{{ . }}{{ else }}https://arxiv.org/abs/{{ .id }}{{ end }}" rel="noopener">{{ .name }}</a>{{ if .mine }}<sup class="mine" title="I'm a co-author">*</sup>{{ end }}</td><td>{{ .year }}</td><td>{{ .task }}</td><td>{{ .metric }}</td></tr>{{ end }}
+              </tbody>
+            {{ end }}
+          {{ end }}
         </table>
       </div>
-      <p class="sub-note">The usual reference points, not a leaderboard: scores change too fast to keep here. Each name links to the paper that introduced it.</p>
+      <p class="sub-note">The usual reference points, not a leaderboard: scores change too fast to keep here. Each name links to the paper (or page) that introduced it; * marks a benchmark I co-authored.</p>
     </section>
     {{ end }}{{ end }}
 
     {{/* ---------- 4 · what's moving ---------- */}}
     <section class="section reveal" id="moving">
       <div class="section-head"><h2>What’s moving</h2></div>
-      <div class="twocol tight">
-        <div>
-          <h3 class="sub-h">Rising terms</h3>
-          <p class="sub-note">Title words and phrases most over-represented in the last four weeks, against the {{ sub $d.weeks 4 }} before.</p>
-          <div class="chips">
-            {{ range $d.rising }}<button class="chip term" type="button" data-term="{{ .term }}" title="{{ .n }} recent titles, {{ .lift }}× the earlier rate">{{ .term }} <span class="muted">{{ .n }}</span></button>{{ end }}
-          </div>
-        </div>
-        <div>
-          <h3 class="sub-h">Where subfields meet</h3>
-          <p class="sub-note">The pairs that most often share a paper.</p>
-          <ul class="pairs">
-            {{ $top := 1 }}{{ with index $d.pairs 0 }}{{ $top = .n }}{{ end }}
-            {{ range $d.pairs }}
-              <li><button class="pair" type="button" data-filter="{{ .ida }}+{{ .idb }}"><span>{{ .a }} <span class="muted">×</span> {{ .b }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>
-            {{ end }}
-          </ul>
+      <div class="block">
+        <h3 class="sub-h">Rising terms</h3>
+        {{ $rw := $d.rise_weeks | default 8 }}
+        <p class="sub-note">Title words and phrases most over-represented in the last {{ $rw }} weeks against the {{ sub $d.weeks $rw }} before (inflections merged, genre words like “technical report” left out). Counts are small, so read these as hints, not findings. Click one to search.</p>
+        <div class="chips">
+          {{ range $d.rising }}<button class="chip term" type="button" data-term="{{ .term }}" title="{{ .n }} recent titles, {{ .lift }}× the earlier rate">{{ .term }} <span class="muted">{{ .n }}</span></button>{{ end }}
         </div>
       </div>
       <div class="twocol tight">
+        <div>
+          <h3 class="sub-h">Where subfields meet</h3>
+          <p class="sub-note">Pairs that most often share a paper.</p>
+          <ul class="pairs">
+            {{ $top := 1 }}{{ with index $d.pairs 0 }}{{ $top = .n }}{{ end }}
+            {{ range $d.pairs }}
+              <li><button class="pair" type="button" data-filter="{{ .ida }}+{{ .idb }}" title="{{ .a }} × {{ .b }}"><span class="plabel">{{ index $short .ida }} <span class="muted">×</span> {{ index $short .idb }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>
+            {{ end }}
+          </ul>
+        </div>
         {{ with $d.venues }}
         <div>
           <h3 class="sub-h">Where it gets published</h3>
-          <p class="sub-note">Venues from arXiv comments and Semantic Scholar ({{ $d.accepted }} of {{ $d.total }} papers).</p>
+          <p class="sub-note">From arXiv comments and Semantic Scholar ({{ $d.accepted }} of {{ $d.total }}).</p>
           <ul class="pairs">
             {{ $top := (index . 0).n }}
-            {{ range . }}<li><button class="pair" type="button" data-term="{{ .name }}"><span>{{ .name }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>{{ end }}
+            {{ range first 8 . }}<li><button class="pair" type="button" data-term="{{ .name }}"><span class="plabel">{{ .name }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>{{ end }}
           </ul>
         </div>
         {{ end }}
+      </div>
+      <div class="twocol tight">
+        {{ if and $d.authors_disambiguated $d.active_authors }}
         <div>
-          {{ if and $d.authors_disambiguated $d.active_authors }}
-            <h3 class="sub-h">Most active authors</h3>
-            <p class="sub-note">Counted by Semantic Scholar author ID, so people who share a name aren’t merged.</p>
-            <div class="chips">
-              {{ range $d.active_authors }}<button class="chip term" type="button" data-term="{{ .name }}" title="Semantic Scholar author {{ .id }}">{{ .name }} <span class="muted">{{ .n }}</span></button>{{ end }}
-            </div>
-          {{ end }}
-          {{ with $d.most_cited }}
-            <h3 class="sub-h" style="margin-top: 1.2rem">Already being cited</h3>
-            <dl class="dated tightdl">{{ range . }}<dt>{{ .cites }} cit.</dt><dd><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a></dd>{{ end }}</dl>
-          {{ end }}
+          <h3 class="sub-h">Most active authors</h3>
+          <p class="sub-note">By Semantic Scholar author ID, so namesakes aren’t merged.</p>
+          <div class="chips">
+            {{ range $d.active_authors }}<button class="chip term" type="button" data-term="{{ .name }}" title="Semantic Scholar author {{ .id }}">{{ .name }} <span class="muted">{{ .n }}</span></button>{{ end }}
+          </div>
         </div>
+        {{ end }}
+        {{ with $d.most_cited }}
+        <div>
+          <h3 class="sub-h">Already being cited</h3>
+          <p class="sub-note">Ranked by citations per week since release (Semantic Scholar), so older papers don’t win by age. Model releases and technical reports are marked — they tend to collect citations fastest.</p>
+          <dl class="dated tightdl">{{ range . }}<dt>{{ .rate }}/wk</dt><dd><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a> <span class="muted">· {{ .cites }} cit.</span>{{ if .report }} <span class="badge">release</span>{{ end }}</dd>{{ end }}</dl>
+        </div>
+        {{ end }}
       </div>
       {{ with $d.new_benchmarks }}
         <h3 class="sub-h">Newest benchmarks &amp; datasets</h3>
@@ -204,6 +215,7 @@
           <button class="chip flag" type="button" data-flag="bench" aria-pressed="false">benchmarks</button>
           <button class="chip flag" type="button" data-flag="venue" aria-pressed="false">accepted</button>
           <button class="chip flag" type="button" data-flag="code" aria-pressed="false">with code</button>
+          {{ if $d.applications }}<button class="chip flag" type="button" data-flag="app" aria-pressed="false" title="Papers that apply OCR or an LLM to a domain task — listed, not counted in the figures">applications</button>{{ end }}
           {{ if $d.picks }}<button class="chip flag" type="button" data-flag="pick" aria-pressed="false">my picks</button>{{ end }}
           {{ if $d.watch }}<button class="chip flag" type="button" data-flag="watch" aria-pressed="false" title="{{ delimit $d.watch ", " }}">people I follow</button>{{ end }}
           <button class="chip flag" type="button" data-flag="fresh" aria-pressed="false" hidden>new to me</button>
@@ -216,12 +228,12 @@
           {{ $off := mod (add (int $t.Weekday) 6) 7 }}
           {{ $wk := ($t.AddDate 0 0 (int (sub 0 $off))).Format "2006-01-02" }}
           {{ if ne $wk $prevWk }}<h3 class="wk" data-wk="{{ $wk }}">Week of {{ dateFormat "January 2" $wk }}</h3>{{ $prevWk = $wk }}{{ end }}
-          <article class="card paper" data-wk="{{ $wk }}" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}" data-pick="{{ if $p.pick }}true{{ else }}false{{ end }}" data-venue="{{ if $p.venue }}true{{ else }}false{{ end }}" data-code="{{ if $p.code }}true{{ else }}false{{ end }}" data-date="{{ $p.date }}">
+          <article class="card paper" data-wk="{{ $wk }}" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}" data-pick="{{ if $p.pick }}true{{ else }}false{{ end }}" data-app="{{ $p.app }}" data-venue="{{ if $p.venue }}true{{ else }}false{{ end }}" data-code="{{ if $p.code }}true{{ else }}false{{ end }}" data-date="{{ $p.date }}">
             <div class="card-kicker">
               <time datetime="{{ $p.date }}">{{ dateFormat "Jan 2, 2006" $p.date }}</time>
               <span>{{ $p.cat }}</span>
               {{ with $p.venue }}<span class="ve">{{ . }}</span>{{ end }}
-              <span class="push"><span class="badge fresh" hidden>new</span>{{ if $p.pick }}<span class="badge">my pick</span>{{ end }}{{ if $p.watch }}<span class="badge">followed</span>{{ end }}{{ if $p.bench }}<span class="badge">benchmark</span>{{ end }}</span>
+              <span class="push"><span class="badge fresh" hidden>new</span>{{ if $p.app }}<span class="badge">application</span>{{ end }}{{ if $p.report }}<span class="badge">release</span>{{ end }}{{ if $p.pick }}<span class="badge">my pick</span>{{ end }}{{ if $p.watch }}<span class="badge">followed</span>{{ end }}{{ if $p.bench }}<span class="badge">benchmark</span>{{ end }}</span>
             </div>
             <h3 class="card-title"><a class="stretch" href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></h3>
             <p class="card-au">{{ delimit $p.authors ", " }}</p>
@@ -233,7 +245,7 @@
       </div>
       <p class="more-wrap"><button class="chip more" id="survey-more" type="button" hidden>show more</button></p>
       <p class="muted empty" id="survey-empty" hidden>No papers match.</p>
-      <p class="sub-note">All {{ $d.listed_total }} papers from the last {{ $d.weeks }} weeks, newest first and grouped by week — the same set the figures count. Filters are kept in the address bar, so a filtered view can be shared.</p>
+      <p class="sub-note">All {{ $d.listed_total }} papers from the last {{ $d.weeks }} weeks, newest first and grouped by week. The {{ $d.applications | default 0 }} marked “application” (OCR or an LLM applied to a domain task — grading, clinical, legal…) are listed but not counted in the figures. Filters are kept in the address bar, so a filtered view can be shared.</p>
     </section>
 
     {{/* ---------- 6 · method ---------- */}}
@@ -241,7 +253,7 @@
       <div class="section-head"><h2>Method</h2></div>
       <div class="content">
         <p>Every morning (06:00 UTC) a GitHub Action asks the arXiv API for the last {{ $d.weeks }} weeks of papers in cs.CV, cs.CL, cs.IR and neighbouring categories that mention documents, OCR, layout, tables, charts, forms and the like. Only first releases count: a new version or cross-listing of an older paper is skipped.</p>
-        <p>A paper has to be <i>about</i> documents — document terms are scored (title three times, abstract once) and must reach a threshold — and must look visual, so text-only “document” work is dropped; a list of negative patterns catches the usual false friends (pathology “slides”, nautical “charts”, robots, sensors). Each of the {{ len $d.subfields }} subfields is a keyword rule scored the same way; the strongest one is the paper’s main subject, with the catch-all “Document QA &amp; VLMs” discounted so specific subfields win. Retrieval, agent, long-document and extraction papers also need a strong visual cue, and agent papers a stronger document signal.</p>
+        <p>A paper has to be <i>about</i> documents — document terms are scored (title three times, abstract once) and must reach a threshold — and must look visual, so text-only “document” work is dropped; a list of negative patterns catches the usual false friends (pathology “slides”, nautical “charts”, robots, sensors). Each of the {{ len $d.subfields }} subfields is a keyword rule scored the same way; the strongest one is the paper’s main subject, with the catch-all “Document QA &amp; VLMs” discounted so specific subfields win. Retrieval, agent, long-document and extraction papers also need a strong visual cue, and agent papers a stronger document signal. Papers that apply OCR or an LLM to a domain task (exam grading, clinical or legal documents, signature verification…) are kept in the list as “applications” but left out of every figure. Each subfield’s “recent” papers are its own main-subject papers from the last eight weeks, ranked by venue acceptance, citations and public code; a hand-picked entry replaces them.</p>
         <p>Semantic Scholar adds author IDs (so namesakes stay apart), citation counts and venues. On top of the rules sits a hand-kept file, <code>data/survey_curated.toml</code>: papers to exclude or force-include, representative papers per subfield, and my picks. The rules themselves live in <code>scripts/fetch_survey.py</code>. It remains a rough instrument — a map of where attention goes, not a curated reading list.<sup><a href="#fn-arxiv">1</a></sup></p>
         <p id="fn-arxiv" class="fn"><sup>1</sup> Thank you to arXiv for use of its open access interoperability; author IDs, citations and venues from Semantic Scholar. Data window: {{ dateFormat "Jan 2, 2006" $d.since }} – {{ dateFormat "Jan 2, 2006" $d.today }}.</p>
       </div>

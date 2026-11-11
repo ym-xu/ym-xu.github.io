@@ -15,7 +15,7 @@
   var papersSection = document.getElementById('papers');
   var weeks = Array.prototype.slice.call(list.querySelectorAll('.wk'));
   var STEP = 30;
-  var FLAGS = ['bench', 'watch', 'venue', 'code', 'pick', 'fresh'];   // each matches data-<flag>="true"
+  var FLAGS = ['bench', 'watch', 'venue', 'code', 'app', 'pick', 'fresh'];   // each matches data-<flag>="true"
   var state = { tag: '', text: '', shown: STEP };
   FLAGS.forEach(function (f) { state[f] = false; });
   var texts = cards.map(function (c) { return c.textContent.toLowerCase().replace(/\s+/g, ' '); });
