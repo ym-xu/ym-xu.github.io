@@ -486,34 +486,55 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
 @media (max-width: 640px) { .survey .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .survey .stats > div:nth-child(3) { border-left: 0; } }
 
 .fig { margin: 0 0 2rem; }
-.fig figcaption { color: var(--muted); font-size: .9rem; margin-top: .6rem; }
+.fig figcaption { color: var(--muted); font-size: .9rem; margin-top: .6rem; line-height: 1.5; }
 .fig figcaption b { color: var(--fg); }
+.legend { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; color: var(--muted); font-size: .85rem; font-variant: small-caps; letter-spacing: .03em; margin: 0 .4rem .4rem; }
+.legend span { display: inline-flex; align-items: center; gap: .4rem; }
+.legend i { display: inline-block; width: 14px; height: 9px; }
+.legend .push { margin-left: auto; }
+.k-p, .bar .p { background: color-mix(in oklab, var(--link) 78%, transparent); }
+.k-s, .bar .s { background: color-mix(in oklab, var(--link) 26%, transparent); }
 
-/* Figure 1 — horizontal bars, each row a button that filters the list */
+/* Figure 1 — stacked horizontal bars, each row a button that filters the list */
 .barchart { display: flex; flex-direction: column; }
-.brow { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 2.6rem 3.4rem; align-items: center; gap: .8rem; width: 100%; padding: .32rem .4rem; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.brow { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 4.4rem 3.2rem; align-items: center; gap: .8rem; width: 100%; padding: .32rem .4rem; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .brow:hover { background: var(--surface-hover); }
-.brow:hover .bar > span { background: var(--link); }
+.brow:hover .bar .p { background: var(--link); }
 .bname { font-size: .95rem; }
 .bar { display: block; height: 10px; background: var(--surface); }
-.bar > span { display: block; height: 100%; background: color-mix(in oklab, var(--link) 70%, transparent); transform-origin: left center; transition: background .2s; }
-.bnum { text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+.bar-in { display: flex; height: 100%; transform-origin: left center; }
+.bar-in > span { display: block; height: 100%; transition: background .2s; }
+.bnum { text-align: right; font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
 .btrend { text-align: right; color: var(--muted); font-size: .88rem; font-variant-numeric: lining-nums tabular-nums; }
 .up { color: var(--link); }
-@media (max-width: 640px) { .brow { grid-template-columns: minmax(0, 1fr) 2.4rem 3rem; } .brow .bar { grid-column: 1 / -1; grid-row: 2; } }
+@media (max-width: 640px) { .brow { grid-template-columns: minmax(0, 1fr) 4rem 2.8rem; } .brow .bar { grid-column: 1 / -1; grid-row: 2; } .legend .push { display: none; } }
 
-/* Figure 2 — papers per day */
-.cols { display: block; width: 100%; height: 90px; }
+/* Figure 2 — papers per week */
+.cols { display: block; width: 100%; height: 96px; }
 .cols rect { fill: color-mix(in oklab, var(--link) 70%, transparent); transform-box: fill-box; transform-origin: bottom; }
+.cols rect.now { fill: color-mix(in oklab, var(--link) 30%, transparent); }
 .cols rect:hover { fill: var(--link); }
 .cols line { stroke: var(--rule); stroke-width: .5; vector-effect: non-scaling-stroke; }
 .cols-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; font-variant: small-caps; letter-spacing: .03em; margin-top: .2rem; }
 
+/* What's moving */
+.twocol.tight { column-gap: 2.5rem; row-gap: 1.5rem; margin-bottom: 1.6rem; }
+.sub-h { font-size: 1.05rem; margin: 0 0 .25rem; }
+.sub-note { color: var(--muted); font-size: .88rem; margin: 0 0 .7rem; line-height: 1.45; }
+.chip.term .muted { font-variant: normal; font-size: .8em; margin-left: .15em; }
+.pairs { list-style: none; margin: 0; padding: 0; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 4.5rem 1.8rem; align-items: center; gap: .6rem; width: 100%; padding: .28rem .35rem; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; font-size: .92rem; text-align: left; cursor: pointer; }
+.pair:hover { background: var(--surface-hover); }
+.pbar { display: block; height: 6px; background: var(--surface); }
+.pbar > span { display: block; height: 100%; background: color-mix(in oklab, var(--link) 55%, transparent); }
+
 /* subfield cards */
 .card.sub .card-title button { all: unset; cursor: pointer; }
 .card.sub .card-title button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
-.card.sub .card-text a { position: relative; z-index: 2; color: var(--fg); }
-.card.sub .card-text a:hover { color: var(--link); }
+.card.sub .latest { list-style: none; margin: .1rem 0 0; padding: 0; font-size: .9rem; line-height: 1.4; display: flex; flex-direction: column; gap: .3rem; }
+.card.sub .latest a { position: relative; z-index: 2; color: var(--fg); }
+.card.sub .latest a:hover { color: var(--link); }
+.card.sub .latest li::before { content: "–"; color: var(--muted); margin-right: .35rem; }
 .spark { display: block; width: 100%; height: 32px; margin: .2rem 0; }
 .spark polyline { fill: none; stroke: var(--link); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
 
@@ -524,19 +545,25 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
 .search input { flex: 1; min-width: 0; font: inherit; color: var(--fg); background: transparent; border: 0; border-bottom: .5px solid var(--rule); padding: .35rem .1rem; }
 .search input:focus { outline: none; border-bottom-color: var(--link); box-shadow: 0 1px 0 var(--link); }
 .chips { display: flex; flex-wrap: wrap; gap: .35rem; }
-.chip { font: inherit; font-size: .9rem; font-variant: small-caps; letter-spacing: .03em; color: var(--fg); background: transparent; border: .5px solid color-mix(in oklab, var(--rule) 35%, transparent); border-radius: 2px; padding: .28rem .6rem; min-height: 32px; cursor: pointer; transition: background .15s, border-color .15s; }
+.chip { font: inherit; font-size: .9rem; font-variant: small-caps; letter-spacing: .03em; color: var(--fg); background: transparent; border: .5px solid color-mix(in oklab, var(--rule) 35%, transparent); border-radius: 2px; padding: .28rem .6rem; min-height: 32px; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; }
 .chip:hover { border-color: var(--link); }
 .chip[aria-pressed="true"] { background: var(--hl); border-color: transparent; }
-.more-wrap { text-align: center; margin: 1.2rem 0 0; }
+.chip.flag { border-style: dashed; }
+@media (max-width: 640px) {
+  .filters .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; margin: 0 calc(-1 * var(--pad)); padding-left: var(--pad); padding-right: var(--pad); scrollbar-width: thin; }
+}
+.more-wrap { text-align: center; margin: 1.2rem 0 .6rem; }
 .paper .pabs { position: relative; z-index: 2; font-size: .93rem; color: var(--muted); }
 .paper .pabs summary { cursor: pointer; font-variant: small-caps; letter-spacing: .04em; width: max-content; }
 .paper .pabs p { margin: .35rem 0 0; line-height: 1.5; }
+.paper .card-foot b { font-weight: 400; color: var(--fg); }
+.paper .badge + .badge { margin-left: .5em; }
 .fn { font-size: .85rem; color: var(--muted); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .js .reveal .bar > span { transform: scaleX(0); transition: transform .9s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 60ms + .2s), background .2s; }
-  .js .reveal.in .bar > span { transform: none; }
-  .js .reveal .cols rect { transform: scaleY(0); transition: transform .6s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 8ms + .2s); }
+  .js .reveal .bar-in, .js .reveal .pbar > span { transform: scaleX(0); transition: transform .9s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 60ms + .2s); }
+  .js .reveal.in .bar-in, .js .reveal.in .pbar > span { transform: none; }
+  .js .reveal .cols rect { transform: scaleY(0); transition: transform .6s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 25ms + .2s); }
   .js .reveal.in .cols rect { transform: none; }
   .js .reveal .spark polyline { stroke-dasharray: 400; stroke-dashoffset: 400; transition: stroke-dashoffset 1.4s ease .3s; }
   .js .reveal.in .spark polyline { stroke-dashoffset: 0; }

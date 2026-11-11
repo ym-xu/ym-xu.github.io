@@ -12,6 +12,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write   # only for the keep-alive step below
 
 concurrency:
   group: "pages"
@@ -52,6 +53,15 @@ jobs:
         with:
           path: data/survey.json
           key: survey-${{ github.run_id }}
+
+      # GitHub disables scheduled workflows after 60 days without repo activity.
+      # Re-enabling the workflow through the API (no commit) keeps the daily run alive.
+      - name: Keep the daily schedule alive
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pages.yml/enable"
 
       - name: Build
         run: hugo --minify -b "${{ steps.pages.outputs.base_url }}"

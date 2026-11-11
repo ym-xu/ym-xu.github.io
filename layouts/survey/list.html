@@ -3,8 +3,8 @@
 <article class="survey">
   <header class="maketitle fx-title">
     <h1>{{ .Title }}</h1>
-    <p class="mt-author">Compiled automatically from arXiv</p>
-    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} papers in the last {{ .window_days }} days</p>{{ end }}
+    <p class="mt-author">Compiled automatically from arXiv, every morning</p>
+    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} papers over {{ .weeks }} weeks</p>{{ end }}
   </header>
 
   <div class="abstract fx-after">
@@ -12,12 +12,12 @@
     {{ .Content }}
   </div>
 
-  {{ if not $d }}
+  {{ if not (and $d $d.weekly) }}
     <p class="muted">The survey data hasn’t been generated yet — run <code>python3 scripts/fetch_survey.py</code>.</p>
   {{ else }}
   {{ $maxC := $d.max_count | default 1 }}
   {{ $maxW := $d.max_weekly | default 1 }}
-  {{ $maxD := $d.max_daily | default 1 }}
+  {{ $maxT := $d.max_weekly_total | default 1 }}
 
   <div class="sections">
     {{/* ---------- 1 · the field at a glance ---------- */}}
@@ -25,43 +25,77 @@
       <div class="section-head"><h2>The field at a glance</h2></div>
 
       <dl class="stats">
-        <div><dt>papers</dt><dd>{{ $d.total }}</dd></div>
-        <div><dt>last 14 days</dt><dd>{{ $d.last14 }}</dd></div>
+        <div><dt>papers · {{ $d.weeks }} wk</dt><dd>{{ $d.total }}</dd></div>
+        <div><dt>last 4 weeks</dt><dd>{{ $d.last4w }}</dd></div>
         <div><dt>new benchmarks</dt><dd>{{ $d.benchmarks }}</dd></div>
-        <div><dt>subfields</dt><dd>{{ len $d.subfields }}</dd></div>
+        {{ if $d.watch }}<div><dt>by people I follow</dt><dd>{{ $d.watched }}</dd></div>{{ else }}<div><dt>this week</dt><dd>{{ $d.this_week }}</dd></div>{{ end }}
       </dl>
 
       <figure class="fig">
+        <div class="legend" aria-hidden="true"><span><i class="k-p"></i>primary subfield</span><span><i class="k-s"></i>also touches it</span><span class="push">4-wk change</span></div>
         <div class="barchart" role="list">
           {{ range $i, $s := $d.subfields }}
-            <button class="brow" type="button" role="listitem" data-filter="{{ $s.id }}" style="--i: {{ $i }}" aria-label="{{ $s.name }}: {{ $s.count }} papers, {{ $s.share }}% — show these papers">
+            <button class="brow" type="button" role="listitem" data-filter="{{ $s.id }}" style="--i: {{ $i }}" title="{{ $s.desc }}"
+                    aria-label="{{ $s.name }}: primary in {{ $s.primary }} papers, touched by {{ $s.count }} — show them">
               <span class="bname">{{ $s.name }}</span>
-              <span class="bar"><span style="width: {{ printf "%.1f" (div (mul $s.count 100.0) $maxC) }}%"></span></span>
-              <span class="bnum">{{ $s.count }}</span>
-              <span class="btrend">{{ with $s.trend }}{{ if gt . 0 }}<span class="up">+{{ . }}%</span>{{ else if lt . 0 }}{{ . }}%{{ else }}±0%{{ end }}{{ else }}–{{ end }}</span>
+              <span class="bar"><span class="bar-in">
+                <span class="p" style="width: {{ printf "%.2f" (div (mul $s.primary 100.0) $maxC) }}%"></span><span class="s" style="width: {{ printf "%.2f" (div (mul (sub $s.count $s.primary) 100.0) $maxC) }}%"></span>
+              </span></span>
+              <span class="bnum">{{ $s.primary }}<span class="muted"> / {{ $s.count }}</span></span>
+              <span class="btrend">{{ with $s.trend }}{{ if gt . 0 }}<span class="up">+{{ . }}%</span>{{ else }}{{ . }}%{{ end }}{{ else }}–{{ end }}</span>
             </button>
           {{ end }}
         </div>
-        <figcaption><b>Figure 1:</b> Papers per subfield over the last {{ $d.window_days }} days (a paper can count in several). Right column: the last four weeks against the four before. Click a row to list its papers.</figcaption>
+        <figcaption><b>Figure 1:</b> Subfields of document understanding over the last {{ $d.weeks }} weeks. The dark segment counts papers whose <i>main</i> subject is the subfield (these add up to {{ $d.total }}); the light one, papers that also touch it. Change compares the last four weeks with the four before, shown when both have at least four papers. Click a row to list its papers.</figcaption>
       </figure>
 
-      {{ $n := len $d.daily }}
-      {{ $w := 4 }}
-      {{ $H := 64.0 }}
+      {{ $n := len $d.weekly }}
+      {{ $w := 10 }}
+      {{ $H := 60.0 }}
       <figure class="fig">
-        <svg class="cols" viewBox="0 0 {{ mul $n $w }} {{ add $H 2 }}" preserveAspectRatio="none" role="img" aria-label="Papers per day, {{ index $d.days 0 }} to {{ index $d.days (sub $n 1) }}, peak {{ $maxD }} per day">
-          {{ range $i, $v := $d.daily }}
-            {{ $h := div (mul $v $H) $maxD }}
-            <rect x="{{ mul $i $w }}" y="{{ printf "%.2f" (sub $H $h) }}" width="{{ sub $w 1 }}" height="{{ printf "%.2f" $h }}" style="--i: {{ $i }}"><title>{{ index $d.days $i }}: {{ $v }}</title></rect>
+        <svg class="cols" viewBox="0 0 {{ mul $n $w }} {{ add $H 1 }}" preserveAspectRatio="none" role="img" aria-label="Papers per week over {{ $n }} weeks, peak {{ $maxT }}">
+          {{ range $i, $v := $d.weekly }}
+            {{ $h := div (mul $v $H) $maxT }}
+            <rect class="{{ if eq $i (sub $n 1) }}now{{ end }}" x="{{ add (mul $i $w) 1 }}" y="{{ printf "%.2f" (sub $H $h) }}" width="{{ sub $w 2 }}" height="{{ printf "%.2f" $h }}" style="--i: {{ $i }}"><title>Week of {{ dateFormat "Jan 2" (index $d.week_starts $i) }}: {{ $v }} papers</title></rect>
           {{ end }}
           <line x1="0" y1="{{ $H }}" x2="{{ mul $n $w }}" y2="{{ $H }}"></line>
         </svg>
-        <div class="cols-axis"><span>{{ dateFormat "Jan 2" (index $d.days 0) }}</span><span>{{ dateFormat "Jan 2" (index $d.days (sub $n 1)) }}</span></div>
-        <figcaption><b>Figure 2:</b> New document-understanding papers per day (peak {{ $maxD }}).</figcaption>
+        <div class="cols-axis"><span>{{ dateFormat "Jan 2" (index $d.week_starts 0) }}</span><span>this week</span></div>
+        <figcaption><b>Figure 2:</b> Papers per week (peak {{ $maxT }}). The last bar is the week in progress, and arXiv lists papers a day or two late, so it always looks short.</figcaption>
       </figure>
     </section>
 
-    {{/* ---------- 2 · subfields ---------- */}}
+    {{/* ---------- 2 · what's moving ---------- */}}
+    <section class="section reveal" id="moving">
+      <div class="section-head"><h2>What’s moving</h2></div>
+      <div class="twocol tight">
+        <div>
+          <h3 class="sub-h">Rising terms</h3>
+          <p class="sub-note">Title words and phrases most over-represented in the last four weeks, against the {{ sub $d.weeks 4 }} before.</p>
+          <div class="chips">
+            {{ range $d.rising }}<button class="chip term" type="button" data-term="{{ .term }}" title="{{ .n }} recent titles, {{ .lift }}× the earlier rate">{{ .term }} <span class="muted">{{ .n }}</span></button>{{ end }}
+          </div>
+        </div>
+        <div>
+          <h3 class="sub-h">Where subfields meet</h3>
+          <p class="sub-note">The pairs that most often share a paper.</p>
+          <ul class="pairs">
+            {{ $top := 1 }}{{ with index $d.pairs 0 }}{{ $top = .n }}{{ end }}
+            {{ range $d.pairs }}
+              <li><button class="pair" type="button" data-filter="{{ .ida }}+{{ .idb }}"><span>{{ .a }} <span class="muted">×</span> {{ .b }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>
+            {{ end }}
+          </ul>
+        </div>
+      </div>
+      {{ with $d.new_benchmarks }}
+        <h3 class="sub-h">Newest benchmarks &amp; datasets</h3>
+        <dl class="dated">
+          {{ range . }}<dt>{{ dateFormat "Jan 2" .date }}</dt><dd><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a></dd>{{ end }}
+        </dl>
+      {{ end }}
+    </section>
+
+    {{/* ---------- 3 · subfields ---------- */}}
     <section class="section reveal" id="subfields">
       <div class="section-head"><h2>Subfields</h2></div>
       <div class="cards">
@@ -70,55 +104,61 @@
           {{ $nw := len $s.weekly }}
           {{ range $j, $v := $s.weekly }}
             {{ $x := div (mul $j 120.0) (sub $nw 1) }}
-            {{ $y := sub 27.0 (div (mul $v 24.0) $maxW) }}
+            {{ $y := sub 28.0 (div (mul $v 25.0) $maxW) }}
             {{ $pts = $pts | append (printf "%.1f,%.1f" $x $y) }}
           {{ end }}
           <article class="card sub">
-            <div class="card-kicker"><span>{{ $s.count }} papers · {{ $s.share }}%</span>{{ with $s.trend }}<span class="push{{ if gt . 0 }} up{{ end }}">{{ if gt . 0 }}+{{ end }}{{ . }}%</span>{{ end }}</div>
+            <div class="card-kicker"><span>{{ $s.primary }} primary · {{ $s.count }} in all</span>{{ with $s.trend }}<span class="push{{ if gt . 0 }} up{{ end }}">{{ if gt . 0 }}+{{ end }}{{ . }}%</span>{{ end }}</div>
             <h3 class="card-title"><button class="stretch" type="button" data-filter="{{ $s.id }}">{{ $s.name }}</button></h3>
+            <p class="card-text">{{ $s.desc }}</p>
             <svg class="spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ delimit $pts " " }}"></polyline></svg>
-            {{ with $s.latest }}<p class="card-text"><span class="sc">latest</span> <a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a></p>{{ end }}
+            {{ with $s.latest }}
+              <ul class="latest">{{ range . }}<li><a href="https://arxiv.org/abs/{{ .id }}" rel="noopener">{{ .title }}</a></li>{{ end }}</ul>
+            {{ end }}
           </article>
         {{ end }}
       </div>
     </section>
 
-    {{/* ---------- 3 · the papers ---------- */}}
+    {{/* ---------- 4 · the papers ---------- */}}
     <section class="section reveal" id="papers">
       <div class="section-head"><h2>Latest papers</h2><span class="muted" id="survey-count" aria-live="polite"></span></div>
       <div class="filters">
         <label class="search"><span class="sc">search</span> <input id="survey-q" type="search" placeholder="title, author, abstract…" autocomplete="off"></label>
-        <div class="chips" role="group" aria-label="Filter by subfield">
+        <div class="chips" role="group" aria-label="Filter papers">
           <button class="chip" type="button" data-filter="" aria-pressed="true">all</button>
           {{ range $d.subfields }}<button class="chip" type="button" data-filter="{{ .id }}" aria-pressed="false">{{ .name }}</button>{{ end }}
-          <button class="chip" type="button" data-bench aria-pressed="false">benchmarks only</button>
+          <button class="chip flag" type="button" data-flag="bench" aria-pressed="false">benchmarks</button>
+          {{ if $d.watch }}<button class="chip flag" type="button" data-flag="watch" aria-pressed="false" title="{{ delimit $d.watch ", " }}">people I follow</button>{{ end }}
         </div>
       </div>
       <div class="cards one plist" id="survey-list">
         {{ range $k, $p := $d.papers }}
-          <article class="card paper" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}"{{ if ge $k 30 }} hidden{{ end }}>
+          <article class="card paper" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}"{{ if ge $k 30 }} hidden{{ end }}>
             <div class="card-kicker">
               <time datetime="{{ $p.date }}">{{ dateFormat "Jan 2, 2006" $p.date }}</time>
               <span>{{ $p.cat }}</span>
-              {{ if $p.bench }}<span class="badge push">benchmark</span>{{ end }}
+              <span class="push">{{ if $p.watch }}<span class="badge">followed</span>{{ end }}{{ if $p.bench }}<span class="badge">benchmark</span>{{ end }}</span>
             </div>
             <h3 class="card-title"><a class="stretch" href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></h3>
             <p class="card-au">{{ delimit $p.authors ", " }}</p>
             <details class="pabs"><summary>abstract</summary><p>{{ $p.abs }}</p></details>
-            <div class="card-foot">{{ delimit $p.tagnames " · " }} <span class="blinks"><a href="https://arxiv.org/pdf/{{ $p.id }}" rel="noopener">pdf</a></span></div>
+            <div class="card-foot"><b>{{ index $p.tagnames 0 }}</b>{{ range after 1 $p.tagnames }} · {{ . }}{{ end }} <span class="blinks"><a href="https://arxiv.org/pdf/{{ $p.id }}" rel="noopener">pdf</a></span></div>
           </article>
         {{ end }}
       </div>
       <p class="more-wrap"><button class="chip more" id="survey-more" type="button">show more</button></p>
       <p class="muted empty" id="survey-empty" hidden>No papers match.</p>
+      <p class="sub-note">All {{ $d.listed_total }} papers from the last {{ $d.weeks }} weeks, newest first — the same set the figures count. Filters are kept in the address bar, so a filtered view can be shared.</p>
     </section>
 
-    {{/* ---------- 4 · method ---------- */}}
+    {{/* ---------- 5 · method ---------- */}}
     <section class="section reveal" id="method">
       <div class="section-head"><h2>Method</h2></div>
       <div class="content">
-        <p>Every morning (06:00 UTC) a GitHub Action queries the arXiv API for recent papers in cs.CV, cs.CL, cs.IR and neighbouring categories whose title or abstract mentions documents, OCR, layout, tables, charts, forms and the like. Papers that don’t look visual — text-only “documents” — are dropped. The rest are filed into the {{ len $d.subfields }} subfields above by keyword rules; a paper can sit in several, so shares add up to more than 100%. The rules live in <code>scripts/fetch_survey.py</code>, and the whole thing is a rough instrument: expect some misfiled papers.<sup><a href="#fn-arxiv">1</a></sup></p>
-        <p id="fn-arxiv" class="fn"><sup>1</sup> Thank you to arXiv for use of its open access interoperability. Data window: {{ dateFormat "Jan 2, 2006" $d.since }} – {{ dateFormat "Jan 2, 2006" (index $d.days (sub (len $d.days) 1)) }}.</p>
+        <p>Every morning (06:00 UTC) a GitHub Action asks the arXiv API for the last {{ $d.weeks }} weeks of papers in cs.CV, cs.CL, cs.IR and neighbouring categories whose title or abstract mentions documents, OCR, layout, tables, charts, forms and the like. Papers that don’t look visual — text-only “documents” — are dropped.</p>
+        <p>Each of the {{ len $d.subfields }} subfields is a keyword rule. A rule found in the title counts three times, in the abstract once; a subfield is tagged at a score of two or more, so a single passing mention (“we run an OCR engine”) is not enough. The highest-scoring subfield is the paper’s primary one. “Rising terms” compares how often a title word or phrase appears in the last four weeks with the weeks before. The rules live in <code>scripts/fetch_survey.py</code>; this is a rough instrument, so expect some misfiled papers.<sup><a href="#fn-arxiv">1</a></sup></p>
+        <p id="fn-arxiv" class="fn"><sup>1</sup> Thank you to arXiv for use of its open access interoperability. Data window: {{ dateFormat "Jan 2, 2006" $d.since }} – {{ dateFormat "Jan 2, 2006" $d.today }}.</p>
       </div>
     </section>
   </div>
