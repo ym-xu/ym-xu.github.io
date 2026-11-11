@@ -57,7 +57,7 @@ TERMS = [
 # (id, name, one-line scope, regex). Order breaks ties for the primary subfield.
 SUBFIELDS = [
     ("ocr", "OCR & Text Recognition", "Reading the characters: printed, scene and multilingual text recognition and spotting.",
-     r"\bocr\b|optical character|text recognition|text spotting|scene text|character recognition|text line recognition"),
+     r"\bocr\b|optical character|text recognition|text spotting|scene text(?! (editing|removal|erasure|synthesis|generation|rendering))|character recognition|text line recognition"),
     ("docvqa", "Document QA & VLMs", "Vision-language models and question answering over document images.",
      r"document (visual )?question answering|docvqa|document vqa|visually[- ]rich|document (vlm|mllm|lvlm|understanding model)s?|document understanding|text[- ]rich (image|document)s?|text[- ]centric|document intelligence|document ai\b|ocr[- ]free"),
     ("rag", "Retrieval & RAG", "Finding evidence in documents: visual retrieval, multimodal RAG, page search.",
@@ -81,7 +81,7 @@ SUBFIELDS = [
     ("historical", "Handwriting & Historical", "Handwritten text, manuscripts, archives and historical newspapers.",
      r"handwrit\w+|historical (documents?|manuscripts?|newspapers?)|manuscripts?|archival|\bhtr\b|palaeograph\w*|paleograph\w*|palimpsest"),
     ("imaging", "Imaging & Generation", "Document image processing and synthesis: dewarping, binarisation, layout and text generation.",
-     r"dewarp\w*|binari[sz]ation|document (image )?(enhancement|restoration|rectification|deblur\w*)|layout generation|document generation|text rendering|visual text generation|forgery|tamper\w*"),
+     r"(scene )?text (image )?(editing|removal|erasure|synthesis)|dewarp\w*|binari[sz]ation|document (image )?(enhancement|restoration|rectification|deblur\w*)|layout generation|document generation|text rendering|visual text generation|forgery|tamper\w*"),
 ]
 VISUAL = re.compile(
     r"document images?|visually[- ]rich|visual(ly)? (rich )?documents?|multimodal documents?|\bocr\b|optical character|scann\w+"
@@ -295,6 +295,8 @@ def venue_of(comment, jref):
     return ""
 
 
+# the field's own vocabulary: always frequent, never a trend
+FIELD_WORDS = {"ocr", "pdf", "document", "page", "text", "visual", "reading", "recognition", "understanding", "vision-language"}
 NORMALISE = {"agentic": "agent", "agents": "agent", "charts": "chart", "tables": "table", "benchmarks": "benchmark",
              "retrievers": "retriever", "parsers": "parser", "forms": "form", "receipts": "receipt", "invoices": "invoice",
              "manuscripts": "manuscript", "pages": "page", "documents": "document", "embeddings": "embedding"}
@@ -431,13 +433,19 @@ def main():
         mine = [p for p in research if sid in p["tags"]]
         primary = [p for p in mine if p["tags"][0] == sid]
         now, before, g = growth(mine)
+        prev_weeks = collections.Counter(week_of(p["date"]) for p in mine if 4 <= week_of(p["date"]) < 8)
+        burst = None
+        if before >= 8 and now < before and prev_weeks:   # only worth saying when it explains a drop
+            k, n = prev_weeks.most_common(1)[0]
+            if n / before >= 0.4:
+                burst = {"n": n, "of": before, "week": (today - dt.timedelta(days=7 * k + 6)).isoformat()}
         subfields.append({
             "id": sid, "name": name, "desc": desc,
             "count": len(mine), "primary": len(primary),
             "share": round(100 * len(primary) / total, 1),     # primary shares sum to 100%
-            "last4w": now, "prev4w": before, "trend": g,
+            "last4w": now, "prev4w": before, "trend": g, "burst": burst,
             "weekly": weekly(mine),
-            "latest": [{"id": p["id"], "title": p["title"]} for p in representative(primary)],
+            "auto": [{"id": p["id"], "title": p["title"]} for p in representative(primary)],
             "featured": [],
         })
     subfields.sort(key=lambda s: (-s["primary"], -s["count"]))
@@ -451,6 +459,9 @@ def main():
                 sf["featured"].append({"id": i, "title": by_id[i]["title"]})
             elif i in extra:
                 sf["featured"].append({"id": i, "title": extra[i][0]})
+        pinned = [dict(x, pinned=True) for x in sf["featured"]]
+        taken = {x["id"] for x in pinned}
+        sf["shown"] = (pinned + [dict(x, pinned=False) for x in sf["auto"] if x["id"] not in taken])[:max(2, len(pinned))]
     names = {sid: name for sid, name, *_ in COMPILED}
     for p in papers:
         p["tagnames"] = [names[t] for t in p["tags"]]
@@ -485,22 +496,34 @@ def main():
         rc.update(terms_of(p["title"]))
     for p in base:
         bc.update(terms_of(p["title"]))
+    # Rank by the z-scored log-odds ratio with an informative Dirichlet prior
+    # (Monroe, Colaresi & Quinn 2008): frequent field words ("ocr", "pdf") get
+    # no free ride, and a term must also be clearly more common than before.
+    import math
+    allc = rc + bc
+    n_all = sum(allc.values()) or 1
+    a0 = 500.0
+    n_r, n_b = sum(rc.values()) or 1, sum(bc.values()) or 1
     nr, nb = max(len(recent), 1), max(len(base), 1)
     rising = []
     for term, c in rc.items():
-        if c < 4:
+        if c < 4 or term in FIELD_WORDS:
             continue
+        aw = a0 * allc[term] / n_all
+        lr = math.log((c + aw) / (n_r + a0 - c - aw))
+        lb = math.log((bc[term] + aw) / (n_b + a0 - bc[term] - aw))
+        z = (lr - lb) / math.sqrt(1 / (c + aw) + 1 / (bc[term] + aw))
         lift = (c / nr) / ((bc[term] + 1) / nb)
-        if lift < 1.3:
+        if lift < 1.5 or z < 1.0:
             continue
-        rising.append((lift, c, term))
+        rising.append((z, c, term, lift))
     rising.sort(reverse=True)
     picked, words_used = [], set()
-    for lift, c, term in rising:
+    for z, c, term, lift in rising:
         parts = set(term.split())
         if parts & words_used and " " not in term:   # skip a word already shown inside a bigram
             continue
-        picked.append({"term": term, "n": c, "lift": round(lift, 1)})
+        picked.append({"term": term, "n": c, "lift": round(lift, 1), "z": round(z, 1)})
         words_used |= parts
         if len(picked) == 10:
             break

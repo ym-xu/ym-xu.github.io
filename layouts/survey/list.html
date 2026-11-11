@@ -13,6 +13,15 @@
     {{ .Content }}
   </div>
 
+  {{ $mine := slice }}
+  {{ with $notes }}{{ with .my_work }}
+    {{ $mine = .subfields | default slice }}
+    <aside class="mywork fx-after2" id="my-work">
+      <p class="mywork-h">Where my work fits</p>
+      <p>{{ .text | markdownify }}</p>
+    </aside>
+  {{ end }}{{ end }}
+
   {{ if not (and $d $d.weekly) }}
     <p class="muted">The survey data hasn’t been generated yet — run <code>python3 scripts/fetch_survey.py</code>.</p>
   {{ else }}
@@ -42,7 +51,7 @@
           {{ range $i, $s := $d.subfields }}
             <button class="brow" type="button" role="listitem" data-filter="{{ $s.id }}" style="--i: {{ $i }}" title="{{ $s.desc }}"
                     aria-label="{{ $s.name }}: main subject of {{ $s.primary }} papers, touched by {{ $s.count }}; {{ $s.last4w }} in the last four weeks against {{ $s.prev4w }} — show them">
-              <span class="bname">{{ $s.name }}</span>
+              <span class="bname">{{ $s.name }}{{ if in $mine $s.id }}<span class="minedot" title="where my work sits">●</span>{{ end }}</span>
               <span class="bar"><span class="bar-in">
                 <span class="p" style="width: {{ printf "%.2f" (div (mul $s.primary 100.0) $maxC) }}%"></span><span class="s" style="width: {{ printf "%.2f" (div (mul (sub $s.count $s.primary) 100.0) $maxC) }}%"></span>
               </span></span>
@@ -51,7 +60,7 @@
             </button>
           {{ end }}
         </div>
-        <figcaption><b>Figure 1:</b> Subfields over the last {{ $d.weeks }} weeks. Dark: papers whose <i>main</i> subject is the subfield (these add up to {{ $d.total }}); light: papers that also touch it. The right column gives raw counts for the last four weeks against the four before; a percentage is added only when both are at least {{ $minT }}, since smaller counts swing a lot on a handful of papers. Click a row to list its papers.</figcaption>
+        <figcaption><b>Figure 1:</b> Subfields over the last {{ $d.weeks }} weeks. Dark: papers whose <i>main</i> subject is the subfield (these add up to {{ $d.total }}); light: papers that also touch it. The right column gives raw counts for the last four weeks against the four before; a percentage is added only when both are at least {{ $minT }}, since smaller counts swing a lot on a handful of papers. Click a row to list its papers.{{ $bursts := where $d.subfields "burst" "!=" nil }}{{ with $bursts }} Bursts: {{ range $k, $b := . }}{{ if $k }}; {{ end }}in {{ $b.name }}, {{ $b.burst.n }} of the {{ $b.burst.of }} earlier papers came out in one week (week of {{ dateFormat "Jan 2" $b.burst.week }}), so part of its drop is that spike passing{{ end }}.{{ end }}{{ if $mine }} <span class="minedot">●</span> marks where my own work sits.{{ end }}</figcaption>
       </figure>
 
       {{ $n := len $d.weekly }}
@@ -99,7 +108,7 @@
           {{ with $notes }}{{ with index .overview $s.id }}{{ $ov = . }}{{ end }}{{ with index .classics $s.id }}{{ $cl = . }}{{ end }}{{ end }}
           <article class="subentry spot" id="sub-{{ $s.id }}">
             <div class="sside">
-              <h3 class="sname"><button type="button" data-filter="{{ $s.id }}" title="List its papers">{{ $s.name }}</button></h3>
+              <h3 class="sname"><button type="button" data-filter="{{ $s.id }}" title="List its papers">{{ $s.name }}</button>{{ if in $mine $s.id }}<span class="minedot" title="where my work sits">●</span>{{ end }}</h3>
               <p class="sstat">{{ $s.primary }} main · {{ $s.count }} in all</p>
               <p class="sstat">{{ $s.last4w }} vs {{ $s.prev4w }} in 4 wk{{ if ne $s.trend nil }} · {{ if gt $s.trend 0 }}<span class="up">+{{ $s.trend }}%</span>{{ else if lt $s.trend 0 }}{{ $s.trend }}%{{ else }}±0%{{ end }}{{ end }}</p>
               <svg class="spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ delimit $pts " " }}"></polyline></svg>
@@ -107,8 +116,8 @@
             <div class="smain">
               <p class="ov">{{ $ov | default $s.desc | markdownify }}</p>
               {{ with $cl }}<p class="smeta"><span class="lbl">key refs</span>{{ range $k, $c := . }}{{ if $k }}<span class="sep"> · </span>{{ end }}<a href="https://arxiv.org/abs/{{ index $c 1 }}" rel="noopener">{{ index $c 0 }}</a>{{ end }}</p>{{ end }}
-              {{ $list := $s.featured | default $s.latest }}
-              {{ with $list }}<ul class="snew">{{ range $k, $p := . }}<li class="lbl">{{ if not $k }}{{ if $s.featured }}picked{{ else }}recent{{ end }}{{ end }}</li><li><a href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></li>{{ end }}</ul>{{ end }}
+              {{ $list := $s.shown | default $s.latest }}
+              {{ with $list }}<ul class="snew">{{ range $k, $p := . }}<li class="lbl">{{ if $p.pinned }}picked{{ else }}recent{{ end }}</li><li><a href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></li>{{ end }}</ul>{{ end }}
             </div>
           </article>
         {{ end }}
@@ -145,7 +154,7 @@
       <div class="block">
         <h3 class="sub-h">Rising terms</h3>
         {{ $rw := $d.rise_weeks | default 8 }}
-        <p class="sub-note">Title words and phrases most over-represented in the last {{ $rw }} weeks against the {{ sub $d.weeks $rw }} before (inflections merged, genre words like “technical report” left out). Counts are small, so read these as hints, not findings. Click one to search.</p>
+        <p class="sub-note">Title words and phrases most over-represented in the last {{ $rw }} weeks against the {{ sub $d.weeks $rw }} before ranked by a log-odds ratio with an informative prior, so the field’s everyday words (“ocr”, “pdf”) don’t count as trends; inflections are merged and genre words like “technical report” left out. Counts are small, so read these as hints, not findings. Click one to search.</p>
         <div class="chips">
           {{ range $d.rising }}<button class="chip term" type="button" data-term="{{ .term }}" title="{{ .n }} recent titles, {{ .lift }}× the earlier rate">{{ .term }} <span class="muted">{{ .n }}</span></button>{{ end }}
         </div>
@@ -253,7 +262,7 @@
       <div class="section-head"><h2>Method</h2></div>
       <div class="content">
         <p>Every morning (06:00 UTC) a GitHub Action asks the arXiv API for the last {{ $d.weeks }} weeks of papers in cs.CV, cs.CL, cs.IR and neighbouring categories that mention documents, OCR, layout, tables, charts, forms and the like. Only first releases count: a new version or cross-listing of an older paper is skipped.</p>
-        <p>A paper has to be <i>about</i> documents — document terms are scored (title three times, abstract once) and must reach a threshold — and must look visual, so text-only “document” work is dropped; a list of negative patterns catches the usual false friends (pathology “slides”, nautical “charts”, robots, sensors). Each of the {{ len $d.subfields }} subfields is a keyword rule scored the same way; the strongest one is the paper’s main subject, with the catch-all “Document QA &amp; VLMs” discounted so specific subfields win. Retrieval, agent, long-document and extraction papers also need a strong visual cue, and agent papers a stronger document signal. Papers that apply OCR or an LLM to a domain task (exam grading, clinical or legal documents, signature verification…) are kept in the list as “applications” but left out of every figure. Each subfield’s “recent” papers are its own main-subject papers from the last eight weeks, ranked by venue acceptance, citations and public code; a hand-picked entry replaces them.</p>
+        <p>A paper has to be <i>about</i> documents — document terms are scored (title three times, abstract once) and must reach a threshold — and must look visual, so text-only “document” work is dropped; a list of negative patterns catches the usual false friends (pathology “slides”, nautical “charts”, robots, sensors). Each of the {{ len $d.subfields }} subfields is a keyword rule scored the same way; the strongest one is the paper’s main subject, with the catch-all “Document QA &amp; VLMs” discounted so specific subfields win. Retrieval, agent, long-document and extraction papers also need a strong visual cue, and agent papers a stronger document signal. Papers that apply OCR or an LLM to a domain task (exam grading, clinical or legal documents, signature verification…) are kept in the list as “applications” but left out of every figure. Each subfield shows one hand-picked paper (“picked”) and one chosen automatically (“recent”): its own main-subject papers from the last eight weeks, ranked by venue acceptance, citations and public code.</p>
         <p>Semantic Scholar adds author IDs (so namesakes stay apart), citation counts and venues. On top of the rules sits a hand-kept file, <code>data/survey_curated.toml</code>: papers to exclude or force-include, representative papers per subfield, and my picks. The rules themselves live in <code>scripts/fetch_survey.py</code>. It remains a rough instrument — a map of where attention goes, not a curated reading list.<sup><a href="#fn-arxiv">1</a></sup></p>
         <p id="fn-arxiv" class="fn"><sup>1</sup> Thank you to arXiv for use of its open access interoperability; author IDs, citations and venues from Semantic Scholar. Data window: {{ dateFormat "Jan 2, 2006" $d.since }} – {{ dateFormat "Jan 2, 2006" $d.today }}.</p>
       </div>
