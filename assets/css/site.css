@@ -54,6 +54,7 @@
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* author display rules (e.g. .card{display:flex}) must not un-hide */
 html { -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; padding: 0; }
 body {
@@ -108,8 +109,8 @@ body.section-r-course.kind-page { --sheet: 1140px; }
 #theme-toggle:hover { background: var(--surface-hover); color: var(--link); }
 @media (max-width: 480px) {
   .nav { gap: 0; margin-left: -.3rem; }
-  .nav-item { padding: .5rem .3rem; font-size: .95rem; }
-  #theme-toggle { width: 36px; height: 36px; margin-left: 0; }
+  .nav-item { padding: .5rem .22rem; font-size: .9rem; letter-spacing: .03em; }
+  #theme-toggle { width: 32px; height: 32px; margin-left: 0; }
 }
 
 /* ---------- footer: a footnote rule, then small print ---------- */
@@ -475,6 +476,71 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
 }
 @media (max-width: 600px) { body.section-r-course .lesson .post-header h1 { font-size: 1.7rem; } }
 @media (max-width: 480px) { .lesson-row { grid-template-columns: 1.8rem minmax(0, 1fr); } .lesson-row-arrow { display: none; } }
+
+/* ---------- survey: a living map of document understanding ---------- */
+.survey .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0 0 1.6rem; border-top: .5px solid var(--rule); border-bottom: .5px solid var(--rule); }
+.survey .stats > div { padding: .7rem .9rem; }
+.survey .stats > div + div { border-left: .5px solid var(--border); }
+.survey .stats dt { color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .9rem; }
+.survey .stats dd { margin: .1rem 0 0; font-size: 1.8rem; line-height: 1.1; font-variant-numeric: lining-nums tabular-nums; }
+@media (max-width: 640px) { .survey .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .survey .stats > div:nth-child(3) { border-left: 0; } }
+
+.fig { margin: 0 0 2rem; }
+.fig figcaption { color: var(--muted); font-size: .9rem; margin-top: .6rem; }
+.fig figcaption b { color: var(--fg); }
+
+/* Figure 1 — horizontal bars, each row a button that filters the list */
+.barchart { display: flex; flex-direction: column; }
+.brow { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 2.6rem 3.4rem; align-items: center; gap: .8rem; width: 100%; padding: .32rem .4rem; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.brow:hover { background: var(--surface-hover); }
+.brow:hover .bar > span { background: var(--link); }
+.bname { font-size: .95rem; }
+.bar { display: block; height: 10px; background: var(--surface); }
+.bar > span { display: block; height: 100%; background: color-mix(in oklab, var(--link) 70%, transparent); transform-origin: left center; transition: background .2s; }
+.bnum { text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+.btrend { text-align: right; color: var(--muted); font-size: .88rem; font-variant-numeric: lining-nums tabular-nums; }
+.up { color: var(--link); }
+@media (max-width: 640px) { .brow { grid-template-columns: minmax(0, 1fr) 2.4rem 3rem; } .brow .bar { grid-column: 1 / -1; grid-row: 2; } }
+
+/* Figure 2 — papers per day */
+.cols { display: block; width: 100%; height: 90px; }
+.cols rect { fill: color-mix(in oklab, var(--link) 70%, transparent); transform-box: fill-box; transform-origin: bottom; }
+.cols rect:hover { fill: var(--link); }
+.cols line { stroke: var(--rule); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.cols-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; font-variant: small-caps; letter-spacing: .03em; margin-top: .2rem; }
+
+/* subfield cards */
+.card.sub .card-title button { all: unset; cursor: pointer; }
+.card.sub .card-title button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.card.sub .card-text a { position: relative; z-index: 2; color: var(--fg); }
+.card.sub .card-text a:hover { color: var(--link); }
+.spark { display: block; width: 100%; height: 32px; margin: .2rem 0; }
+.spark polyline { fill: none; stroke: var(--link); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+
+/* paper list filters */
+.filters { display: flex; flex-direction: column; gap: .7rem; margin: 0 0 1.2rem; }
+.search { display: flex; align-items: baseline; gap: .6rem; }
+.search .sc { color: var(--muted); }
+.search input { flex: 1; min-width: 0; font: inherit; color: var(--fg); background: transparent; border: 0; border-bottom: .5px solid var(--rule); padding: .35rem .1rem; }
+.search input:focus { outline: none; border-bottom-color: var(--link); box-shadow: 0 1px 0 var(--link); }
+.chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.chip { font: inherit; font-size: .9rem; font-variant: small-caps; letter-spacing: .03em; color: var(--fg); background: transparent; border: .5px solid color-mix(in oklab, var(--rule) 35%, transparent); border-radius: 2px; padding: .28rem .6rem; min-height: 32px; cursor: pointer; transition: background .15s, border-color .15s; }
+.chip:hover { border-color: var(--link); }
+.chip[aria-pressed="true"] { background: var(--hl); border-color: transparent; }
+.more-wrap { text-align: center; margin: 1.2rem 0 0; }
+.paper .pabs { position: relative; z-index: 2; font-size: .93rem; color: var(--muted); }
+.paper .pabs summary { cursor: pointer; font-variant: small-caps; letter-spacing: .04em; width: max-content; }
+.paper .pabs p { margin: .35rem 0 0; line-height: 1.5; }
+.fn { font-size: .85rem; color: var(--muted); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal .bar > span { transform: scaleX(0); transition: transform .9s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 60ms + .2s), background .2s; }
+  .js .reveal.in .bar > span { transform: none; }
+  .js .reveal .cols rect { transform: scaleY(0); transition: transform .6s cubic-bezier(.3,.7,.2,1) calc(var(--i, 0) * 8ms + .2s); }
+  .js .reveal.in .cols rect { transform: none; }
+  .js .reveal .spark polyline { stroke-dasharray: 400; stroke-dashoffset: 400; transition: stroke-dashoffset 1.4s ease .3s; }
+  .js .reveal.in .spark polyline { stroke-dashoffset: 0; }
+}
 
 /* ---------- 404 ---------- */
 .err { padding: 2rem 0 3rem; }

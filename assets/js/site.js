@@ -60,7 +60,7 @@
       entries.forEach(function (en) {
         if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
       });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0 });  // 0: tall blocks must trigger too
     els.forEach(function (el) { io.observe(el); });
   }
 

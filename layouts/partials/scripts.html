@@ -8,6 +8,12 @@
 <script defer src="{{ $home.RelPermalink }}" integrity="{{ $home.Data.Integrity }}"></script>
 {{- end }}
 
+{{- /* Survey page: list filters. */ -}}
+{{- if and (eq .Section "survey") (not .IsPage) }}
+{{- $survey := resources.Get "js/survey.js" | minify | fingerprint }}
+<script defer src="{{ $survey.RelPermalink }}" integrity="{{ $survey.Data.Integrity }}"></script>
+{{- end }}
+
 {{- /* WebR in-browser R runner: only on pages that actually have a runnable block.
        The WebR runtime itself is still fetched lazily, on the first "Run" click. */ -}}
 {{- if strings.Contains .Content "code-runnable" }}

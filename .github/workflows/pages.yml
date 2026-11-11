@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # Rebuild every morning so the survey page (/survey/) picks up new arXiv papers.
+  schedule:
+    - cron: "0 6 * * *"
 
 permissions:
   contents: read
@@ -30,6 +33,25 @@ jobs:
         with:
           hugo-version: 'latest'
           extended: true
+
+      # The survey data is fetched at build time and never committed. The last
+      # good snapshot is kept in the Actions cache (falling back to the one in
+      # the repo), so an arXiv outage just means yesterday's data.
+      - name: Restore last survey snapshot
+        uses: actions/cache/restore@v4
+        with:
+          path: data/survey.json
+          key: survey-${{ github.run_id }}
+          restore-keys: survey-
+
+      - name: Fetch latest papers from arXiv
+        run: python3 scripts/fetch_survey.py
+
+      - name: Save survey snapshot
+        uses: actions/cache/save@v4
+        with:
+          path: data/survey.json
+          key: survey-${{ github.run_id }}
 
       - name: Build
         run: hugo --minify -b "${{ steps.pages.outputs.base_url }}"

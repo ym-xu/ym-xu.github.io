@@ -107,6 +107,10 @@ ignoreLogs = ['warning-goldmark-raw-html']
     url = "/publications/"
     weight = 20
   [[menu.main]]
+    name = "Survey"
+    url = "/survey/"
+    weight = 25
+  [[menu.main]]
     name = "Writing"
     url = "/posts/"
     weight = 30
