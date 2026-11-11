@@ -1,54 +1,32 @@
-<script>
-// Theme toggle with localStorage
-(function() {
-  const key = 'prefers-color-scheme';
-  const btn = document.getElementById('theme-toggle');
-  const root = document.documentElement;
-  function applyTheme(t){ root.setAttribute('data-theme', t); }
-  function current(){ return localStorage.getItem(key) || 'auto'; }
-  function init(){
-    const t = current();
-    if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) applyTheme('dark');
-    if (btn) btn.addEventListener('click', () => {
-      const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      applyTheme(now); localStorage.setItem(key, now);
-    });
-  }
-  document.addEventListener('DOMContentLoaded', init);
-})();
-</script>
+{{- /* Site-wide: theme toggle + code-copy buttons (tiny). */ -}}
+{{- $site := resources.Get "js/site.js" | minify | fingerprint -}}
+<script defer src="{{ $site.RelPermalink }}" integrity="{{ $site.Data.Integrity }}"></script>
 
-{{/* Copy button for Claude-style code blocks */}}
-<script>
-(function(){
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.code-copy');
-    if (!btn) return;
-    var card = btn.closest('.code-card');
-    var pre = card && card.querySelector('pre');
-    if (!pre) return;
-    navigator.clipboard.writeText(pre.innerText).then(function(){
-      var old = btn.textContent;
-      btn.textContent = 'Copied';
-      btn.classList.add('copied');
-      setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1500);
-    });
-  });
-})();
-</script>
+{{- /* Home only: the beat-synced highlighter + email assembly. */ -}}
+{{- if .IsHome }}
+{{- $home := resources.Get "js/home.js" | minify | fingerprint }}
+<script defer src="{{ $home.RelPermalink }}" integrity="{{ $home.Data.Integrity }}"></script>
+{{- end }}
 
-{{/* WebR in-browser R runner for code blocks (lazy-loaded on first Run) */}}
-<script type="module" src="{{ "js/webr-run.js" | relURL }}?v={{ now.Unix }}"></script>
+{{- /* WebR in-browser R runner: only on pages that actually have a runnable block.
+       The WebR runtime itself is still fetched lazily, on the first "Run" click. */ -}}
+{{- if strings.Contains .Content "code-runnable" }}
+{{- $webr := resources.Get "js/webr-run.js" | fingerprint }}
+<script type="module" src="{{ $webr.RelPermalink }}" integrity="{{ $webr.Data.Integrity }}"></script>
+{{- end }}
 
-{{/* Lesson reading UI: progress bar + scroll-spy TOC (self-guards to lesson pages) */}}
-<script defer src="{{ "js/lesson-ui.js" | relURL }}?v={{ now.Unix }}"></script>
+{{- /* Lesson reading UI: progress bar + scroll-spy TOC, lesson pages only. */ -}}
+{{- if and .IsPage (eq .Section "r-course") }}
+{{- $lesson := resources.Get "js/lesson-ui.js" | minify | fingerprint }}
+<script defer src="{{ $lesson.RelPermalink }}" integrity="{{ $lesson.Data.Integrity }}"></script>
+{{- end }}
 
-{{/* Plausible (optional) */}}
+{{- /* Plausible (optional) */ -}}
 {{ with site.Params.plausibleDomain }}
 <script defer data-domain="{{ . }}" src="https://plausible.io/js/script.js"></script>
 {{ end }}
 
-{{/* Giscus (optional, only on posts if enabled) */}}
+{{- /* Giscus (optional, only on pages that opt in) */ -}}
 {{ if and (.IsPage) (.Params.comments) (site.Params.giscus.repo) }}
 <script src="https://giscus.app/client.js"
         data-repo="{{ site.Params.giscus.repo }}"

@@ -1,17 +1,38 @@
-{{- $title := cond .IsHome site.Title (print .Title " — " site.Title) -}}
+{{- $title := cond .IsHome site.Title (printf "%s — %s" .Title site.Title) -}}
+{{- $desc := "" -}}
+{{- with .Description }}{{ $desc = . }}{{ else }}{{ with .Params.summary }}{{ $desc = . }}{{ else }}{{ with site.Params.description }}{{ $desc = . }}{{ end }}{{ end }}{{ end -}}
+{{- $desc = $desc | plainify | htmlUnescape -}}
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{{ $title }}</title>
-<meta name="description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ with site.Params.description }}{{ . }}{{ end }}{{ end }}" />
-{{- if .Params.noindex }}<meta name="robots" content="noindex, nofollow" />{{ end }}
-<link rel="alternate" type="application/rss+xml" href="{{ "index.xml" | relURL }}" title="{{ site.Title }}" />
-{{ $ver := now.Unix }}
-<link rel="stylesheet" href="{{ "css/styles.css" | relURL }}?v={{ $ver }}" />
-<link rel="stylesheet" href="{{ "css/syntax.css" | relURL }}?v={{ $ver }}" />
-<link rel="stylesheet" href="{{ "css/custom.css" | relURL }}?v={{ $ver }}" />
+<meta name="description" content="{{ $desc }}" />
+<link rel="canonical" href="{{ .Permalink }}" />
+{{- if .Params.noindex }}
+<meta name="robots" content="noindex, nofollow" />
+{{- end }}
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ebebeb" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101010" />
+{{- /* Apply a saved theme before first paint (no light flash in dark mode).
+       With no saved choice, the CSS follows the OS via prefers-color-scheme. */}}
+<script>(function(){try{var t=localStorage.getItem('prefers-color-scheme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="preload" href="{{ "fonts/texgyrepagella-regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin />
+{{- $css := slice (resources.Get "css/site.css") (resources.Get "css/syntax.css") | resources.Concat "css/bundle.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />
+<link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml" />
+<link rel="alternate" type="application/rss+xml" href="{{ "index.xml" | absURL }}" title="{{ site.Title }}" />
 
-<!-- Open Graph -->
+{{- /* Open Graph / social cards */}}
+<meta property="og:site_name" content="{{ site.Title }}" />
 <meta property="og:title" content="{{ $title }}" />
-<meta property="og:description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ with site.Params.description }}{{ . }}{{ end }}{{ end }}" />
-<meta property="og:type" content="website" />
+<meta property="og:description" content="{{ $desc }}" />
+<meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}" />
 <meta property="og:url" content="{{ .Permalink }}" />
+{{- /* Portrait as the link-preview image — hidden along with the home photo.
+{{- with resources.Get (site.Params.home.avatar | default "images/avatar.jpg") }}
+{{- with .Fill "600x600 Center jpg q80" }}
+<meta property="og:image" content="{{ .Permalink }}" />
+{{- end }}
+{{- end }}
+*/}}
+<meta name="twitter:card" content="summary" />

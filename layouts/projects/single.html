@@ -1,17 +1,28 @@
 {{ define "main" }}
   <article class="project-single">
-    <header class="post-header">
+    <header class="maketitle">
       <h1>{{ .Title }}</h1>
-      <div class="meta">
-        {{ with .Params.year }}<span>{{ . }}</span>{{ end }}
-        {{ with .Params.role }} · <span>{{ . }}</span>{{ end }}
-      </div>
-      {{ with .Params.tags }}<div class="tag-row">{{ range . }}<span class="pill">{{ . }}</span>{{ end }}</div>{{ end }}
+      <p class="mt-date">
+        {{ with .Params.role }}<i>{{ . }}</i>{{ end }}{{ with .Params.year }} · {{ . }}{{ end }}
+      </p>
+      {{ with .Params.tags }}<p class="mt-tags">{{ delimit . " · " }}</p>{{ end }}
     </header>
+    {{ with .Params.summary }}
+      <div class="abstract"><p class="abstract-h">Summary</p><p>{{ . }}</p></div>
+    {{ end }}
     <div class="content">{{ .Content }}</div>
-    <nav class="pager">
-      {{ with .PrevInSection }}<a class="prev" href="{{ .RelPermalink }}">&larr; {{ .Title }}</a>{{ end }}
-      {{ with .NextInSection }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} &rarr;</a>{{ end }}
+    {{/* .ByWeight order, not PrevInSection's date order (which ran backwards here). */}}
+    {{ $sibs := .CurrentSection.Pages.ByWeight }}
+    {{ $prev := false }}{{ $next := false }}
+    {{ range $i, $s := $sibs }}
+      {{ if eq $s.RelPermalink $.RelPermalink }}
+        {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
+        {{ if lt (add $i 1) (len $sibs) }}{{ $next = index $sibs (add $i 1) }}{{ end }}
+      {{ end }}
+    {{ end }}
+    <nav class="pager" aria-label="More projects">
+      {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+      {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
     </nav>
   </article>
 {{ end }}

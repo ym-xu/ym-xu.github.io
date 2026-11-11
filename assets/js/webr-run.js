@@ -1,6 +1,7 @@
 // In-browser R for the course code blocks, powered by WebR (R compiled to WebAssembly).
-// Lazy-loaded: the WebR runtime only boots on the first "Run" click.
-import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
+// Lazy-loaded: the WebR runtime is only downloaded and booted on the first
+// "Run" click. (A top-level `import` here used to fetch webr.mjs on every page.)
+const WEBR_URL = 'https://webr.r-wasm.org/latest/webr.mjs';
 
 let webRPromise = null;
 const installed = new Set();
@@ -14,8 +15,15 @@ const BASE_PKGS = new Set([
 function bootWebR(setStatus) {
   if (!webRPromise) {
     setStatus('正在启动 R 运行时(首次较慢,约 10–30 秒)…');
-    const webR = new WebR();
-    webRPromise = webR.init().then(() => webR);
+    webRPromise = import(WEBR_URL)
+      .then(({ WebR }) => {
+        const webR = new WebR();
+        return webR.init().then(() => webR);
+      })
+      .catch((err) => {
+        webRPromise = null; // let the next click retry (e.g. after a network blip)
+        throw err;
+      });
   }
   return webRPromise;
 }
@@ -112,10 +120,11 @@ async function runCard(card) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function init() {
   // Make runnable code blocks editable so learners can tweak before running.
   document.querySelectorAll('.code-runnable pre').forEach((pre) => {
-    pre.setAttribute('contenteditable', 'true');
+    pre.setAttribute('contenteditable', 'plaintext-only');
+    if (pre.contentEditable !== 'plaintext-only') pre.setAttribute('contenteditable', 'true');
     pre.setAttribute('spellcheck', 'false');
     pre.setAttribute('title', '可直接在这里修改代码再点 Run');
   });
@@ -123,4 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = e.target.closest('.code-run');
     if (btn) runCard(btn.closest('.code-card'));
   });
-});
+}
+
+if (document.readyState !== 'loading') init();
+else document.addEventListener('DOMContentLoaded', init);

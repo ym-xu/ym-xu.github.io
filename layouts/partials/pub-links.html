@@ -1,0 +1,13 @@
+{{- /* [pdf] [code] … links for a publication page. Context: the page. */ -}}
+{{- with .Params.links -}}
+{{- if or .pdf .code .doi .leaderboard .data .page -}}
+<span class="blinks">
+  {{- with .pdf }}<a href="{{ . }}" rel="noopener">pdf</a>{{ end -}}
+  {{- with .code }}<a href="{{ . }}" rel="noopener">code</a>{{ end -}}
+  {{- with .doi }}<a href="https://doi.org/{{ . }}" rel="noopener">doi</a>{{ end -}}
+  {{- with .data }}<a href="{{ . }}" rel="noopener">data</a>{{ end -}}
+  {{- with .leaderboard }}<a href="{{ . }}" rel="noopener">leaderboard</a>{{ end -}}
+  {{- with .page }}<a href="{{ . }}" rel="noopener">page</a>{{ end -}}
+</span>
+{{- end -}}
+{{- end -}}

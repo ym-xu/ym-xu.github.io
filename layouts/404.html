@@ -1,0 +1,9 @@
+{{ define "main" }}
+  <section class="err">
+    <h1 class="page-title">Page not found</h1>
+    <pre>! Undefined control sequence.
+l.404 \thispage
+               {}</pre>
+    <p>The page you asked for isn’t in this document. Try the <a href="{{ "/" | relURL }}">front page</a>, the <a href="{{ "/publications/" | relURL }}">publications</a> or the <a href="{{ "/posts/" | relURL }}">writing</a>.</p>
+  </section>
+{{ end }}

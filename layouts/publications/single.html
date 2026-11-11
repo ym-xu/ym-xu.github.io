@@ -1,36 +1,36 @@
 {{ define "main" }}
-  <article class="pub-single{{ if or (.Params.case) (eq .Params.layout "case") }} case{{ end }}">
-    <header class="post-header">
+  {{ $isCase := or (.Params.case) (eq .Params.layout "case") }}
+  <article class="pub-single{{ if $isCase }} case{{ end }}">
+    <header class="maketitle">
       <h1>{{ .Title }}</h1>
       {{ $hideMeta := or (.Params.hideMeta) (eq .Params.header "none") }}
       {{ if not $hideMeta }}
-        {{ $authors := replace (.Params.authors | default "") "Yiming Xu" "<strong>Yiming Xu</strong>" }}
-        <div class="meta">
-          {{ with $authors }}<span>{{ . | safeHTML }}</span>{{ end }}
-          {{ with .Params.venue }} · <span>{{ . }}{{ with $.Params.badge }} · {{ . }}{{ end }}</span>{{ end }}
-          {{ with .Params.year }} <span>({{ . }})</span>{{ end }}
-        </div>
+        {{ $me := site.Params.author.name | default "Yiming Xu" }}
+        {{ $authors := replace (.Params.authors | default "" | htmlEscape) $me (printf "<strong>%s</strong>" $me) }}
+        {{ with $authors }}<p class="mt-author">{{ . | safeHTML }}</p>{{ end }}
+        <p class="mt-date">
+          {{ with .Params.venue }}<i>{{ . }}</i>{{ end }}{{ with .Params.year }} {{ . }}{{ end }}
+          {{ with .Params.badge }}<span class="badge">{{ lower . }}</span>{{ end }}
+        </p>
       {{ end }}
+      {{ partial "pub-links.html" . }}
     </header>
 
-    {{ $cover := .Resources.GetMatch "cover*" }}
-    {{ $isCase := or (.Params.case) (eq .Params.layout "case") }}
-    {{ $showCover := cond (isset .Params "showCover") .Params.showCover (not $isCase) }}
-    {{ if and $showCover $cover }}
-      <figure class="pub-cover">
-        <img src="{{ $cover.RelPermalink }}" alt="cover for {{ .Title }}" loading="lazy" decoding="async" />
-      </figure>
+    {{ with .Params.summary }}
+      {{ if not $isCase }}
+        <div class="abstract">
+          <p class="abstract-h">Abstract</p>
+          <p>{{ . }}</p>
+        </div>
+      {{ end }}
     {{ end }}
 
-    {{ with .Params.links }}
-      <div class="pub-links">
-        {{ with .pdf }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">PDF</a>{{ end }}
-        {{ with .code }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Code</a>{{ end }}
-        {{ with .doi }}<a class="pill" href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>{{ end }}
-        {{ with .leaderboard }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Leaderboard</a>{{ end }}
-        {{ with .data }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Data</a>{{ end }}
-        {{ with .page }}<a class="pill" href="{{ . }}" target="_blank" rel="noopener">Page</a>{{ end }}
-      </div>
+    {{ $cover := .Resources.GetMatch "cover*" }}
+    {{ $showCover := cond (isset .Params "showcover") .Params.showCover (not $isCase) }}
+    {{ if and $showCover $cover }}
+      <figure class="pub-cover">
+        <img src="{{ $cover.RelPermalink }}" alt="Overview figure for {{ .Title }}" loading="lazy" decoding="async" />
+      </figure>
     {{ end }}
 
     <div class="content">{{ .Content }}</div>

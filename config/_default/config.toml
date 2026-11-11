@@ -34,7 +34,7 @@ enableRobotsTXT = true
 ignoreLogs = ['warning-goldmark-raw-html']
 
 [params]
-  description = "A clean and fast content website"
+  description = "Yiming Xu — PhD Fellow working on multimodal document understanding at the Computer Vision Center, Universitat Autònoma de Barcelona."
   showReadingTime = true
   enableDarkMode = true
   showToc = true
@@ -43,15 +43,33 @@ ignoreLogs = ['warning-goldmark-raw-html']
 [params.author]
   name = "Yiming Xu"
 
-# --- Home hero (phase 2) ---
+# --- Home hero ---
 [params.home]
-  role = "PhD Fellow, Multimodal Document Understanding"
-  avatar = "/avatar.jpg"   # drop your photo at static/avatar.jpg (already included in this package)
+  role = "PhD Fellow · Multimodal Document Understanding"
+  affiliation = "Computer Vision Center, Universitat Autònoma de Barcelona"
+  avatar = "images/avatar.jpg"   # a file under assets/ — resized and converted to WebP at build time
+  # The highlighter: phrases of the bio (content/_index.md) it jumps between,
+  # in any order (it plays them in reading order). Must match the text exactly.
+  beat = 128   # tempo in BPM
+  highlights = [
+    "Vision & Language Group",
+    "Dimosthenis Karatzas",
+    "Ernest Valveny",
+    "agentic document-understanding systems",
+    "foundation models for document understanding",
+    "University of Amsterdam",
+    "Multimodal RAG",
+    "principal developer",
+    "e-commerce AI agents",
+  ]
+  # A theorem-style aside under the bio. Delete both lines to hide it.
+  definitionTerm = "Document"
+  definition = "A page is not an image; it is a tree of meaning that happens to be printed."
   # Email kept in two parts so the literal address is never a contiguous string
   # in the HTML; assembled client-side on click.
   emailUser = "yiming"
   emailDomain = "cvc.uab.cat"
-  cvUrl = "/cv.pdf"   # TODO: drop your CV PDF at static/cv.pdf (or change this path)
+  cvUrl = "/cv.pdf"   # drop your CV at static/cv.pdf — the link only appears once that file exists
   [params.home.social]
     linkedin = "https://www.linkedin.com/in/yiming-xu-86371b201/"
     github = "https://github.com/ym-xu"

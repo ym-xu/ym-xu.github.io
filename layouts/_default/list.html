@@ -1,0 +1,21 @@
+{{ define "main" }}
+  <h1 class="page-title">{{ .Title }}</h1>
+  {{ with .Description }}<p class="page-sub">{{ . }}</p>{{ else }}<p class="page-sub"></p>{{ end }}
+  {{ $p := .Paginate .Pages.ByDate.Reverse }}
+  {{ if .Data.Terms }}
+    <dl class="dated">
+      {{ range .Data.Terms.ByCount }}
+        <dt>{{ .Count }} {{ cond (eq .Count 1) "entry" "entries" }}</dt>
+        <dd><a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a></dd>
+      {{ end }}
+    </dl>
+  {{ else }}
+    <dl class="dated">
+      {{ range $p.Pages }}
+        <dt>{{ .Date.Format "Jan 2006" }}</dt>
+        <dd><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.summary }}<span class="sum">{{ . }}</span>{{ end }}</dd>
+      {{ end }}
+    </dl>
+    {{ partial "pagination.html" . }}
+  {{ end }}
+{{ end }}
