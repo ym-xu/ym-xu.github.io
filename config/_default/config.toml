@@ -65,10 +65,11 @@ ignoreLogs = ['warning-goldmark-raw-html']
   # A theorem-style aside under the bio. Delete both lines to hide it.
   definitionTerm = "Document"
   definition = "A page is not an image; it is a tree of meaning that happens to be printed."
-  # Email kept in two parts so the literal address is never a contiguous string
-  # in the HTML; assembled client-side on click.
-  emailUser = "yiming"
-  emailDomain = "cvc.uab.cat"
+  # Email, never written out on the page or in this repo: the address reversed,
+  # each character XOR 0x2a, as hex. The page shows only "email"; home.js decodes
+  # it on click. To change it, run:
+  #   python3 -c "a='you@example.org';print(''.join('%02x'%(ord(c)^0x2a) for c in a[::-1]))"
+  emailCode = "5e4b4904484b5f04495c496a4d4443474353"
   cvUrl = "/cv.pdf"   # drop your CV at static/cv.pdf — the link only appears once that file exists
   [params.home.social]
     linkedin = "https://www.linkedin.com/in/yiming-xu-86371b201/"

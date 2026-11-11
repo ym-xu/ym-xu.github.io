@@ -138,7 +138,8 @@ body.section-r-course.kind-page { --sheet: 1140px; }
 .home-photo img { display: block; width: 132px; height: 132px; object-fit: cover; border: .5px solid var(--rule); }
 .home-links { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; margin: 1.5rem 0 0; font-size: 1.02rem; }
 .home-links a { font-variant: small-caps; letter-spacing: .04em; padding: .35rem 0; }
-.home-links a.tt { font-variant: normal; letter-spacing: 0; }
+.home-links .linkish { font: inherit; font-variant: small-caps; letter-spacing: .04em; color: var(--link); background: none; border: 0; padding: .35rem 0; cursor: pointer; }
+.home-links .linkish:hover { color: var(--link-hover); text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: .06em; }
 .defn { margin: 2rem 0 0; font-size: 1.05rem; }
 .defn i { font-style: italic; }
 @media (max-width: 720px) {

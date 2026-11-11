@@ -4,12 +4,23 @@
 // Hovering a phrase pins the highlight there. Respects reduced motion, and
 // stops while the hero is off-screen or the tab is hidden.
 (function () {
-  // Email: assembled on click so the address is never one string in the HTML.
+  // Email: the page only carries an encoded string (reversed, XOR 0x2a, hex);
+  // it is decoded on a real click, never at load, so scrapers find nothing.
   var mail = document.getElementById('home-email');
   if (mail) {
-    mail.addEventListener('click', function (e) {
-      e.preventDefault();
-      window.location.href = 'mailto:' + this.dataset.u + String.fromCharCode(64) + this.dataset.d;
+    mail.addEventListener('click', function () {
+      var c = mail.getAttribute('data-c') || '', s = '';
+      for (var i = 0; i < c.length; i += 2) s += String.fromCharCode(parseInt(c.substr(i, 2), 16) ^ 0x2a);
+      var addr = s.split('').reverse().join('');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(addr).then(function () {
+          var old = mail.textContent;
+          mail.textContent = 'address copied';
+          setTimeout(function () { mail.textContent = old; }, 1800);
+        }, function () {});
+      }
+      window.location.href = 'mailto:' + addr;
     });
   }
 

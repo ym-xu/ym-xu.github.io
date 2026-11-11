@@ -27,7 +27,7 @@
   </section>
 
   <div class="home-links">
-    {{ with $h.emailUser }}<a id="home-email" class="tt" data-u="{{ . }}" data-d="{{ $h.emailDomain }}" href="#">{{ . }}<span>&#64;</span>{{ $h.emailDomain }}</a>{{ end }}
+    {{ with $h.emailCode }}<button id="home-email" class="linkish" type="button" data-c="{{ . }}" aria-label="Email me (opens your mail app and copies the address)">email</button>{{ end }}
     {{ with $h.cvUrl }}{{ if fileExists (path.Join "static" .) }}<a href="{{ . | relURL }}">cv (pdf)</a>{{ end }}{{ end }}
     {{ partial "social.html" (dict "social" $h.social) }}
   </div>
