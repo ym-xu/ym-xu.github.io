@@ -1,7 +1,7 @@
 {{ define "main" }}
   <h1 class="page-title">Projects</h1>
   <p class="page-sub">Research and engineering I’ve led or built.</p>
-  <div class="cards two">
+  <div class="cards two reveal">
     {{ range .Pages.ByWeight }}
       {{ partial "project-card.html" . }}
     {{ end }}

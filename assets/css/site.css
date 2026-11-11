@@ -219,31 +219,69 @@ a.card, a.card:hover { color: var(--fg); text-decoration: none; }
 .card-foot { margin-top: auto; padding-top: .35rem; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .9rem; }
 .card-foot .blinks { margin-left: 0; font-variant: normal; letter-spacing: 0; }
 
-/* ---------- home motion ----------
+/* ---------- motion, site-wide ----------
    Only opacity, blur, clip-path and a rule's scaleX are animated: no element
    is translated or scaled, so text never shifts. Gated on .js (set in <head>)
-   so the page is fully visible without JavaScript, and off for reduced motion. */
+   so pages are fully visible without JavaScript, and off for reduced motion.
+   .reveal elements get .in from site.js as they scroll into view. */
 @media (prefers-reduced-motion: no-preference) {
-  /* the name "inks in", then the lines under it */
-  .js .home-name  { animation: ink 1.1s cubic-bezier(.2,.7,.2,1) both; }
-  .js .home-field { animation: fade .8s ease .35s both; }
-  .js .home-bio   { animation: fade .8s ease .55s both; }
-  .js .home-links { animation: fade .8s ease .75s both; }
+  /* load-in: a title "inks in", then the lines under it */
+  .js .home-name, .js .fx-title > h1, .js .page-title { animation: ink 1.1s cubic-bezier(.2,.7,.2,1) both; }
+  .js .home-field, .js .fx-title > :not(h1), .js .page-sub { animation: fade .8s ease .35s both; }
+  .js .home-bio, .js .fx-after { animation: fade .8s ease .55s both; }
+  .js .home-links, .js .fx-after2 { animation: fade .8s ease .75s both; }
 
-  /* sections: heading fades, its rule draws left → right, cards follow one by one */
-  .js .reveal > .section-head { opacity: 0; transition: opacity .6s ease; }
-  .js .reveal > .section-head::after { transform: scaleX(0); transition: transform .9s cubic-bezier(.5,0,.2,1) .15s; }
-  .js .reveal > :not(.section-head) { opacity: 0; transition: opacity .7s ease .2s; }
-  .js .reveal .card { opacity: 0; transition: opacity .6s ease calc(var(--i, 0) * 90ms + .25s), border-color .25s, box-shadow .25s; }
-  .js .reveal.in > .section-head,
-  .js .reveal.in > :not(.section-head),
-  .js .reveal.in .card { opacity: 1; }
-  .js .reveal.in > .section-head::after { transform: none; }
+  /* home sections: heading fades, its rule draws left → right, content follows */
+  .js .section.reveal > .section-head { opacity: 0; transition: opacity .6s ease; }
+  .js .section.reveal > .section-head::after { transform: scaleX(0); transition: transform .9s cubic-bezier(.5,0,.2,1) .15s; }
+  .js .section.reveal > :not(.section-head) { opacity: 0; transition: opacity .7s ease .2s; }
+  .js .section.reveal.in > .section-head,
+  .js .section.reveal.in > :not(.section-head) { opacity: 1; }
+  .js .section.reveal.in > .section-head::after { transform: none; }
+
+  /* syllabus phases: the rule under each phase draws in the same way */
+  .js .phase.reveal .phase-head::after { transform: scaleX(0); transition: transform .9s cubic-bezier(.5,0,.2,1) .1s; }
+  .js .phase.reveal.in .phase-head::after { transform: none; }
+
+  /* cards and lesson rows inside any revealed block: one after another */
+  .js .reveal .card,
+  .js .reveal .lesson-row { opacity: 0; transition: opacity .6s ease calc(var(--i, 0) * 80ms + .2s), border-color .25s, box-shadow .25s, background .12s; }
+  .js .reveal.in .card,
+  .js .reveal.in .lesson-row { opacity: 1; }
+
+  /* single elements in article bodies (tagged by site.js): fade; images also un-blur */
+  .js .fx { opacity: 0; transition: opacity .8s ease; }
+  .js .fx.in { opacity: 1; }
+  .js img.fx, .js figure.fx img { filter: blur(6px); transition: opacity .8s ease, filter 1s ease; }
+  .js img.fx.in, .js figure.fx.in img { filter: none; }
 
   /* Definition 1 is typed out, left to right */
   .js .defn.reveal { clip-path: inset(0 100% 0 0); transition: clip-path 1.6s steps(48, end) .2s; }
   .js .defn.reveal.in { clip-path: inset(0 0 0 0); }
 }
+
+/* printing: show everything, revealed or not */
+@media print {
+  .js .fx, .js .reveal .card, .js .reveal .lesson-row, .js .section.reveal > *, .js .defn.reveal { opacity: 1 !important; filter: none !important; clip-path: none !important; }
+  .reading-progress, #theme-toggle { display: none; }
+}
+
+/* links in prose: the underline draws in on hover */
+.content a:not(.code-copy):not(.code-run) {
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) left 100% / 0 1px no-repeat;
+  transition: background-size .3s ease;
+}
+.content a:not(.code-copy):not(.code-run):hover { background-size: 100% 1px; }
+
+/* syllabus rows: the same cursor spotlight as the cards (no border glow) */
+.spot { position: relative; isolation: isolate; }
+.spot::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(96, 165, 250, .16), transparent 65%);
+  opacity: 0; transition: opacity .3s;
+}
+.spot:hover::before { opacity: 1; }
 @keyframes ink  { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
@@ -389,7 +427,8 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .course-intro { margin-bottom: 2.2rem; }
 
 .syllabus { display: flex; flex-direction: column; gap: 1.7rem; }
-.phase-head { display: flex; align-items: baseline; gap: .9rem; padding-bottom: .4rem; margin-bottom: .35rem; border-bottom: .5px solid var(--rule); }
+.phase-head { position: relative; display: flex; align-items: baseline; gap: .9rem; padding-bottom: .4rem; margin-bottom: .35rem; }
+.phase-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-bottom: .5px solid var(--rule); transform-origin: left center; }
 .phase-index { font-size: 1.2rem; line-height: 1; color: var(--link); min-width: 1.8rem; font-variant: small-caps; }
 .phase-title { margin: 0; font-size: 1.1rem; }
 .phase-sub { margin: .12rem 0 0; font-size: .86rem; color: var(--muted); }

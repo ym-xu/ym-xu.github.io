@@ -1,6 +1,6 @@
 {{ define "main" }}
   <article class="project-single">
-    <header class="maketitle">
+    <header class="maketitle fx-title">
       <h1>{{ .Title }}</h1>
       <p class="mt-date">
         {{ with .Params.role }}<i>{{ . }}</i>{{ end }}{{ with .Params.year }} · {{ . }}{{ end }}
@@ -8,7 +8,7 @@
       {{ with .Params.tags }}<p class="mt-tags">{{ delimit . " · " }}</p>{{ end }}
     </header>
     {{ with .Params.summary }}
-      <div class="abstract"><p class="abstract-h">Summary</p><p>{{ . }}</p></div>
+      <div class="abstract fx-after"><p class="abstract-h">Summary</p><p>{{ . }}</p></div>
     {{ end }}
     <div class="content">{{ .Content }}</div>
     {{/* .ByWeight order, not PrevInSection's date order (which ran backwards here). */}}

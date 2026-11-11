@@ -3,7 +3,7 @@
   {{ $pages := .Pages.ByWeight }}
   {{ $total := len $pages }}
 
-  <header class="course-hero">
+  <header class="course-hero fx-title">
     <h1>{{ .Title }}</h1>
     {{ with .Params.subtitle }}<p class="course-hero-sub">{{ . }}</p>{{ end }}
     <ul class="course-meta">
@@ -14,13 +14,13 @@
     </ul>
   </header>
 
-  <div class="content course-intro">{{ .Content }}</div>
+  <div class="content course-intro fx-after">{{ .Content }}</div>
 
   <div class="syllabus">
     {{ range $pi, $phase := $phases }}
       {{ $inPhase := where (where $pages "Weight" "gt" $phase.min) "Weight" "le" $phase.max }}
       {{ if $inPhase }}
-        <section class="phase">
+        <section class="phase reveal">
           <div class="phase-head">
             <span class="phase-index">{{ index (slice "I" "II" "III" "IV" "V" "VI" "VII") $pi }}</span>
             <div>
@@ -32,7 +32,7 @@
             {{ range $p := $inPhase }}
               {{ $num := add (len (where $pages "Weight" "lt" $p.Weight)) 1 }}
               {{ $t := replaceRE "^Lesson [0-9]+ · " "" $p.Title }}
-              <a class="lesson-row" href="{{ $p.RelPermalink }}">
+              <a class="lesson-row spot" href="{{ $p.RelPermalink }}">
                 <span class="lesson-row-num">{{ printf "%02d" $num }}</span>
                 <span class="lesson-row-body">
                   <span class="lesson-row-title">{{ $t }}</span>

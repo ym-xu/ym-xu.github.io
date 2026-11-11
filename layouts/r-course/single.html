@@ -7,12 +7,12 @@
   {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
 
   <article class="lesson" data-lesson>
-    <div class="lesson-eyebrow">
+    <div class="lesson-eyebrow fx-after">
       <a class="lesson-back" href="{{ .Parent.RelPermalink }}">← 课程目录 Syllabus</a>
       <span class="lesson-locator">第 {{ $num }} / {{ $total }} 课{{ with $phase }} · {{ .title }}{{ end }}</span>
     </div>
 
-    <header class="post-header">
+    <header class="post-header fx-title">
       <h1>{{ .Title }}</h1>
       {{ with .Params.summary }}<p class="page-sub">{{ . }}</p>{{ end }}
     </header>

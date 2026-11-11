@@ -16,6 +16,8 @@
         {{ partial "footer.html" . }}
       </footer>
     </div>
+    {{- /* reading progress for the home page and articles; lessons run their own */}}
+    {{ if and (or .IsHome .IsPage) (ne .Section "r-course") }}<div class="reading-progress" data-progress aria-hidden="true"><span></span></div>{{ end }}
     {{ partial "scripts.html" . }}
   </body>
 </html>

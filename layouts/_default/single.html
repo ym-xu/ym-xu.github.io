@@ -1,7 +1,7 @@
 {{ define "main" }}
   <article class="doc">
     {{/* \maketitle */}}
-    <header class="maketitle">
+    <header class="maketitle fx-title">
       <h1>{{ .Title }}</h1>
       {{ $showMeta := cond (isset .Params "showmeta") .Params.showMeta true }}
       {{ if $showMeta }}
@@ -18,7 +18,7 @@
 
     {{/* \begin{abstract} */}}
     {{ with .Params.summary }}
-      <div class="abstract">
+      <div class="abstract fx-after">
         <p class="abstract-h">Abstract</p>
         <p>{{ . }}</p>
       </div>
@@ -29,7 +29,7 @@
     {{ if $showToc }}
       {{ with .TableOfContents }}
         {{ if gt (len (findRE "<li>" .)) 2 }}
-          <nav class="toc" aria-label="Contents"><p class="toc-h">Contents</p>{{ . }}</nav>
+          <nav class="toc fx-after2" aria-label="Contents"><p class="toc-h">Contents</p>{{ . }}</nav>
         {{ end }}
       {{ end }}
     {{ end }}

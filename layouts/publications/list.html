@@ -4,7 +4,7 @@
   {{ $all := .Pages.ByDate.Reverse }}
   {{ $p := .Paginate $all }}
   {{ $start := sub (len $all) (mul (sub $p.PageNumber 1) $p.PagerSize) }}
-  <div class="cards one">
+  <div class="cards one reveal">
     {{ range $i, $pg := $p.Pages }}
       {{ partial "pub-card.html" (dict "page" $pg "n" (sub $start $i) "summary" true) }}
     {{ end }}

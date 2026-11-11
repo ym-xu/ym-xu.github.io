@@ -1,7 +1,7 @@
 {{ define "main" }}
   {{ $isCase := or (.Params.case) (eq .Params.layout "case") }}
   <article class="pub-single{{ if $isCase }} case{{ end }}">
-    <header class="maketitle">
+    <header class="maketitle fx-title">
       <h1>{{ .Title }}</h1>
       {{ $hideMeta := or (.Params.hideMeta) (eq .Params.header "none") }}
       {{ if not $hideMeta }}
@@ -18,7 +18,7 @@
 
     {{ with .Params.summary }}
       {{ if not $isCase }}
-        <div class="abstract">
+        <div class="abstract fx-after">
           <p class="abstract-h">Abstract</p>
           <p>{{ . }}</p>
         </div>

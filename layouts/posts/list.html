@@ -2,7 +2,7 @@
   <h1 class="page-title">Writing</h1>
   <p class="page-sub">Notes on research, system design, and things I’m reading.</p>
   {{ $p := .Paginate .Pages.ByDate.Reverse }}
-  <div class="cards two">
+  <div class="cards two reveal">
     {{ range $p.Pages }}
       {{ partial "post-card.html" . }}
     {{ end }}
