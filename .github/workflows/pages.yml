@@ -57,6 +57,33 @@ jobs:
           path: data/survey.json
           key: survey-${{ github.run_id }}
 
+      # Paper cards (Figure 4): DeepSeek reads the abstracts of papers that have no
+      # card yet. Cards are cached like the survey; without the secret, or if the
+      # step fails, the page is built from the cards it already has.
+      - name: Restore paper cards
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/survey_cards.json
+            scripts/.cache
+          key: cards-${{ github.run_id }}
+          restore-keys: cards-
+
+      - name: Cards for new papers
+        continue-on-error: true
+        run: python3 scripts/survey_cards.py
+        env:
+          # optional repository secret; only public arXiv abstracts are sent
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+      - name: Save paper cards
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/survey_cards.json
+            scripts/.cache
+          key: cards-${{ github.run_id }}
+
       # GitHub disables scheduled workflows after 60 days without repo activity.
       # Re-enabling the workflow through the API (no commit) keeps the daily run alive.
       - name: Keep the daily schedule alive

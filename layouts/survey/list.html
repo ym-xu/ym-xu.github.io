@@ -207,7 +207,36 @@
       {{ end }}
     </section>
 
-    {{/* ---------- 5 · the papers, grouped by week ---------- */}}
+    {{/* ---------- 5 · methods x tasks (paper cards) ---------- */}}
+    {{ $cd := site.Data.survey_cards }}
+    {{ with $cd }}{{ $mx := .matrix }}{{ if $mx.rows }}
+    <section class="section reveal" id="methods">
+      <div class="section-head"><h2>Methods × tasks</h2></div>
+      <p class="sub-note">What papers <i>propose</i> (rows) for which task (columns), from a structured card per paper read off its abstract. A cell counts papers that propose that kind of method for that task; darker is more. Bold cells meet at least twice as often as their row and column sizes predict; dashed cells are <i>quiet</i>: both are common on their own, yet they rarely meet. Benchmark and evaluation work is left out of the grid. Click a cell, row or column to list its papers.</p>
+      <figure class="fig">
+        <div class="mx-wrap">
+          <table class="mx">
+            <thead><tr><th scope="col" class="mx-corner"><span>proposes ↓ &nbsp;for →</span></th>{{ range $mx.cols }}<th scope="col"><button type="button" class="mx-h" data-t="{{ .id }}" title="{{ .full }} · {{ .n }} papers"><span>{{ .name }}</span></button></th>{{ end }}</tr></thead>
+            <tbody>
+              {{ range $i, $r := $mx.rows }}
+              <tr style="--i: {{ $i }}"><th scope="row"><button type="button" class="mx-h" data-m="{{ $r.id }}" title="{{ $r.full }} · proposed in {{ $r.n }} papers">{{ $r.name }}</button></th>{{ range $j, $c := index $mx.cells $i }}{{ $col := index $mx.cols $j }}{{ $a := div (mul $c.n 1.0) $mx.max }}<td><button type="button" class="mx-c{{ if $c.quiet }} quiet{{ end }}{{ if $c.hot }} hot{{ end }}{{ if gt $a 0.5 }} dk{{ end }}" data-m="{{ $r.id }}" data-t="{{ $col.id }}" style="--a: {{ printf "%.2f" $a }}" title="{{ $r.name }} for {{ $col.name }}: {{ $c.n }} {{ if eq $c.n 1 }}paper{{ else }}papers{{ end }} (about {{ $c.e }} if unrelated)"{{ if eq $c.n 0 }} disabled{{ end }}>{{ if $c.n }}{{ $c.n }}{{ end }}</button></td>{{ end }}</tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+        <figcaption><b>Figure 4:</b> Proposed method × task over {{ $mx.n }} counted papers ({{ $cd.n }} of {{ $cd.of }} carry a card). A tag counts only if the card quotes the abstract word for word as evidence ({{ $cd.quotes }}% of quotes check out); “other” and backbones a paper merely uses are left out, and a paper can sit in several cells.</figcaption>
+      </figure>
+      {{ with $mx.quiet }}
+      <div class="block">
+        <h3 class="sub-h">Quiet combinations</h3>
+        <p class="sub-note">Common on their own, rarely together — the expected count assumes method and task were unrelated. A quiet cell can be an opening, or a sign the pair makes little sense; read the row and the column before deciding.</p>
+        <dl class="dated mxq">{{ range . }}<dt>{{ .n }} vs ~{{ .e }}</dt><dd><button type="button" class="linkish" data-m="{{ .m }}">{{ .mname }}</button> <span class="muted">×</span> <button type="button" class="linkish" data-t="{{ .t }}">{{ .tname }}</button></dd>{{ end }}</dl>
+      </div>
+      {{ end }}
+    </section>
+    {{ end }}{{ end }}
+
+    {{/* ---------- 6 · the papers, grouped by week ---------- */}}
     <section class="section reveal" id="papers">
       <div class="section-head"><h2>Papers</h2><span class="muted" id="survey-count" aria-live="polite"></span></div>
       {{ with $d.picks }}
@@ -230,14 +259,17 @@
           <button class="chip flag" type="button" data-flag="fresh" aria-pressed="false" hidden>new to me</button>
         </div>
       </div>
+      <p class="since mx-state" id="survey-mx" hidden></p>
       <div class="cards one plist" id="survey-list">
         {{ $prevWk := "" }}
+        {{ $cards := dict }}{{ $cn := dict }}{{ with site.Data.survey_cards }}{{ $cards = .papers }}{{ $cn = .names }}{{ end }}
         {{ range $p := $d.papers }}
+          {{ $c := index $cards $p.id }}
           {{ $t := time $p.date }}
           {{ $off := mod (add (int $t.Weekday) 6) 7 }}
           {{ $wk := ($t.AddDate 0 0 (int (sub 0 $off))).Format "2006-01-02" }}
           {{ if ne $wk $prevWk }}<h3 class="wk" data-wk="{{ $wk }}">Week of {{ dateFormat "January 2" $wk }}</h3>{{ $prevWk = $wk }}{{ end }}
-          <article class="card paper" data-wk="{{ $wk }}" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}" data-pick="{{ if $p.pick }}true{{ else }}false{{ end }}" data-app="{{ $p.app }}" data-venue="{{ if $p.venue }}true{{ else }}false{{ end }}" data-code="{{ if $p.code }}true{{ else }}false{{ end }}" data-date="{{ $p.date }}">
+          <article class="card paper" data-wk="{{ $wk }}" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}" data-pick="{{ if $p.pick }}true{{ else }}false{{ end }}" data-app="{{ $p.app }}" data-venue="{{ if $p.venue }}true{{ else }}false{{ end }}" data-code="{{ if $p.code }}true{{ else }}false{{ end }}" data-date="{{ $p.date }}"{{ with $c }} data-mech="{{ delimit .mp " " }}" data-task="{{ delimit .t " " }}"{{ end }}>
             <div class="card-kicker">
               <time datetime="{{ $p.date }}">{{ dateFormat "Jan 2, 2006" $p.date }}</time>
               <span>{{ $p.cat }}</span>
@@ -247,6 +279,7 @@
             <h3 class="card-title"><a class="stretch" href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></h3>
             <p class="card-au">{{ delimit $p.authors ", " }}</p>
             {{ with $p.pick }}<p class="pick-note">{{ . }}</p>{{ end }}
+            {{ with $c }}{{ if or .o .mp }}<p class="card-sum">{{ .o }}{{ with .mp }} <span class="props"><span class="sc">proposes</span> {{ range $k, $m := . }}{{ if $k }} · {{ end }}{{ index $cn $m | default $m }}{{ end }}</span>{{ end }}</p>{{ end }}{{ end }}
             <details class="pabs"><summary>abstract</summary><p>{{ $p.abs }}</p></details>
             <div class="card-foot"><b>{{ index $p.tagnames 0 }}</b>{{ range after 1 $p.tagnames }} · {{ . }}{{ end }} <span class="blinks"><a href="https://arxiv.org/pdf/{{ $p.id }}" rel="noopener">pdf</a>{{ with $p.code }}<a href="{{ . }}" rel="noopener">code</a>{{ end }}<a href="https://arxiv.org/bibtex/{{ $p.id }}" rel="noopener">bib</a></span></div>
           </article>
@@ -257,13 +290,13 @@
       <p class="sub-note">All {{ $d.listed_total }} papers from the last {{ $d.weeks }} weeks, newest first and grouped by week. The {{ $d.applications | default 0 }} marked “application” (OCR or an LLM applied to a domain task — grading, clinical, legal…) are listed but not counted in the figures. Filters are kept in the address bar, so a filtered view can be shared.</p>
     </section>
 
-    {{/* ---------- 6 · method ---------- */}}
+    {{/* ---------- 7 · method ---------- */}}
     <section class="section reveal" id="method">
       <div class="section-head"><h2>Method</h2></div>
       <div class="content">
         <p>Every morning (06:00 UTC) a GitHub Action asks the arXiv API for the last {{ $d.weeks }} weeks of papers in cs.CV, cs.CL, cs.IR and neighbouring categories that mention documents, OCR, layout, tables, charts, forms and the like. Only first releases count: a new version or cross-listing of an older paper is skipped.</p>
         <p>A paper has to be <i>about</i> documents — document terms are scored (title three times, abstract once) and must reach a threshold — and must look visual, so text-only “document” work is dropped; a list of negative patterns catches the usual false friends (pathology “slides”, nautical “charts”, robots, sensors). Each of the {{ len $d.subfields }} subfields is a keyword rule scored the same way; the strongest one is the paper’s main subject, with the catch-all “Document QA &amp; VLMs” discounted so specific subfields win. Retrieval, agent, long-document and extraction papers also need a strong visual cue, and agent papers a stronger document signal. Papers that apply OCR or an LLM to a domain task (exam grading, clinical or legal documents, signature verification…) are kept in the list as “applications” but left out of every figure. Each subfield shows one hand-picked paper (“picked”) and one chosen automatically (“recent”): its own main-subject papers from the last eight weeks, ranked by venue acceptance, citations and public code.</p>
-        <p>Semantic Scholar adds author IDs (so namesakes stay apart), citation counts and venues. On top of the rules sits a hand-kept file, <code>data/survey_curated.toml</code>: papers to exclude or force-include, representative papers per subfield, and my picks. The rules themselves live in <code>scripts/fetch_survey.py</code>. It remains a rough instrument — a map of where attention goes, not a curated reading list.<sup><a href="#fn-arxiv">1</a></sup></p>
+        <p>Semantic Scholar adds author IDs (so namesakes stay apart), citation counts and venues. On top of the rules sits a hand-kept file, <code>data/survey_curated.toml</code>: papers to exclude or force-include, representative papers per subfield, and my picks. The rules themselves live in <code>scripts/fetch_survey.py</code>. Figure 4 comes from a card per paper: a language model (DeepSeek) reads the title and abstract and fills in a fixed schema — contribution type, tasks, methods proposed or merely used, new resources — quoting the abstract as evidence for every tag. A tag is kept only if its quote is found word for word in the abstract. Cards are made once per paper and only from public abstracts, so they share the abstract’s blind spots: anything that appears only in the full text is missing. It remains a rough instrument — a map of where attention goes, not a curated reading list.<sup><a href="#fn-arxiv">1</a></sup></p>
         <p id="fn-arxiv" class="fn"><sup>1</sup> Thank you to arXiv for use of its open access interoperability; author IDs, citations and venues from Semantic Scholar. Data window: {{ dateFormat "Jan 2, 2006" $d.since }} – {{ dateFormat "Jan 2, 2006" $d.today }}.</p>
       </div>
     </section>
