@@ -112,7 +112,7 @@
     });
   });
 
-  function boot() { init(); reveals(); progress(); }
+  function boot() { init(); reveals(); progress(); document.documentElement.classList.add('js-ok'); }
   if (document.readyState !== 'loading') boot();
   else document.addEventListener('DOMContentLoaded', boot);
 })();

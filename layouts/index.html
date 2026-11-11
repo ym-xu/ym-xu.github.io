@@ -37,6 +37,19 @@
   {{ end }}
 
   <div class="sections">
+    {{/* ---- News — data/news.yaml, newest first ---- */}}
+    {{ with site.Data.news }}
+    <section class="section reveal">
+      <div class="section-head"><h2>News</h2></div>
+      <dl class="dated">
+        {{ range first ($h.newsCount | default 5) . }}
+          <dt>{{ (time.AsTime (printf "%s-01" .date)).Format "Jan 2006" }}</dt>
+          <dd>{{ .text | markdownify }}</dd>
+        {{ end }}
+      </dl>
+    </section>
+    {{ end }}
+
     {{/* ---- Selected projects — three cards ---- */}}
     {{ $projects := (where site.RegularPages "Section" "projects").ByWeight }}
     {{ if $projects }}

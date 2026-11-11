@@ -11,3 +11,6 @@ __pycache__/
 
 # DeepSeek card extraction: local abstract cache
 scripts/.cache/
+
+# Local design prototype (kept on disk, not in the repo)
+/Yiming Xu Personal Site.html
