@@ -1,0 +1,12 @@
+{{- /* A post as a card. Context: the post page. */ -}}
+<article class="card">
+  <div class="card-kicker">
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+    {{ if site.Params.showReadingTime }}<span class="push">{{ .ReadingTime }} min read</span>{{ end }}
+  </div>
+  <h3 class="card-title"><a class="stretch" href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+  {{ with .Params.summary }}<p class="card-text">{{ . }}</p>{{ end }}
+  {{ with .Params.tags }}
+    <div class="card-foot">{{ range $i, $t := . }}{{ if $i }} · {{ end }}<a href="{{ (print "/tags/" $t | urlize | relURL) }}">{{ $t }}</a>{{ end }}</div>
+  {{ end }}
+</article>

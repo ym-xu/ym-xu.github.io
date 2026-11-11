@@ -3,11 +3,11 @@
   <p class="page-sub">Document understanding, retrieval and question answering. Newest first.</p>
   {{ $all := .Pages.ByDate.Reverse }}
   {{ $p := .Paginate $all }}
-  {{ $start := add (sub (len $all) (mul (sub $p.PageNumber 1) $p.PagerSize)) 1 }}
-  <ol class="bib" style="--bib-start: {{ $start }}">
-    {{ range $p.Pages }}
-      {{ partial "bib-entry.html" (dict "page" . "summary" true) }}
+  {{ $start := sub (len $all) (mul (sub $p.PageNumber 1) $p.PagerSize) }}
+  <div class="cards one">
+    {{ range $i, $pg := $p.Pages }}
+      {{ partial "pub-card.html" (dict "page" $pg "n" (sub $start $i) "summary" true) }}
     {{ end }}
-  </ol>
+  </div>
   {{ partial "pagination.html" . }}
 {{ end }}

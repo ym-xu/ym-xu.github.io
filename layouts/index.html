@@ -37,35 +37,31 @@
   {{ end }}
 
   <div class="sections">
-    {{/* ---- Selected projects — a description list ---- */}}
+    {{/* ---- Selected projects — three cards ---- */}}
     {{ $projects := (where site.RegularPages "Section" "projects").ByWeight }}
     {{ if $projects }}
     <section class="section">
       <div class="section-head"><h2>Selected projects</h2><a href="{{ "/projects/" | relURL }}">All projects →</a></div>
-      <dl class="desc">
-        {{ range first 3 $projects }}
-          <div>
-            <dt><a href="{{ .RelPermalink }}">{{ .Title }}</a>.</dt>
-            <dd>{{ with .Params.summary }}{{ . }}{{ end }}{{ with .Params.year }}<span class="yr">{{ . }}</span>{{ end }}</dd>
-          </div>
-        {{ end }}
-      </dl>
+      <div class="cards">
+        {{ range first 3 $projects }}{{ partial "project-card.html" . }}{{ end }}
+      </div>
     </section>
     {{ end }}
 
-    {{/* ---- Recent publications — a bibliography ---- */}}
+    {{/* ---- Recent publications — numbered like a bibliography ---- */}}
     {{ $allPubs := (where site.RegularPages "Section" "publications").ByDate.Reverse }}
     {{ if $allPubs }}
     <section class="section">
       <div class="section-head"><h2>Recent publications</h2><a href="{{ "/publications/" | relURL }}">All publications →</a></div>
-      <ol class="bib" style="--bib-start: {{ add (len $allPubs) 1 }}">
-        {{ range first 3 $allPubs }}
-          {{ partial "bib-entry.html" (dict "page" . "summary" false) }}
+      <div class="cards one">
+        {{ range $i, $pg := first 3 $allPubs }}
+          {{ partial "pub-card.html" (dict "page" $pg "n" (sub (len $allPubs) $i) "summary" false) }}
         {{ end }}
-      </ol>
+      </div>
     </section>
     {{ end }}
 
+    <div class="twocol">
     {{/* ---- Recent writing ---- */}}
     {{ $posts := first 3 (where site.RegularPages "Section" "posts").ByDate.Reverse }}
     {{ if $posts }}
@@ -89,5 +85,6 @@
       </dl>
     </section>
     {{ end }}
+    </div>
   </div>
 {{ end }}

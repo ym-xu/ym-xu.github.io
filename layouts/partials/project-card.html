@@ -1,0 +1,10 @@
+{{- /* A project as a card. Context: the project page. */ -}}
+<a class="card" href="{{ .RelPermalink }}">
+  <div class="card-kicker">
+    {{ with .Params.year }}<span>{{ . }}</span>{{ end }}
+  </div>
+  <h3 class="card-title">{{ .Title }}</h3>
+  {{ with .Params.role }}<p class="card-role">{{ . }}</p>{{ end }}
+  {{ with .Params.summary }}<p class="card-text">{{ . }}</p>{{ end }}
+  {{ with .Params.tags }}<div class="card-foot">{{ delimit . " · " }}</div>{{ end }}
+</a>

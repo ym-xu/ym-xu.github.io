@@ -1,17 +1,9 @@
 {{ define "main" }}
   <h1 class="page-title">Projects</h1>
   <p class="page-sub">Research and engineering I’ve led or built.</p>
-  <dl class="desc">
+  <div class="cards two">
     {{ range .Pages.ByWeight }}
-      <div>
-        <dt><a href="{{ .RelPermalink }}">{{ .Title }}</a>.</dt>
-        <dd>
-          {{ with .Params.role }}<span class="role">{{ . }}.</span>{{ end }}
-          {{ with .Params.summary }}{{ . }}{{ end }}
-          {{ with .Params.year }}<span class="yr">{{ . }}</span>{{ end }}
-          {{ with .Params.tags }}<span class="tags">{{ delimit . " · " }}</span>{{ end }}
-        </dd>
-      </div>
+      {{ partial "project-card.html" . }}
     {{ end }}
-  </dl>
+  </div>
 {{ end }}

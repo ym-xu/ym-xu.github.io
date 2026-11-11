@@ -34,6 +34,22 @@
     }
   }
 
+  // Card spotlight: feed the cursor position (relative to the hovered card)
+  // to CSS as --mx / --my, at most once per frame.
+  var raf = 0, card = null, px = 0, py = 0;
+  document.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var c = e.target.closest && e.target.closest('.card');
+    if (!c) return;
+    card = c; px = e.clientX; py = e.clientY;
+    if (!raf) raf = requestAnimationFrame(function () {
+      raf = 0;
+      var r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (px - r.left) + 'px');
+      card.style.setProperty('--my', (py - r.top) + 'px');
+    });
+  }, { passive: true });
+
   // Copy button for the code-card render hook.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.code-copy');

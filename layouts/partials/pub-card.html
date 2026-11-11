@@ -1,0 +1,17 @@
+{{- /* A publication as a card. Usage:
+       partial "pub-card.html" (dict "page" . "n" 4 "summary" true)
+       n is its bibliography number ([n]), newest = highest. */ -}}
+{{- $p := .page -}}
+{{- $me := site.Params.author.name | default "Yiming Xu" -}}
+{{- $authors := replace ($p.Params.authors | default "" | htmlEscape) $me (printf "<strong>%s</strong>" $me) -}}
+<article class="card">
+  <div class="card-kicker">
+    {{ with .n }}<span class="n">[{{ . }}]</span>{{ end }}
+    <span><span class="ve">{{ $p.Params.venue }}</span>{{ with $p.Params.year }} {{ . }}{{ end }}</span>
+    {{ with $p.Params.badge }}<span class="badge push">{{ lower . }}</span>{{ end }}
+  </div>
+  <h3 class="card-title"><a class="stretch" href="{{ $p.RelPermalink }}">{{ $p.Title }}</a></h3>
+  {{ with $authors }}<p class="card-au">{{ . | safeHTML }}</p>{{ end }}
+  {{ if .summary }}{{ with $p.Params.summary }}<p class="card-text">{{ . }}</p>{{ end }}{{ end }}
+  {{ with partial "pub-links.html" $p }}<div class="card-foot">{{ . }}</div>{{ end }}
+</article>

@@ -164,27 +164,65 @@ body.section-r-course.kind-page { --sheet: 1140px; }
 .dated .sum { display: block; color: var(--muted); font-size: .94rem; line-height: 1.45; margin-top: .1rem; }
 @media (max-width: 520px) { .dated { grid-template-columns: 1fr; gap: 0; } .dated dd { margin-bottom: .7rem; } }
 
-/* \begin{description} — projects */
-.desc { margin: 0; display: flex; flex-direction: column; gap: .85rem; }
-.desc > div { padding-left: 1.5em; text-indent: -1.5em; }
-.desc dt { display: inline; font-weight: 700; margin-right: .3em; } /* --minify strips the space between </dt> and <dd> */
-.desc dt a { color: var(--fg); }
-.desc dt a:hover { color: var(--link); }
-.desc dd { display: inline; margin: 0; }
-.desc .yr { color: var(--muted); font-variant: small-caps; letter-spacing: .03em; margin-left: .35em; }
-.desc .role { color: var(--muted); font-style: italic; }
-.desc .tags { display: block; text-indent: 0; color: var(--muted); font-variant: small-caps; letter-spacing: .03em; font-size: .92rem; margin-top: .15rem; }
+/* ---------- \fbox-style cards ----------
+   A hairline box, like a framed LaTeX float. On hover a soft spotlight and a
+   brighter piece of the border follow the cursor (--mx/--my, set by site.js).
+   Nothing moves or scales, so the text never jumps. */
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cards.one { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) { .cards, .cards.two { grid-template-columns: minmax(0, 1fr); } }
 
-/* \begin{thebibliography} — publications */
-.bib { list-style: none; margin: 0; padding: 0; counter-reset: bib var(--bib-start, 0); }
-.bib > li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr); gap: 0 .3rem; margin: 0 0 1.05rem; }
-.bib > li::before { counter-increment: bib -1; content: "[" counter(bib) "]"; color: var(--muted); }
-.bib .t { color: var(--fg); font-weight: 700; }
-.bib a.t:hover { color: var(--link); }
-.bib .au { color: var(--muted); }
-.bib .au strong { color: var(--fg); font-weight: 400; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: .05em; }
-.bib .ve { font-style: italic; }
-.bib .sum { display: block; color: var(--muted); font-size: .94rem; line-height: 1.45; margin-top: .2rem; }
+.card {
+  --card-border: color-mix(in oklab, var(--rule) 20%, transparent);
+  --spot: rgba(96, 165, 250, .14);
+  position: relative; isolation: isolate;
+  display: flex; flex-direction: column; gap: .4rem;
+  padding: 1rem 1.15rem 1.05rem;
+  background: var(--bg); color: var(--fg);
+  border: 1px solid var(--card-border); border-radius: 3px;
+  transition: border-color .25s, box-shadow .25s;
+}
+:root[data-theme="dark"] .card { --spot: rgba(96, 165, 250, .12); }
+a.card, a.card:hover { color: var(--fg); text-decoration: none; }
+.card::before, .card::after {
+  content: ""; position: absolute; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity .3s;
+}
+.card::before { inset: 0; z-index: -1; background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), var(--spot), transparent 65%); }
+.card::after {
+  inset: -1px; padding: 1px;
+  background: radial-gradient(160px circle at var(--mx, 50%) var(--my, 50%), var(--link), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.card:hover, .card:focus-within { box-shadow: 0 8px 24px rgba(0, 0, 0, .06); }
+.card:hover::before, .card:hover::after, .card:focus-within::before, .card:focus-within::after { opacity: 1; }
+@media (hover: none) { .card::after { display: none; } }
+
+.card-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .92rem; }
+.card-kicker .n { font-variant: normal; letter-spacing: 0; }
+.card-kicker .ve { font-style: italic; }
+.card-kicker .push { margin-left: auto; }
+.card-title { margin: 0; font-size: 1.08rem; font-weight: 700; line-height: 1.3; }
+.card-title a { color: var(--fg); }
+.card:hover .card-title, .card:hover .card-title a { color: var(--link); }
+.card-title a:hover { text-decoration: none; }
+/* the whole card is the title link's hit area; inner links sit above it */
+.card .stretch::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.card .blinks a, .card .card-foot a { position: relative; z-index: 2; }
+.card-au { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.45; }
+.card-au strong { color: var(--fg); font-weight: 400; text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: .05em; }
+.card-role { margin: 0; color: var(--muted); font-style: italic; font-size: .95rem; }
+.card-text { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.5; }
+.card-foot { margin-top: auto; padding-top: .35rem; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .9rem; }
+.card-foot .blinks { margin-left: 0; font-variant: normal; letter-spacing: 0; }
+
+/* \twocolumn — side-by-side sections on wide screens */
+.twocol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2.5rem; }
+.twocol > .section { min-width: 0; }
+.twocol .dated { grid-template-columns: 5.6em minmax(0, 1fr); }
+@media (max-width: 760px) { .twocol { grid-template-columns: minmax(0, 1fr); } }
 .badge { font-variant: small-caps; letter-spacing: .06em; color: var(--link); font-weight: 400; margin-left: .3em; }
 .blinks { display: inline-flex; flex-wrap: wrap; gap: 0 .5rem; margin-left: .2rem; }
 .blinks a::before { content: "["; color: var(--muted); }

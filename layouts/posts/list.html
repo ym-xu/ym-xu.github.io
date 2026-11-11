@@ -2,15 +2,10 @@
   <h1 class="page-title">Writing</h1>
   <p class="page-sub">Notes on research, system design, and things I’m reading.</p>
   {{ $p := .Paginate .Pages.ByDate.Reverse }}
-  <dl class="dated">
+  <div class="cards two">
     {{ range $p.Pages }}
-      <dt><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time></dt>
-      <dd>
-        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-        {{ with .Params.summary }}<span class="sum">{{ . }}</span>{{ end }}
-        {{ with .Params.tags }}<span class="sum sc">{{ range $i, $t := . }}{{ if $i }} · {{ end }}<a href="{{ (print "/tags/" $t | urlize | relURL) }}">{{ $t }}</a>{{ end }}</span>{{ end }}
-      </dd>
+      {{ partial "post-card.html" . }}
     {{ end }}
-  </dl>
+  </div>
   {{ partial "pagination.html" . }}
 {{ end }}
