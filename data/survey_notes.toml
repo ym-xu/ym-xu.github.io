@@ -1,0 +1,143 @@
+# Editor's notes for the survey page: a short overview per subfield, classic
+# papers from before the tracking window, and the core benchmarks.
+# Every arXiv id below was checked against arXiv. Overviews describe paradigms
+# and open problems only — no leaderboard numbers, which go stale in weeks.
+# Set reviewed = true once you've read and edited them; until then the page
+# labels them as a draft.
+
+reviewed = false
+updated = "2026-11-11"
+
+[overview]
+ocr = "Recognition moved from detect-then-recognise pipelines with CTC or attention decoders to end-to-end transformer readers, and now to unified models that read whole pages. Open problems: low-resource scripts, very dense or degraded pages, and judging OCR by what it does to downstream reasoning rather than character error alone."
+docvqa = "Layout-aware pre-trained encoders (the LayoutLM line) gave way to OCR-free encoder–decoders (Donut, Pix2Struct) and then to general vision-language models tuned on document data. Open problems: grounding answers in visible evidence, hallucination on dense text, and the cost of high-resolution inputs."
+rag = "Retrieval over page images — late-interaction VLM embeddings (ColPali) and screenshot embeddings (DSE) — has largely replaced OCR-then-text indexing, with retrieved pages handed to a VLM (VisRAG, M3DocRAG). Open problems: region-level rather than page-level evidence, the storage cost of multi-vector indexes, and cross-lingual collections."
+agents = "The newest strand: models that plan, call tools (search, crop, OCR, code) and iterate over long documents or whole collections, increasingly trained with reinforcement learning. Open problems: cost and latency, faithful evidence trails, and evaluating the search trajectory rather than only the final answer."
+longdoc = "Questions moved from one page to many: multi-page QA, slide decks and long PDFs. Methods combine page retrieval, hierarchical encoders and long-context VLMs. Open problems: reasoning across pages, pointing to where the answer is, and recognising unanswerable questions."
+layout = "Usually framed as object detection on large annotated corpora (PubLayNet, DocLayNet), plus separate reading-order models. Open problems: robustness across domains and languages, and logical structure — headings, hierarchy, captions — beyond bounding boxes."
+parsing = "End-to-end page-to-markup models (Nougat, unified OCR-2.0-style models) now compete with modular pipelines, and benchmarks such as OmniDocBench compare both. Open problems: getting text, tables, formulas and reading order right in one pass, and staying faithful on unusual layouts."
+tables = "Table detection and structure recognition on large datasets (PubTabNet, PubTables-1M) with image-to-structure models (TableFormer), increasingly joined by table question answering with VLMs. Open problems: spanning and nested cells, tables split across pages, and numeric reasoning."
+charts = "Question answering and reasoning over plots and charts (PlotQA, ChartQA), infographics, and chart-to-data or chart-to-code derendering with VLMs. Open problems: exact value extraction, misleading visualisations, and dense scientific figures."
+kie = "Entity labelling and linking on forms and receipts (FUNSD, SROIE) with layout-aware models, now often generative extraction by VLMs. Open problems: generalising to unseen schemas, long and multi-page forms, and privacy-sensitive data."
+historical = "Handwritten text-line and full-page recognition with transformer models, together with layout analysis and reading order for archives and newspapers. Open problems: low-resource scripts and languages, scarce transcriptions, and end-to-end page-level recognition."
+imaging = "Document image restoration — dewarping, binarisation, shadow and illumination removal — and, more recently, generating text-rich images and detecting tampering. Open problems: judging restoration by downstream OCR, realistic synthetic data, and robustness to forgery."
+
+# Classic papers (before the tracking window) — [label, arXiv id]
+[classics]
+ocr        = [["TrOCR", "2109.10282"], ["PARSeq", "2207.06966"], ["OCR-2.0 (GOT)", "2409.01704"]]
+docvqa     = [["LayoutLM", "1912.13318"], ["LayoutLMv3", "2204.08387"], ["Donut", "2111.15664"], ["Pix2Struct", "2210.03347"], ["UDOP", "2212.02623"]]
+rag        = [["ColPali", "2407.01449"], ["DSE", "2406.11251"], ["VisRAG", "2410.10594"], ["M3DocRAG", "2411.04952"]]
+agents     = [["ViDoRAG", "2502.18017"], ["MDocAgent", "2503.13964"], ["VRAG-RL", "2505.22019"]]
+longdoc    = [["Hi-VT5 / MP-DocVQA", "2212.05935"], ["DUDE", "2305.08455"], ["SlideVQA", "2301.04883"], ["MMLongBench-Doc", "2407.01523"]]
+layout     = [["PubLayNet", "1908.07836"], ["DocLayNet", "2206.01062"], ["LayoutReader", "2108.11591"]]
+parsing    = [["Nougat", "2308.13418"], ["KOSMOS-2.5", "2309.11419"], ["OmniDocBench", "2412.07626"]]
+tables     = [["PubTabNet", "1911.10683"], ["PubTables-1M", "2110.00061"], ["TableFormer", "2203.01017"]]
+charts     = [["PlotQA", "1909.00997"], ["ChartQA", "2203.10244"], ["InfographicVQA", "2104.12756"]]
+kie        = [["FUNSD", "1905.13538"], ["SROIE", "2103.10213"], ["LayoutLMv2", "2012.14740"]]
+historical = [["Non-recurrent HTR", "2005.13044"], ["Rethinking text-line recognition", "2104.07787"]]
+imaging    = [["DocTr", "2110.12942"], ["DocDeshadower", "2307.15318"]]
+
+# Core benchmarks — the usual reference points per subfield
+[[benchmarks]]
+name = "DocVQA"
+id = "2007.00398"
+year = 2020
+sub = "docvqa"
+task = "Question answering on single document pages"
+metric = "ANLS"
+
+[[benchmarks]]
+name = "InfographicVQA"
+id = "2104.12756"
+year = 2021
+sub = "charts"
+task = "Question answering on infographics"
+metric = "ANLS"
+
+[[benchmarks]]
+name = "ChartQA"
+id = "2203.10244"
+year = 2022
+sub = "charts"
+task = "Visual and logical questions about charts"
+metric = "Relaxed accuracy"
+
+[[benchmarks]]
+name = "MP-DocVQA"
+id = "2212.05935"
+year = 2022
+sub = "longdoc"
+task = "Question answering over multi-page documents"
+metric = "ANLS, page accuracy"
+
+[[benchmarks]]
+name = "DUDE"
+id = "2305.08455"
+year = 2023
+sub = "longdoc"
+task = "Multi-page, multi-domain document QA"
+metric = "ANLS, calibration"
+
+[[benchmarks]]
+name = "SlideVQA"
+id = "2301.04883"
+year = 2023
+sub = "longdoc"
+task = "Question answering over slide decks"
+metric = "EM, F1"
+
+[[benchmarks]]
+name = "MMLongBench-Doc"
+id = "2407.01523"
+year = 2024
+sub = "longdoc"
+task = "Questions over long PDFs with charts and tables"
+metric = "Accuracy, F1"
+
+[[benchmarks]]
+name = "ViDoRe"
+id = "2407.01449"
+year = 2024
+sub = "rag"
+task = "Retrieving document pages for a query (introduced with ColPali)"
+metric = "nDCG@5"
+
+[[benchmarks]]
+name = "DocLayNet"
+id = "2206.01062"
+year = 2022
+sub = "layout"
+task = "Layout detection across diverse document types"
+metric = "mAP"
+
+[[benchmarks]]
+name = "PubTabNet"
+id = "1911.10683"
+year = 2019
+sub = "tables"
+task = "Image-to-structure table recognition"
+metric = "TEDS"
+
+[[benchmarks]]
+name = "OmniDocBench"
+id = "2412.07626"
+year = 2024
+sub = "parsing"
+task = "End-to-end PDF page parsing (text, tables, formulas, order)"
+metric = "Edit distance, TEDS"
+
+[[benchmarks]]
+name = "FUNSD"
+id = "1905.13538"
+year = 2019
+sub = "kie"
+task = "Entity labelling and linking in scanned forms"
+metric = "F1"
+
+[[benchmarks]]
+name = "SROIE"
+id = "2103.10213"
+year = 2019
+sub = "kie"
+task = "Receipt OCR and key information extraction"
+metric = "F1"

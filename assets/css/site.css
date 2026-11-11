@@ -517,6 +517,29 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
 .cols line { stroke: var(--rule); stroke-width: .5; vector-effect: non-scaling-stroke; }
 .cols-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; font-variant: small-caps; letter-spacing: .03em; margin-top: .2rem; }
 
+/* v4 additions: five stats, honest counts, editor's notes, benchmarks, week groups */
+.survey .stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 760px) { .survey .stats.five { grid-template-columns: repeat(2, minmax(0, 1fr)); } .survey .stats.five > div:nth-child(odd) { border-left: 0; } }
+.brow { grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 4.4rem 6.6rem; }
+.btrend .vs { color: var(--muted); }
+@media (max-width: 640px) { .brow { grid-template-columns: minmax(0, 1fr) 4rem 6rem; } }
+.draft { font-size: .88rem; font-style: italic; }
+.sub-label { margin: .35rem 0 0; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .85rem; }
+.card.sub .classics { margin: 0; font-size: .9rem; line-height: 1.5; }
+.card.sub .classics a { position: relative; z-index: 2; color: var(--fg); }
+.card.sub .classics a:hover { color: var(--link); }
+.card.sub .card-text { line-height: 1.5; }
+table.booktabs { font-size: .92rem; }
+table.booktabs td:nth-child(2) { font-variant-numeric: lining-nums tabular-nums; color: var(--muted); }
+table.booktabs td:nth-child(3), table.booktabs td:nth-child(5) { color: var(--muted); }
+.plist .wk { margin: 1.1rem 0 .1rem; font-size: .95rem; font-weight: 400; font-variant: small-caps; letter-spacing: .05em; color: var(--muted); border-bottom: .5px solid var(--border); padding-bottom: .25rem; }
+.plist .wk:first-child { margin-top: 0; }
+.pick-note { margin: 0; font-size: .93rem; font-style: italic; }
+.picks { margin: 0 0 1.4rem; padding: .8rem 1rem; border: .5px solid var(--rule); }
+.tightdl { grid-template-columns: 4.6em minmax(0, 1fr); font-size: .93rem; }
+/* the paper list stays readable even before it is revealed (and for tools that read the page) */
+.js .reveal .plist .card { opacity: 1; transition: border-color .25s, box-shadow .25s; }
+
 /* Figure 3 — subfield × week heatmap (one hue; darker = more papers) */
 .heat { display: flex; flex-direction: column; gap: 3px; }
 .hrow, .haxis { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr); gap: .8rem; align-items: center; }

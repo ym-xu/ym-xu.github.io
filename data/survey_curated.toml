@@ -1,0 +1,31 @@
+# Hand edits for the survey page (/survey/). The daily job reads this file,
+# so changes here take effect on the next build. arXiv ids without "v2" etc.
+
+# ---- Papers that matched the keyword rules but aren't document understanding ----
+exclude = [
+  { id = "2610.41328", why = "whole-slide pathology images ('slides')" },
+  { id = "2609.25386", why = "footwear outsole impressions" },
+  { id = "2609.32117", why = "handwriting leaked through phone motion sensors" },
+  { id = "2611.13711", why = "video overlay removal" },
+  { id = "2611.06089", why = "STARE: scene-text retrieval for robots / everyday objects" },
+  { id = "2610.28836", why = "Sketch2Sim: hand-drawn circuit analysis" },
+  { id = "2610.34094", why = "temporal causal reasoning, not documents" },
+  { id = "2608.06221", why = "robot handwriting trajectories" },
+]
+
+# ---- Papers to keep even though the automatic relevance gate drops them ----
+include = [
+  { id = "2609.15800", why = "Navigating Sparse Evidence: agentic visual RAG" },
+  { id = "2606.01613", why = "TechRAG: multimodal agentic RAG over technical documents" },
+  { id = "2610.39301", why = "Youtu-Parsing-Omni: omni-modal document parsing" },
+]
+
+# ---- Representative papers per subfield, shown on its card instead of the newest ----
+# Keys are subfield ids: ocr docvqa rag agents longdoc layout parsing tables charts kie historical imaging
+[featured]
+# agents = ["2611.xxxxx", "2610.xxxxx"]
+
+# ---- My picks: highlighted on the page with a short note, and filterable ----
+# [[picks]]
+# id = "2611.xxxxx"
+# note = "Why this one matters (e.g. close to MuDocU / HindSeek)."

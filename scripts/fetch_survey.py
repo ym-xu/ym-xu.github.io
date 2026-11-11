@@ -31,6 +31,9 @@ import xml.etree.ElementTree as ET
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "data", "survey.json")
 CONFIG = os.path.join(HERE, "..", "config", "_default", "config.toml")
+CURATED = os.path.join(HERE, "..", "data", "survey_curated.toml")   # your hand edits: exclude / featured / picks
+S2_URL = "https://api.semanticscholar.org/graph/v1/paper/batch?fields=venue,publicationVenue,year,citationCount,authors"
+MIN_FOR_TREND = 10        # show 4-week change only when both windows have at least this many papers
 WEEKS = 26                # history shown in the trend charts
 LIST_DAYS = WEEKS * 7     # papers listed on the page (shown 30 at a time) — same window as the charts, so counts match
 PAGE = 400                # results per API call
@@ -60,9 +63,11 @@ SUBFIELDS = [
     ("rag", "Retrieval & RAG", "Finding evidence in documents: visual retrieval, multimodal RAG, page search.",
      r"\bRAG\b|retrieval[- ]augmented|document (retrieval|search)|page retrieval|visual(ly)? (rich )?document (retrieval|search)|colpali|multimodal retriev\w*|retriev\w* (over|from|across) (long |multiple )?(documents|pages|pdfs)"),
     ("agents", "Agents & Reasoning", "Agents that read, navigate and reason across documents.",
-     r"(document|page|pdf|reading)[- ](centric |understanding |qa )?agents?\b|agents? (for|over|on|that)\b.{0,60}\b(documents?|pages|pdfs?)\b|agentic (document|rag|retrieval|search|parsing|reading)|deep research|navigat\w+ (the |a |long )?(document|page)s?|reasoning (over|across) (long |multiple )?documents"),
+     # papers are already document-gated, so plain "agent(ic)" is safe here
+     r"\bagent(s|ic)?\b|multi[- ]agent|tool[- ](use|using|calling|augmented)|deep research|self[- ]evolving|\bharness(es)?\b|navigat\w+|\bplanner\b"
+     r"|evidence (seeking|search|acquisition|discovery|routing|threading|selection|navigation)|multi[- ]hop|working memory|memory[- ]guided|iterative (retrieval|reasoning)"),
     ("longdoc", "Long & Multi-page Documents", "Documents beyond a single page: long PDFs, slide decks, collections.",
-     r"long[- ]documents?|multi[- ]page|multipage|long[- ]context document|book[- ]length|slide decks?|\bslides\b|lengthy documents|document collections?"),
+     r"long[- ]documents?|multi[- ]page|multipage|long[- ]context document|book[- ]length|slide decks?|presentation slides|lecture slides|\bpptx?\b|lengthy documents|document collections?|extra[- ]long"),
     ("layout", "Layout & Reading Order", "Page structure: layout detection, reading order, logical structure.",
      r"layout (analysis|detection|understanding|parsing|model)|page (object )?segmentation|reading order|document structure|logical structure|document layout|heading hierarch\w+"),
     ("parsing", "Parsing & Conversion", "Turning pages into structured text: PDF-to-Markdown, formulas, end-to-end parsers.",
@@ -81,14 +86,24 @@ SUBFIELDS = [
 VISUAL = re.compile(
     r"document images?|visually[- ]rich|visual(ly)? (rich )?documents?|multimodal documents?|\bocr\b|optical character|scann\w+"
     r"|\blayouts?\b|page images?|document pages?|\bpdfs?\b|\btables?\b|\bcharts?\b|infographic|handwrit|manuscript|\bforms?\b"
-    r"|invoice|receipt|scene text|text (recognition|spotting|detection)|\bslides?\b|text[- ]rich|docvqa|screenshots?|scientific figures?"
+    r"|invoice|receipt|scene text|text (recognition|spotting|detection)|slide decks?|presentation slides|lecture slides|text[- ]rich|docvqa|screenshots?|scientific figures?"
     r"|document (vlm|mllm|lvlm|understanding|parsing|analysis|intelligence)|historical (documents?|newspapers?)", re.I)
 # Subfields where text-only work slips in (RAG over text "documents", research
 # agents, long text): their papers need a *strong* visual cue as well.
 NEEDS_STRONG = {"rag", "agents", "longdoc", "kie"}
+# Every paper must be *about* documents: scored like a subfield (title x3,
+# abstract x1, capped) and must reach 2 to enter; the broad subfields above
+# additionally need a strong visual cue, where general agent / RAG work otherwise leaks in.
+DOC_CORE = re.compile(
+    r"\bdocuments?\b|\bpdfs?\b|\bocr\b|optical character|document images?|text recognition|scene text|text spotting"
+    r"|handwrit\w*|manuscripts?|\bcharts?\b|infographics?|chartqa|docvqa|\binvoices?\b|\breceipts?\b|slide decks?"
+    r"|presentation slides|text[- ]rich|visually[- ]rich|historical (newspapers?|records|archives?)|table (recognition|structure|images?)"
+    r"|forms? understanding|page[- ]level|multi[- ]page|scanned (documents?|pages?|forms?|records)"
+    r"|text[- ]lines?|glyphs?|characters? recognition|logograph\w*|reading order|layout analysis|document layout"
+    r"|digiti[sz]\w* (of )?(books?|documents?|archives?|dictionar\w+|records|newspapers?)|visual text (rendering|generation)|text rendering", re.I)
 STRONG_VISUAL = re.compile(
     r"document images?|visually[- ]rich|visual(ly)? (rich )?documents?|multimodal|page images?|screenshots?|\bocr\b|scann\w+"
-    r"|\blayouts?\b|\bcharts?\b|infographic|vision[- ]language|\bvlms?\b|\bmllms?\b|\blvlms?\b|\bimages?\b|\bvisual\b|figures?|\bslides?\b|\bpixels?\b", re.I)
+    r"|\blayouts?\b|\bcharts?\b|infographic|handwrit\w*|manuscripts?|\bpdfs?\b|vision[- ]language|\bvlms?\b|\bmllms?\b|\blvlms?\b|\bimages?\b|\bvisual\b|figures?|slide decks?|presentation slides|\bpixels?\b", re.I)
 
 # Where a paper was accepted, from arXiv's author comment / journal ref.
 VENUES = ["CVPR", "ICCV", "ECCV", "NeurIPS", "ICLR", "ICML", "ACL", "EMNLP", "NAACL", "COLING", "EACL", "AAAI", "IJCAI",
@@ -100,7 +115,14 @@ ACCEPT_RX = re.compile(r"accept|to appear|published|camera[- ]ready|proceedings|
 UNDER_REVIEW = re.compile(r"submitted|under review|in submission|under submission|preprint|extended version of", re.I)
 CODE_RX = re.compile(r"https?://(?:www\.)?(?:github\.com|gitlab\.com|huggingface\.co)/[\w.\-/]+[\w/]", re.I)
 
-NOT_FIELD = re.compile(r"channel charting|flow ?chart(ing)? of (the )?(study|patients)", re.I)
+NOT_FIELD = re.compile(
+    r"channel charting|flow ?chart(ing)? of (the )?(study|patients)"
+    r"|whole[- ]slide|histopatholog\w*|patholog\w+ (slides?|images?)|gigapixel|\bWSIs?\b|cross[- ]hospital"   # pathology "slides"
+    r"|footwear|outsole|shoe ?prints?|motion sensors?|accelerometer|gyroscope|side[- ]channel|keystroke"     # forensics / sensing
+    r"|robot(ic)? (learning|grasp\w*|manipulation)|everyday objects|robot learning"                         # robotics
+    r"|video (text |subtitle |caption )?overlay|overlay removal|subtitle removal"                            # video editing
+    r"|circuit (analysis|diagrams?|simulation)|causal topology"
+    r"|navigational charts?|nautical charts?|maritime", re.I)
 BENCH_TITLE = re.compile(r"\b(benchmark|dataset|corpus)s?\b|\bbench\b", re.I)
 BENCH_ABS = re.compile(r"\b(introduce|present|release|construct|propose|curate|build|collect)\w*\s+(a|an|the)?\s*((new|novel|large[- ]scale|first|comprehensive|challenging|multilingual|synthetic)\s+)*([\w-]+\s+){0,3}(benchmark|dataset|corpus)\b", re.I)
 COMPILED = [(i, n, desc, re.compile(p, re.I)) for i, n, desc, p in SUBFIELDS]
@@ -122,6 +144,80 @@ def config_watchlist():
         return [a for a in cfg.get("params", {}).get("survey", {}).get("watch", []) if a]
     except Exception:
         return []
+
+
+def curated():
+    try:
+        with open(CURATED, "rb") as f:
+            c = tomllib.load(f)
+    except FileNotFoundError:
+        return {"exclude": set(), "include": set(), "featured": {}, "picks": {}}
+    return {
+        "exclude": {re.sub(r"v\d+$", "", e["id"] if isinstance(e, dict) else e) for e in c.get("exclude", [])},
+        "include": {re.sub(r"v\d+$", "", e["id"] if isinstance(e, dict) else e) for e in c.get("include", [])},
+        "featured": {k: list(v) for k, v in c.get("featured", {}).items()},
+        "picks": {p["id"]: p.get("note", "") for p in c.get("picks", [])},
+    }
+
+
+def arxiv_titles(ids):
+    """{id: (title, date)} for a few explicit ids (featured papers outside the window)."""
+    if not ids:
+        return {}
+    params = urllib.parse.urlencode({"id_list": ",".join(ids), "max_results": len(ids)})
+    req = urllib.request.Request("https://export.arxiv.org/api/query?" + params, headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            root = ET.fromstring(r.read())
+    except Exception as e:
+        print(f"  featured lookup failed ({e})", file=sys.stderr)
+        return {}
+    out = {}
+    for e in root.findall("a:entry", NS):
+        i = re.sub(r"v\d+$", "", clean(e.findtext("a:id", "", NS)).rsplit("/", 1)[-1])
+        out[i] = (clean(e.findtext("a:title", "", NS)), clean(e.findtext("a:published", "", NS))[:10])
+    return out
+
+
+def s2_enrich(papers):
+    """Semantic Scholar, in batches: author IDs (to tell people with the same name
+    apart), citation counts and published venue. Optional — on any failure the
+    survey just goes without; set S2_API_KEY for a higher rate limit."""
+    out = {}
+    headers = {"User-Agent": UA, "Content-Type": "application/json"}
+    if os.environ.get("S2_API_KEY"):
+        headers["x-api-key"] = os.environ["S2_API_KEY"]
+    ids = [p["id"] for p in papers]
+    for k in range(0, len(ids), 400):
+        chunk = ids[k:k + 400]
+        body = json.dumps({"ids": [f"ARXIV:{i}" for i in chunk]}).encode()
+        for attempt in range(4):
+            try:
+                req = urllib.request.Request(S2_URL, data=body, headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    rows = json.loads(r.read())
+                break
+            except Exception as e:
+                print(f"  Semantic Scholar failed ({e}); retry {attempt + 1}/4", file=sys.stderr)
+                time.sleep(10 * (attempt + 1))
+        else:
+            return None
+        for i, row in zip(chunk, rows):
+            if row:
+                out[i] = row
+        time.sleep(1.5)
+    return out
+
+
+def s2_venue(row):
+    """A short venue like 'ACL 2026' from S2's publicationVenue names, or ''."""
+    pv = row.get("publicationVenue") or {}
+    names = [pv.get("name") or "", row.get("venue") or ""] + list(pv.get("alternate_names") or [])
+    for n in names:
+        for v in VENUES:
+            if re.fullmatch(re.escape(v).replace(r"\ ", r"\s*"), n.strip(), re.I):
+                return f"{v} {row.get('year') or ''}".strip()
+    return ""
 
 
 def query():
@@ -150,10 +246,25 @@ def score(title, abstract):
     """{subfield id: score}; title hits weigh 3x."""
     out = {}
     for sid, _, _, rx in COMPILED:
-        s = 3 * sum(1 for _ in rx.finditer(title)) + sum(1 for _ in rx.finditer(abstract))
+        s = 3 * sum(1 for _ in rx.finditer(title)) + min(3, sum(1 for _ in rx.finditer(abstract)))
         if s >= 2:
             out[sid] = s
     return out
+
+
+def doc_strength(title, abstract):
+    return 3 * sum(1 for _ in DOC_CORE.finditer(title)) + min(4, sum(1 for _ in DOC_CORE.finditer(abstract)))
+
+
+# Primary subfield = strongest match. "Document QA & VLMs" is the umbrella every
+# paper partly matches ("document understanding"…), so it counts 0.6x for the
+# primary choice; ties go to the more specific subfield in this order.
+PRIMARY_WEIGHT = {"docvqa": 0.6}
+TIE_ORDER = ["tables", "charts", "kie", "layout", "parsing", "imaging", "historical", "ocr", "agents", "rag", "longdoc", "docvqa"]
+
+
+def rank(sc):
+    return sorted(sc, key=lambda k: (-sc[k] * PRIMARY_WEIGHT.get(k, 1.0), TIE_ORDER.index(k)))
 
 
 def venue_of(comment, jref):
@@ -187,6 +298,7 @@ def main():
     today = dt.datetime.now(dt.timezone.utc).date()
     since = today - dt.timedelta(days=WEEKS * 7 - 1)
     watch = config_watchlist()
+    cur = curated()
     watch_rx = re.compile("|".join(re.escape(a) for a in watch), re.I) if watch else None
 
     papers, seen, start = [], set(), 0
@@ -201,19 +313,28 @@ def main():
             if not base or base in seen:
                 continue
             seen.add(base)
+            if base in cur["exclude"]:
+                continue
             pub = dt.date.fromisoformat(clean(e.findtext("a:published", "", NS))[:10])
             oldest = pub if oldest is None or pub < oldest else oldest
             if pub < since:
                 continue
+            m_id = re.match(r"(\d{2})(\d{2})\.", base)
+            if m_id and (2000 + int(m_id.group(1)), int(m_id.group(2))) < (since.year, since.month):
+                continue  # an old paper resurfacing (new version / cross-list): count first releases only
             title = clean(e.findtext("a:title", "", NS))
             abstract = clean(e.findtext("a:summary", "", NS))
             sc = score(title, abstract)
-            if not sc or not VISUAL.search(f"{title} {abstract}") or NOT_FIELD.search(f"{title} {abstract}"):
+            forced = base in cur["include"]       # hand-confirmed: skip the relevance gates
+            if not sc and forced:
+                sc = {"docvqa": 2}
+            if not forced and (not sc or not VISUAL.search(f"{title} {abstract}") or NOT_FIELD.search(f"{title} {abstract}")):
                 continue
-            order = [sid for sid, *_ in COMPILED]
-            tags = sorted(sc, key=lambda k: (-sc[k], order.index(k)))
-            if tags[0] in NEEDS_STRONG and not STRONG_VISUAL.search(f"{title} {abstract}"):
-                continue  # text-only RAG / agents / long text — not visual document understanding
+            tags = rank(sc)
+            ds = doc_strength(title, abstract)
+            if not forced and (ds < 2 or (tags[0] == "agents" and ds < 3)
+                               or (tags[0] in NEEDS_STRONG and not STRONG_VISUAL.search(f"{title} {abstract}"))):
+                continue  # not about documents, or text-only RAG / agents / long text
             prim = e.find("arxiv:primary_category", NS)
             authors = [clean(a.findtext("a:name", "", NS)) for a in e.findall("a:author", NS)]
             comment = clean(e.findtext("arxiv:comment", "", NS))
@@ -228,6 +349,7 @@ def main():
                 "tags": tags,                      # tags[0] is the primary subfield
                 "bench": bool(BENCH_TITLE.search(title) or BENCH_ABS.search(abstract)),
                 "watch": bool(watch_rx and any(watch_rx.fullmatch(a) for a in authors)),
+                "pick": ((cur["picks"][base] or True) if base in cur["picks"] else None),   # note text, or true
                 "venue": venue_of(comment, jref),
                 "code": code.group(0).rstrip(".,);") if code else "",
                 "abs": abstract[:320] + ("…" if len(abstract) > 320 else ""),
@@ -255,7 +377,7 @@ def main():
     def growth(ps):
         now = sum(1 for p in ps if week_of(p["date"]) < 4)
         before = sum(1 for p in ps if 4 <= week_of(p["date"]) < 8)
-        return now, before, (None if min(now, before) < 4 else round(100 * (now - before) / before))
+        return now, before, (None if min(now, before) < MIN_FOR_TREND else round(100 * (now - before) / before))
 
     total = len(papers) or 1
     subfields = []
@@ -270,15 +392,43 @@ def main():
             "last4w": now, "prev4w": before, "trend": g,
             "weekly": weekly(mine),
             "latest": [{"id": p["id"], "title": p["title"]} for p in mine[:2]],
+            "featured": [],
         })
     subfields.sort(key=lambda s: (-s["primary"], -s["count"]))
+    # hand-picked representative papers (data/survey_curated.toml) replace "latest"
+    by_id = {p["id"]: p for p in papers}
+    want = sorted({i for ids in cur["featured"].values() for i in ids if i not in by_id})
+    extra = arxiv_titles(want)
+    for sf in subfields:
+        for i in cur["featured"].get(sf["id"], []):
+            if i in by_id:
+                sf["featured"].append({"id": i, "title": by_id[i]["title"]})
+            elif i in extra:
+                sf["featured"].append({"id": i, "title": extra[i][0]})
     names = {sid: name for sid, name, *_ in COMPILED}
     for p in papers:
         p["tagnames"] = [names[t] for t in p["tags"]]
 
-    # ---- who and where: most active authors, accepted venues ----
-    au = collections.Counter(a for p in papers for a in p["_all_authors"])
-    active = [{"name": a, "n": n} for a, n in au.most_common(40) if n >= 3][:12]
+    # ---- Semantic Scholar: author IDs, citations, venues it knows about ----
+    s2 = s2_enrich(papers) if papers else None
+    active, cited = [], []
+    if s2:
+        au, au_name = collections.Counter(), {}
+        for p in papers:
+            row = s2.get(p["id"])
+            if not row:
+                continue
+            p["cites"] = row.get("citationCount") or 0
+            if not p["venue"]:
+                p["venue"] = s2_venue(row)
+            for a in row.get("authors") or []:
+                if a.get("authorId"):
+                    au[a["authorId"]] += 1
+                    au_name[a["authorId"]] = a.get("name") or ""
+        active = [{"name": au_name[i], "id": i, "n": n} for i, n in au.most_common(12) if n >= 3]
+        cited = sorted((p for p in papers if p.get("cites")), key=lambda p: -p["cites"])[:6]
+        cited = [{"id": p["id"], "title": p["title"], "cites": p["cites"]} for p in cited]
+        print(f"  Semantic Scholar: {len(s2)}/{len(papers)} papers matched", file=sys.stderr)
     ven = collections.Counter(re.sub(r"\s+(20\d\d)", "", p["venue"]).replace(" Findings", "").replace(" Workshop", "")
                               for p in papers if p["venue"])
     venues = [{"name": v, "n": n} for v, n in ven.most_common(10)]
@@ -338,6 +488,11 @@ def main():
         "subfields": subfields,
         "pairs": top_pairs,
         "active_authors": active,
+        "authors_disambiguated": bool(s2),
+        "most_cited": cited,
+        "picks": [{"id": p["id"], "title": p["title"], "note": p["pick"] if isinstance(p["pick"], str) else "", "date": p["date"]}
+                  for p in papers if p.get("pick") is not None],
+        "min_for_trend": MIN_FOR_TREND,
         "venues": venues,
         "accepted": sum(1 for p in papers if p["venue"]),
         "with_code": sum(1 for p in papers if p["code"]),

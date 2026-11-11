@@ -47,6 +47,9 @@ jobs:
 
       - name: Fetch latest papers from arXiv
         run: python3 scripts/fetch_survey.py
+        env:
+          # optional repository secret: a Semantic Scholar API key avoids rate limits
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
 
       - name: Save survey snapshot
         uses: actions/cache/save@v4

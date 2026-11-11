@@ -13,8 +13,9 @@
   var chips = Array.prototype.slice.call(document.querySelectorAll('.chips .chip[data-filter]'));
   var flags = Array.prototype.slice.call(document.querySelectorAll('.chips .chip[data-flag]'));
   var papersSection = document.getElementById('papers');
+  var weeks = Array.prototype.slice.call(list.querySelectorAll('.wk'));
   var STEP = 30;
-  var FLAGS = ['bench', 'watch', 'venue', 'code', 'fresh'];   // each matches data-<flag>="true"
+  var FLAGS = ['bench', 'watch', 'venue', 'code', 'pick', 'fresh'];   // each matches data-<flag>="true"
   var state = { tag: '', text: '', shown: STEP };
   FLAGS.forEach(function (f) { state[f] = false; });
   var texts = cards.map(function (c) { return c.textContent.toLowerCase().replace(/\s+/g, ' '); });
@@ -83,6 +84,10 @@
       c.hidden = !show;
       if (show) visible++;
     });
+    // week headings: show one only if a paper of its week is visible
+    var seenWk = {};
+    cards.forEach(function (c) { if (!c.hidden) seenWk[c.getAttribute('data-wk')] = true; });
+    weeks.forEach(function (h) { h.hidden = !seenWk[h.getAttribute('data-wk')]; });
     count.textContent = visible < match ? visible + ' of ' + match : match + (match === 1 ? ' paper' : ' papers');
     more.hidden = match <= state.shown;
     empty.hidden = match > 0;
