@@ -33,14 +33,14 @@
   </div>
 
   {{ with $h.definition }}
-    <p class="defn"><b>Definition 1</b>{{ with $h.definitionTerm }} ({{ . }}){{ end }}. <i>{{ . }}</i></p>
+    <p class="defn reveal"><b>Definition 1</b>{{ with $h.definitionTerm }} ({{ . }}){{ end }}. <i>{{ . }}</i></p>
   {{ end }}
 
   <div class="sections">
     {{/* ---- Selected projects — three cards ---- */}}
     {{ $projects := (where site.RegularPages "Section" "projects").ByWeight }}
     {{ if $projects }}
-    <section class="section">
+    <section class="section reveal">
       <div class="section-head"><h2>Selected projects</h2><a href="{{ "/projects/" | relURL }}">All projects →</a></div>
       <div class="cards">
         {{ range first 3 $projects }}{{ partial "project-card.html" . }}{{ end }}
@@ -51,7 +51,7 @@
     {{/* ---- Recent publications — numbered like a bibliography ---- */}}
     {{ $allPubs := (where site.RegularPages "Section" "publications").ByDate.Reverse }}
     {{ if $allPubs }}
-    <section class="section">
+    <section class="section reveal">
       <div class="section-head"><h2>Recent publications</h2><a href="{{ "/publications/" | relURL }}">All publications →</a></div>
       <div class="cards one">
         {{ range $i, $pg := first 3 $allPubs }}
@@ -65,7 +65,7 @@
     {{/* ---- Recent writing ---- */}}
     {{ $posts := first 3 (where site.RegularPages "Section" "posts").ByDate.Reverse }}
     {{ if $posts }}
-    <section class="section">
+    <section class="section reveal">
       <div class="section-head"><h2>Recent writing</h2><a href="{{ "/posts/" | relURL }}">All writing →</a></div>
       <dl class="dated">
         {{ range $posts }}
@@ -78,7 +78,7 @@
 
     {{/* ---- Awards ---- */}}
     {{ with site.Data.awards }}
-    <section class="section">
+    <section class="section reveal">
       <div class="section-head"><h2>Awards</h2></div>
       <dl class="dated">
         {{ range . }}<dt>{{ .year }}</dt><dd>{{ .text }}</dd>{{ end }}
@@ -87,4 +87,5 @@
     {{ end }}
     </div>
   </div>
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
 {{ end }}

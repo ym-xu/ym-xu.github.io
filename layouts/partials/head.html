@@ -15,7 +15,7 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101010" />
 {{- /* Apply a saved theme before first paint (no light flash in dark mode).
        With no saved choice, the CSS follows the OS via prefers-color-scheme. */}}
-<script>(function(){try{var t=localStorage.getItem('prefers-color-scheme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('prefers-color-scheme');if(t==='dark'||t==='light')d.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="preload" href="{{ "fonts/texgyrepagella-regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin />
 {{- $css := slice (resources.Get "css/site.css") (resources.Get "css/syntax.css") | resources.Concat "css/bundle.css" | minify | fingerprint }}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />

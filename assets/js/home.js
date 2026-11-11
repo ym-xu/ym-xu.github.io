@@ -24,12 +24,47 @@
     });
   }
 
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scroll reveal: sections and Definition 1 get .in when they come into
+  // view (CSS fades them / draws the rule / types the definition). Cards
+  // inside a section are staggered through --i.
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  reveals.forEach(function (el) {
+    Array.prototype.forEach.call(el.querySelectorAll('.card'), function (c, i) { c.style.setProperty('--i', i); });
+  });
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    reveals.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    reveals.forEach(function (el) { io.observe(el); });
+  }
+
+  // Reading progress: a thin blue bar along the top edge.
+  var bar = document.querySelector('.reading-progress > span');
+  if (bar) {
+    var ticking = false;
+    var paint = function () {
+      ticking = false;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0).toFixed(2) + '%';
+    };
+    var onScroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    paint();
+  }
+
   var hero = document.querySelector('[data-beat]');
   if (!hero) return;
   var hls = Array.prototype.slice.call(hero.querySelectorAll('.hl'));
   if (!hls.length) return;
 
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduce = reduceMotion;
   var bpm = Math.min(200, Math.max(60, parseFloat(hero.getAttribute('data-beat')) || 128));
   var quarter = 60000 / bpm / 4;          // one tick = a sixteenth note
 
@@ -77,6 +112,6 @@
     }).observe(hero);
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
-  step();
-  start();
+  // let the name finish inking in before the highlighter starts playing
+  setTimeout(function () { step(); start(); }, 900);
 })();

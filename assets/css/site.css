@@ -152,7 +152,8 @@ body.section-r-course.kind-page { --sheet: 1140px; }
 /* numbered \section{}s */
 .sections { counter-reset: sec; }
 .section { margin: 3rem 0 0; }
-.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; margin: 0 0 .9rem; }
+.section-head { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; margin: 0 0 1rem; padding-bottom: .4rem; }
+.section-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-bottom: .5px solid var(--rule); transform-origin: left center; }
 .section-head h2 { margin: 0; font-size: 1.4rem; }
 .sections .section-head h2::before { counter-increment: sec; content: counter(sec); display: inline-block; min-width: 1.7em; }
 .section-head a { font-size: .95rem; font-style: italic; }
@@ -217,6 +218,34 @@ a.card, a.card:hover { color: var(--fg); text-decoration: none; }
 .card-text { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.5; }
 .card-foot { margin-top: auto; padding-top: .35rem; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .9rem; }
 .card-foot .blinks { margin-left: 0; font-variant: normal; letter-spacing: 0; }
+
+/* ---------- home motion ----------
+   Only opacity, blur, clip-path and a rule's scaleX are animated: no element
+   is translated or scaled, so text never shifts. Gated on .js (set in <head>)
+   so the page is fully visible without JavaScript, and off for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  /* the name "inks in", then the lines under it */
+  .js .home-name  { animation: ink 1.1s cubic-bezier(.2,.7,.2,1) both; }
+  .js .home-field { animation: fade .8s ease .35s both; }
+  .js .home-bio   { animation: fade .8s ease .55s both; }
+  .js .home-links { animation: fade .8s ease .75s both; }
+
+  /* sections: heading fades, its rule draws left → right, cards follow one by one */
+  .js .reveal > .section-head { opacity: 0; transition: opacity .6s ease; }
+  .js .reveal > .section-head::after { transform: scaleX(0); transition: transform .9s cubic-bezier(.5,0,.2,1) .15s; }
+  .js .reveal > :not(.section-head) { opacity: 0; transition: opacity .7s ease .2s; }
+  .js .reveal .card { opacity: 0; transition: opacity .6s ease calc(var(--i, 0) * 90ms + .25s), border-color .25s, box-shadow .25s; }
+  .js .reveal.in > .section-head,
+  .js .reveal.in > :not(.section-head),
+  .js .reveal.in .card { opacity: 1; }
+  .js .reveal.in > .section-head::after { transform: none; }
+
+  /* Definition 1 is typed out, left to right */
+  .js .defn.reveal { clip-path: inset(0 100% 0 0); transition: clip-path 1.6s steps(48, end) .2s; }
+  .js .defn.reveal.in { clip-path: inset(0 0 0 0); }
+}
+@keyframes ink  { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* \twocolumn — side-by-side sections on wide screens */
 .twocol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2.5rem; }
