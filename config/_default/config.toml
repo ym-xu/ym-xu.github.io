@@ -77,10 +77,6 @@ ignoreLogs = ['warning-goldmark-raw-html']
     scholar = "https://scholar.google.com/citations?user=n1skXDsAAAAJ&hl=en"
     twitter = "https://x.com/Yiming_xu_1104"
 
-# --- /survey/: papers by these authors get a "watched" mark and their own filter ---
-[params.survey]
-  watch = ["Yiming Xu", "Dimosthenis Karatzas", "Ernest Valveny"]
-
 [params.giscus]
   repo = ""
   repo_id = ""
@@ -112,7 +108,7 @@ ignoreLogs = ['warning-goldmark-raw-html']
     weight = 20
   [[menu.main]]
     name = "Map"
-    url = "/survey/"
+    url = "https://ym-xu.github.io/living-survey/"
     weight = 25
   [[menu.main]]
     name = "Writing"
