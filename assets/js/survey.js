@@ -14,24 +14,58 @@
   var flags = Array.prototype.slice.call(document.querySelectorAll('.chips .chip[data-flag]'));
   var papersSection = document.getElementById('papers');
   var STEP = 30;
-  var state = { tag: '', text: '', bench: false, watch: false, shown: STEP };
+  var FLAGS = ['bench', 'watch', 'venue', 'code', 'fresh'];   // each matches data-<flag>="true"
+  var state = { tag: '', text: '', shown: STEP };
+  FLAGS.forEach(function (f) { state[f] = false; });
   var texts = cards.map(function (c) { return c.textContent.toLowerCase().replace(/\s+/g, ' '); });
   var tagsOf = cards.map(function (c) { return (c.getAttribute('data-tags') || '').split(' '); });
+
+  // "New since your last visit": remember the newest paper date this browser
+  // has seen. (Per-viewer convenience only; silently off if storage is blocked.)
+  (function markFresh() {
+    var newest = cards.reduce(function (m, c) { var d = c.getAttribute('data-date') || ''; return d > m ? d : m; }, '');
+    var prev = null;
+    try {
+      prev = sessionStorage.getItem('survey-prev');
+      if (prev === null) {
+        prev = localStorage.getItem('survey-last-seen') || '';
+        sessionStorage.setItem('survey-prev', prev);   // keep the marks across reloads in this session
+      }
+      if (newest) localStorage.setItem('survey-last-seen', newest);
+    } catch (e) { prev = ''; }
+    if (!prev) return;
+    var n = 0;
+    cards.forEach(function (c) {
+      if ((c.getAttribute('data-date') || '') > prev) {
+        c.setAttribute('data-fresh', 'true');
+        var b = c.querySelector('.badge.fresh');
+        if (b) b.hidden = false;
+        n++;
+      }
+    });
+    if (!n) return;
+    var since = document.getElementById('survey-since');
+    since.textContent = n + (n === 1 ? ' paper is' : ' papers are') + ' new since your last visit — ';
+    var a = document.createElement('button');
+    a.type = 'button'; a.className = 'linkish'; a.setAttribute('data-flag', 'fresh'); a.textContent = 'show them';
+    since.appendChild(a);
+    since.hidden = false;
+    var chip = document.querySelector('.chip[data-flag="fresh"]');
+    if (chip) chip.hidden = false;
+  })();
 
   function readHash() {
     var h = new URLSearchParams(location.hash.slice(1));
     state.tag = h.get('tag') || '';
     state.text = (h.get('q') || '').toLowerCase();
-    state.bench = h.get('bench') === '1';
-    state.watch = h.get('watch') === '1';
+    FLAGS.forEach(function (f) { state[f] = h.get(f) === '1'; });
     q.value = h.get('q') || '';
   }
   function writeHash() {
     var h = new URLSearchParams();
     if (state.tag) h.set('tag', state.tag);
     if (state.text) h.set('q', state.text);
-    if (state.bench) h.set('bench', '1');
-    if (state.watch) h.set('watch', '1');
+    FLAGS.forEach(function (f) { if (state[f]) h.set(f, '1'); });
     var s = h.toString();
     history.replaceState(null, '', s ? '#' + s : location.pathname + location.search);
   }
@@ -42,8 +76,7 @@
     var match = 0, visible = 0;
     cards.forEach(function (c, i) {
       var ok = need.every(function (t) { return tagsOf[i].indexOf(t) >= 0; })
-        && (!state.bench || c.getAttribute('data-bench') === 'true')
-        && (!state.watch || c.getAttribute('data-watch') === 'true')
+        && FLAGS.every(function (f) { return !state[f] || c.getAttribute('data-' + f) === 'true'; })
         && words.every(function (w) { return texts[i].indexOf(w) >= 0; });
       if (ok) match++;
       var show = ok && match <= state.shown;
@@ -67,7 +100,7 @@
     var f = t.closest('[data-filter]');
     if (f) { state.tag = f.getAttribute('data-filter'); update(!f.classList.contains('chip')); return; }
     var fl = t.closest('[data-flag]');
-    if (fl) { var k = fl.getAttribute('data-flag'); state[k] = !state[k]; update(false); return; }
+    if (fl) { var k = fl.getAttribute('data-flag'); state[k] = !state[k]; update(!fl.classList.contains('chip')); return; }
     var term = t.closest('[data-term]');
     if (term) { q.value = term.getAttribute('data-term'); state.text = q.value.toLowerCase(); state.tag = ''; update(true); }
   });
@@ -81,7 +114,7 @@
 
   readHash();
   render();
-  if (location.hash.length > 1 && (state.tag || state.text || state.bench || state.watch)) {
+  if (location.hash.length > 1 && (state.tag || state.text || FLAGS.some(function (f) { return state[f]; }))) {
     papersSection.classList.add('in');
     setTimeout(function () { papersSection.scrollIntoView({ block: 'start' }); }, 0);
   }

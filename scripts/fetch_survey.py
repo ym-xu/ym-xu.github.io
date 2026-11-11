@@ -83,6 +83,23 @@ VISUAL = re.compile(
     r"|\blayouts?\b|page images?|document pages?|\bpdfs?\b|\btables?\b|\bcharts?\b|infographic|handwrit|manuscript|\bforms?\b"
     r"|invoice|receipt|scene text|text (recognition|spotting|detection)|\bslides?\b|text[- ]rich|docvqa|screenshots?|scientific figures?"
     r"|document (vlm|mllm|lvlm|understanding|parsing|analysis|intelligence)|historical (documents?|newspapers?)", re.I)
+# Subfields where text-only work slips in (RAG over text "documents", research
+# agents, long text): their papers need a *strong* visual cue as well.
+NEEDS_STRONG = {"rag", "agents", "longdoc", "kie"}
+STRONG_VISUAL = re.compile(
+    r"document images?|visually[- ]rich|visual(ly)? (rich )?documents?|multimodal|page images?|screenshots?|\bocr\b|scann\w+"
+    r"|\blayouts?\b|\bcharts?\b|infographic|vision[- ]language|\bvlms?\b|\bmllms?\b|\blvlms?\b|\bimages?\b|\bvisual\b|figures?|\bslides?\b|\bpixels?\b", re.I)
+
+# Where a paper was accepted, from arXiv's author comment / journal ref.
+VENUES = ["CVPR", "ICCV", "ECCV", "NeurIPS", "ICLR", "ICML", "ACL", "EMNLP", "NAACL", "COLING", "EACL", "AAAI", "IJCAI",
+          "ICDAR", "WACV", "BMVC", "ACM MM", "KDD", "SIGIR", "WWW", "CIKM", "WSDM", "ICASSP", "ICPR", "DAS", "LREC",
+          "TPAMI", "IJCV", "TIP", "TACL", "Pattern Recognition", "ICME", "ACCV", "MICCAI", "JCDL", "TPDL"]
+VENUE_RX = re.compile(r"(?<![A-Za-z])(" + "|".join(re.escape(v).replace(r"\ ", r"\s*") for v in VENUES) + r"|NIPS|ACMMM)(?![A-Za-z])"
+                      r"(?:\s*(?:'|’)?\s*(20\d\d|\d\d))?", re.I)
+ACCEPT_RX = re.compile(r"accept|to appear|published|camera[- ]ready|proceedings|main conference|findings|oral|spotlight|poster|workshop|\bat\b|\bin\b", re.I)
+UNDER_REVIEW = re.compile(r"submitted|under review|in submission|under submission|preprint|extended version of", re.I)
+CODE_RX = re.compile(r"https?://(?:www\.)?(?:github\.com|gitlab\.com|huggingface\.co)/[\w.\-/]+[\w/]", re.I)
+
 NOT_FIELD = re.compile(r"channel charting|flow ?chart(ing)? of (the )?(study|patients)", re.I)
 BENCH_TITLE = re.compile(r"\b(benchmark|dataset|corpus)s?\b|\bbench\b", re.I)
 BENCH_ABS = re.compile(r"\b(introduce|present|release|construct|propose|curate|build|collect)\w*\s+(a|an|the)?\s*((new|novel|large[- ]scale|first|comprehensive|challenging|multilingual|synthetic)\s+)*([\w-]+\s+){0,3}(benchmark|dataset|corpus)\b", re.I)
@@ -139,6 +156,26 @@ def score(title, abstract):
     return out
 
 
+def venue_of(comment, jref):
+    """'CVPR 2026' / 'EMNLP 2025 Findings' / 'ICDAR 2026 Workshop', or ''."""
+    for text in (jref, comment):
+        if not text:
+            continue
+        m = VENUE_RX.search(text)
+        if not m or (text is comment and (not ACCEPT_RX.search(text)
+                                           or (UNDER_REVIEW.search(text) and not re.search(r"accept", text, re.I)))):
+            continue
+        name = m.group(1)
+        canon = next((v for v in VENUES if re.fullmatch(re.escape(v).replace(r"\ ", r"\s*"), name, re.I)), name)
+        canon = {"NIPS": "NeurIPS", "ACMMM": "ACM MM"}.get(canon.upper(), canon)
+        year = m.group(2) or ""
+        if len(year) == 2:
+            year = "20" + year
+        extra = " Findings" if re.search(r"findings", text, re.I) else (" Workshop" if re.search(r"workshop", text, re.I) else "")
+        return f"{canon} {year}".strip() + extra
+    return ""
+
+
 def terms_of(title):
     words = [w for w in re.findall(r"[a-z][a-z0-9-]+", title.lower()) if len(w) > 2]
     uni = {w for w in words if w not in STOP}
@@ -175,17 +212,25 @@ def main():
                 continue
             order = [sid for sid, *_ in COMPILED]
             tags = sorted(sc, key=lambda k: (-sc[k], order.index(k)))
+            if tags[0] in NEEDS_STRONG and not STRONG_VISUAL.search(f"{title} {abstract}"):
+                continue  # text-only RAG / agents / long text — not visual document understanding
             prim = e.find("arxiv:primary_category", NS)
             authors = [clean(a.findtext("a:name", "", NS)) for a in e.findall("a:author", NS)]
+            comment = clean(e.findtext("arxiv:comment", "", NS))
+            jref = clean(e.findtext("arxiv:journal_ref", "", NS))
+            code = CODE_RX.search(f"{abstract} {comment}")
             papers.append({
                 "id": base, "title": title,
                 "authors": authors[:4] + (["et al."] if len(authors) > 4 else []),
+                "_all_authors": authors,           # used for counts, not written out
                 "date": pub.isoformat(),
                 "cat": prim.get("term") if prim is not None else "",
                 "tags": tags,                      # tags[0] is the primary subfield
                 "bench": bool(BENCH_TITLE.search(title) or BENCH_ABS.search(abstract)),
                 "watch": bool(watch_rx and any(watch_rx.fullmatch(a) for a in authors)),
-                "abs": abstract[:420] + ("…" if len(abstract) > 420 else ""),
+                "venue": venue_of(comment, jref),
+                "code": code.group(0).rstrip(".,);") if code else "",
+                "abs": abstract[:320] + ("…" if len(abstract) > 320 else ""),
             })
         print(f"  fetched {start}–{start + len(entries)}; oldest {oldest}", file=sys.stderr)
         if oldest and oldest < since:
@@ -230,6 +275,15 @@ def main():
     names = {sid: name for sid, name, *_ in COMPILED}
     for p in papers:
         p["tagnames"] = [names[t] for t in p["tags"]]
+
+    # ---- who and where: most active authors, accepted venues ----
+    au = collections.Counter(a for p in papers for a in p["_all_authors"])
+    active = [{"name": a, "n": n} for a, n in au.most_common(40) if n >= 3][:12]
+    ven = collections.Counter(re.sub(r"\s+(20\d\d)", "", p["venue"]).replace(" Findings", "").replace(" Workshop", "")
+                              for p in papers if p["venue"])
+    venues = [{"name": v, "n": n} for v, n in ven.most_common(10)]
+    for p in papers:
+        del p["_all_authors"]
 
     # ---- where subfields meet: most common pairs ----
     pairs = collections.Counter()
@@ -283,6 +337,10 @@ def main():
         "max_count": max([s["count"] for s in subfields] or [0]),
         "subfields": subfields,
         "pairs": top_pairs,
+        "active_authors": active,
+        "venues": venues,
+        "accepted": sum(1 for p in papers if p["venue"]),
+        "with_code": sum(1 for p in papers if p["code"]),
         "rising": picked,
         "new_benchmarks": benches,
         "list_days": LIST_DAYS,

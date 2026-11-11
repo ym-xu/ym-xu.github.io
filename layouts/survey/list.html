@@ -4,7 +4,7 @@
   <header class="maketitle fx-title">
     <h1>{{ .Title }}</h1>
     <p class="mt-author">Compiled automatically from arXiv, every morning</p>
-    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} papers over {{ .weeks }} weeks</p>{{ end }}
+    {{ with $d }}<p class="mt-date">Last updated {{ .updated }} · {{ .total }} papers over {{ .weeks }} weeks · <a href="{{ "survey/index.xml" | relURL }}">follow via RSS</a></p>{{ end }}
   </header>
 
   <div class="abstract fx-after">
@@ -28,8 +28,9 @@
         <div><dt>papers · {{ $d.weeks }} wk</dt><dd>{{ $d.total }}</dd></div>
         <div><dt>last 4 weeks</dt><dd>{{ $d.last4w }}</dd></div>
         <div><dt>new benchmarks</dt><dd>{{ $d.benchmarks }}</dd></div>
-        {{ if $d.watch }}<div><dt>by people I follow</dt><dd>{{ $d.watched }}</dd></div>{{ else }}<div><dt>this week</dt><dd>{{ $d.this_week }}</dd></div>{{ end }}
+        <div><dt>accepted · with code</dt><dd>{{ $d.accepted | default 0 }}<span class="muted"> · {{ $d.with_code | default 0 }}</span></dd></div>
       </dl>
+      <p class="since" id="survey-since" hidden></p>
 
       <figure class="fig">
         <div class="legend" aria-hidden="true"><span><i class="k-p"></i>primary subfield</span><span><i class="k-s"></i>also touches it</span><span class="push">4-wk change</span></div>
@@ -63,6 +64,20 @@
         <div class="cols-axis"><span>{{ dateFormat "Jan 2" (index $d.week_starts 0) }}</span><span>this week</span></div>
         <figcaption><b>Figure 2:</b> Papers per week (peak {{ $maxT }}). The last bar is the week in progress, and arXiv lists papers a day or two late, so it always looks short.</figcaption>
       </figure>
+
+      {{/* Figure 3 — subfield × week heatmap: where the attention moves over time */}}
+      <figure class="fig">
+        <div class="heat" role="table" aria-label="Papers per subfield per week">
+          {{ range $i, $s := $d.subfields }}
+            <button class="hrow" type="button" role="row" data-filter="{{ $s.id }}" style="--i: {{ $i }}">
+              <span class="hname" role="rowheader">{{ $s.name }}</span>
+              <span class="hcells">{{ range $j, $v := $s.weekly }}<span role="cell" style="--a: {{ printf "%.2f" (div (mul $v 1.0) $maxW) }}" title="{{ $s.name }}, week of {{ dateFormat "Jan 2" (index $d.week_starts $j) }}: {{ $v }}"></span>{{ end }}</span>
+            </button>
+          {{ end }}
+        </div>
+        <div class="haxis" aria-hidden="true"><span></span><span class="cols-axis"><span>{{ dateFormat "Jan 2" (index $d.week_starts 0) }}</span><span>this week</span></span></div>
+        <figcaption><b>Figure 3:</b> The same papers, week by week: each cell is one subfield in one week, darker for more papers (darkest = {{ $maxW }}). Read across a row to see a subfield heat up or cool down.</figcaption>
+      </figure>
     </section>
 
     {{/* ---------- 2 · what's moving ---------- */}}
@@ -86,6 +101,27 @@
             {{ end }}
           </ul>
         </div>
+      </div>
+      <div class="twocol tight">
+        {{ with $d.venues }}
+        <div>
+          <h3 class="sub-h">Where it gets published</h3>
+          <p class="sub-note">Venues named as accepted in the arXiv comments ({{ $d.accepted }} of {{ $d.total }} papers say).</p>
+          <ul class="pairs">
+            {{ $top := (index . 0).n }}
+            {{ range . }}<li><button class="pair" type="button" data-term="{{ .name }}"><span>{{ .name }}</span><span class="pbar"><span style="width: {{ printf "%.1f" (div (mul .n 100.0) $top) }}%"></span></span><span class="bnum">{{ .n }}</span></button></li>{{ end }}
+          </ul>
+        </div>
+        {{ end }}
+        {{ with $d.active_authors }}
+        <div>
+          <h3 class="sub-h">Most active authors</h3>
+          <p class="sub-note">Names on the most papers in this window — click to see them.</p>
+          <div class="chips">
+            {{ range . }}<button class="chip term" type="button" data-term="{{ .name }}">{{ .name }} <span class="muted">{{ .n }}</span></button>{{ end }}
+          </div>
+        </div>
+        {{ end }}
       </div>
       {{ with $d.new_benchmarks }}
         <h3 class="sub-h">Newest benchmarks &amp; datasets</h3>
@@ -129,21 +165,25 @@
           <button class="chip" type="button" data-filter="" aria-pressed="true">all</button>
           {{ range $d.subfields }}<button class="chip" type="button" data-filter="{{ .id }}" aria-pressed="false">{{ .name }}</button>{{ end }}
           <button class="chip flag" type="button" data-flag="bench" aria-pressed="false">benchmarks</button>
+          <button class="chip flag" type="button" data-flag="venue" aria-pressed="false">accepted</button>
+          <button class="chip flag" type="button" data-flag="code" aria-pressed="false">with code</button>
+          <button class="chip flag" type="button" data-flag="fresh" aria-pressed="false" hidden>new to me</button>
           {{ if $d.watch }}<button class="chip flag" type="button" data-flag="watch" aria-pressed="false" title="{{ delimit $d.watch ", " }}">people I follow</button>{{ end }}
         </div>
       </div>
       <div class="cards one plist" id="survey-list">
         {{ range $k, $p := $d.papers }}
-          <article class="card paper" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}"{{ if ge $k 30 }} hidden{{ end }}>
+          <article class="card paper" data-tags="{{ delimit $p.tags " " }}" data-bench="{{ $p.bench }}" data-watch="{{ $p.watch }}" data-venue="{{ if $p.venue }}true{{ else }}false{{ end }}" data-code="{{ if $p.code }}true{{ else }}false{{ end }}" data-date="{{ $p.date }}"{{ if ge $k 30 }} hidden{{ end }}>
             <div class="card-kicker">
               <time datetime="{{ $p.date }}">{{ dateFormat "Jan 2, 2006" $p.date }}</time>
               <span>{{ $p.cat }}</span>
-              <span class="push">{{ if $p.watch }}<span class="badge">followed</span>{{ end }}{{ if $p.bench }}<span class="badge">benchmark</span>{{ end }}</span>
+              {{ with $p.venue }}<span class="ve">{{ . }}</span>{{ end }}
+              <span class="push"><span class="badge fresh" hidden>new</span>{{ if $p.watch }}<span class="badge">followed</span>{{ end }}{{ if $p.bench }}<span class="badge">benchmark</span>{{ end }}</span>
             </div>
             <h3 class="card-title"><a class="stretch" href="https://arxiv.org/abs/{{ $p.id }}" rel="noopener">{{ $p.title }}</a></h3>
             <p class="card-au">{{ delimit $p.authors ", " }}</p>
             <details class="pabs"><summary>abstract</summary><p>{{ $p.abs }}</p></details>
-            <div class="card-foot"><b>{{ index $p.tagnames 0 }}</b>{{ range after 1 $p.tagnames }} · {{ . }}{{ end }} <span class="blinks"><a href="https://arxiv.org/pdf/{{ $p.id }}" rel="noopener">pdf</a></span></div>
+            <div class="card-foot"><b>{{ index $p.tagnames 0 }}</b>{{ range after 1 $p.tagnames }} · {{ . }}{{ end }} <span class="blinks"><a href="https://arxiv.org/pdf/{{ $p.id }}" rel="noopener">pdf</a>{{ with $p.code }}<a href="{{ . }}" rel="noopener">code</a>{{ end }}<a href="https://arxiv.org/bibtex/{{ $p.id }}" rel="noopener">bib</a></span></div>
           </article>
         {{ end }}
       </div>

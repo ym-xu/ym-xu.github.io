@@ -517,6 +517,28 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
 .cols line { stroke: var(--rule); stroke-width: .5; vector-effect: non-scaling-stroke; }
 .cols-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; font-variant: small-caps; letter-spacing: .03em; margin-top: .2rem; }
 
+/* Figure 3 — subfield × week heatmap (one hue; darker = more papers) */
+.heat { display: flex; flex-direction: column; gap: 3px; }
+.hrow, .haxis { display: grid; grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr); gap: .8rem; align-items: center; }
+.hrow { width: 100%; padding: .12rem .4rem; border: 0; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.hrow:hover { background: var(--surface-hover); }
+.haxis { padding: 0 .4rem; }
+.hname { font-size: .9rem; }
+.hcells { display: grid; grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 2px; height: 15px; }
+.hcells > span { position: relative; background: var(--surface); }
+.hcells > span::after { content: ""; position: absolute; inset: 0; background: var(--link); opacity: calc(var(--a, 0) * .9); }
+.hrow:hover .hcells > span::after { opacity: calc(.08 + var(--a, 0) * .92); }
+@media (max-width: 640px) { .hrow, .haxis { grid-template-columns: minmax(0, 1fr); gap: .15rem; } .haxis > span:first-child { display: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal .hcells { clip-path: inset(0 100% 0 0); transition: clip-path 1.1s cubic-bezier(.4,0,.2,1) calc(var(--i, 0) * 50ms + .2s); }
+  .js .reveal.in .hcells { clip-path: inset(0 0 0 0); }
+}
+
+.since { margin: -.6rem 0 1.4rem; color: var(--fg); font-size: .95rem; }
+.since::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--link); margin-right: .5em; vertical-align: .1em; }
+.linkish { font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: .06em; }
+.badge.fresh { color: var(--fg); background: var(--hl); padding: 0 .35em; border-radius: 2px; }
+
 /* What's moving */
 .twocol.tight { column-gap: 2.5rem; row-gap: 1.5rem; margin-bottom: 1.6rem; }
 .sub-h { font-size: 1.05rem; margin: 0 0 .25rem; }

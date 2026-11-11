@@ -5,3 +5,6 @@
 /public/
 /resources/
 .hugo_build.lock
+
+# Python bytecode
+__pycache__/
