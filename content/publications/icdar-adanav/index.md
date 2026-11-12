@@ -5,7 +5,7 @@ lastmod: 2026-04-01
 authors: "Yiming Xu, Eric López, Artemis Llabrés, Maximiliano Hormazábal, Ernest Valveny, Dimosthenis Karatzas"
 venue: "ICDAR"
 year: 2026
-badge: "Accepted"
+badge: "Oral"
 summary: "AdaNav builds a multimodal document tree and navigates it at query-adaptive granularity — no embedding retriever — beating open-source VLM agent systems by over 5% on MMLongBench-Doc while reading fewer pages."
 links:
   pdf: ""
