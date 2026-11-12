@@ -1,0 +1,4 @@
+# Cloudflare Pages (eming.io) redirects; GitHub Pages ignores this file.
+# The map lives in its own repo, served only at ym-xu.github.io/living-survey/.
+/living-survey   https://ym-xu.github.io/living-survey/   302
+/living-survey/* https://ym-xu.github.io/living-survey/:splat 302
