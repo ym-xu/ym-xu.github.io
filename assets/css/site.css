@@ -201,6 +201,11 @@ a.card, a.card:hover { color: var(--fg); text-decoration: none; }
 .card:hover, .card:focus-within { box-shadow: 0 8px 24px rgba(0, 0, 0, .06); }
 .card:hover::before, .card:hover::after, .card:focus-within::before, .card:focus-within::after { opacity: 1; }
 @media (hover: none) { .card::after { display: none; } }
+/* a card for something not published yet (/yao/): no link, no hover light */
+.card-soon { border-style: dashed; }
+.card-soon:hover, .card-soon:focus-within { box-shadow: none; }
+.card-soon::before, .card-soon::after { display: none; }
+.card.card-soon .card-title, .card.card-soon:hover .card-title { color: var(--muted); }
 
 .card-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; color: var(--muted); font-variant: small-caps; letter-spacing: .04em; font-size: .92rem; }
 .card-kicker .n { font-variant: normal; letter-spacing: 0; }

@@ -1,0 +1,30 @@
+{{ define "main" }}
+  <h1 class="page-title">{{ .Title }}</h1>
+  {{ with .Description }}<p class="page-sub">{{ . }}</p>{{ end }}
+  {{ with .Content }}<div class="content">{{ . }}</div>{{ end }}
+
+  <div class="sections">
+    {{ range .Params.groups }}
+    <section class="section reveal">
+      <div class="section-head"><h2>{{ .title }}</h2></div>
+      <div class="cards two">
+        {{ range .items }}
+          {{ $lessons := 0 }}
+          {{ with .section }}{{ with site.GetPage . }}{{ $lessons = len .RegularPages }}{{ end }}{{ end }}
+          {{ if .url }}<a class="card" href="{{ .url | relURL }}">{{ else }}<div class="card card-soon">{{ end }}
+            <div class="card-kicker">
+              {{ with .kicker }}<span>{{ . }}</span>{{ end }}
+              {{ if $lessons }}<span class="n">{{ $lessons }} 节课</span>{{ end }}
+              {{ with .status }}<span class="push">{{ . }}</span>{{ end }}
+            </div>
+            <h3 class="card-title">{{ .title }}</h3>
+            {{ with .role }}<p class="card-role">{{ . }}</p>{{ end }}
+            {{ with .text }}<p class="card-text">{{ . }}</p>{{ end }}
+            {{ with .foot }}<div class="card-foot">{{ delimit . " · " }}</div>{{ end }}
+          {{ if .url }}</a>{{ else }}</div>{{ end }}
+        {{ end }}
+      </div>
+    </section>
+    {{ end }}
+  </div>
+{{ end }}
