@@ -1,6 +1,6 @@
 ---
 title: "学习与研究"
-description: "学习: R 和 Python 两门课。研究: VCB 研究的统计讲解。"
+description: "学习: R 和 Python 两门课。研究: VCB 研究的论文复现和统计讲解。"
 noindex: true
 # 不进全站列表、RSS 和 sitemap,只能从链接进入(和 /r-course/ 一样)
 outputs: ["HTML"]
@@ -26,6 +26,13 @@ groups:
         text: "正在准备,完成后从这里进入。"
   - title: "研究"
     items:
+      - title: "D90、D2cc 与晚期阴道毒性"
+        url: "/vcb-reproduction/"
+        kicker: "VCB 研究 · 论文复现"
+        status: "需要密码"
+        role: "从原始数据重算这篇论文"
+        text: "左边是已发表论文(Cancers 2026)的摘要,右边逐页讲每张表用的方法、和论文逐个比对的结果,以及论文之外的两项分析。"
+        foot: ["R 复现", "逐格核对", "可交互"]
       - title: "阴道壁厚度与剂量变化"
         url: "/vcb-thickness/"
         kicker: "VCB 研究 · 统计讲解"
