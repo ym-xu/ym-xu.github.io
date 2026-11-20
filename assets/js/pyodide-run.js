@@ -12,8 +12,9 @@
 // fails with a standard message when x is not defined yet.
 const PYODIDE_VERSION = '314.0.7';
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-const COURSE_FILES = ['cohort.py', 'cohort.csv', 'followup.csv'];   // served at /python/ (static/python/), used by both courses
-const LOCAL_DEPS = { cohort: ['numpy', 'pandas'] };
+// served at /python/ (static/python/): the simulated cohort of both courses, and the audit data of the themed practice
+const COURSE_FILES = ['cohort.py', 'cohort.csv', 'followup.csv', 'cervix.py', 'cervix.csv', 'cervix_followup.csv'];
+const LOCAL_DEPS = { cohort: ['numpy', 'pandas'], cervix: ['numpy', 'pandas'] };
 const HEAVY = new Set(['numpy', 'pandas', 'scipy', 'sklearn', 'matplotlib', 'statsmodels']);
 
 let pyPromise = null;

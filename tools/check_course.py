@@ -57,6 +57,7 @@ def main():
             errors = []
             page.on('pageerror', lambda e: errors.append(str(e)))
             page.goto(f'{SITE}{lesson.strip("/")}/?t={time.time()}', wait_until='networkidle')
+            page.evaluate("document.documentElement.classList.add('steps-all')")     # themed practice: show every step
             width = page.evaluate('document.documentElement.scrollWidth')
             print(f'== {lesson}: page width {width}')
 

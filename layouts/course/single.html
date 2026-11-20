@@ -8,13 +8,14 @@
     {{ $pt := .title }}
     {{ range .lessons }}{{ if eq .n $n }}{{ $partTitle = $pt }}{{ end }}{{ end }}
   {{ end }}
-  {{ $sibs := .Parent.Pages.ByWeight }}
+  {{ $sibs := .Parent.RegularPages.ByWeight }}
+  {{ $unit := .Parent.Params.unit | default "课" }}
   {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
 
   <article class="lesson" data-lesson>
     <div class="lesson-eyebrow fx-after">
-      <a class="lesson-back" href="{{ .Parent.RelPermalink }}">← 课程目录 Syllabus</a>
-      <span class="lesson-locator">第 {{ $n }} / {{ $total }} 课{{ with $partTitle }} · {{ . }}{{ end }}</span>
+      <a class="lesson-back" href="{{ .Parent.RelPermalink }}">← {{ .Parent.Params.back_label | default "课程目录 Syllabus" }}</a>
+      <span class="lesson-locator">第 {{ $n }} / {{ $total }} {{ $unit }}{{ with $partTitle }} · {{ . }}{{ end }}</span>
     </div>
 
     <header class="post-header fx-title">
@@ -28,13 +29,13 @@
     <aside class="lesson-overview" aria-label="本课概览">
       {{ with .Params.questions }}
       <div>
-        <p class="lo-h">这一课回答的问题</p>
+        <p class="lo-h">{{ $.Parent.Params.questions_label | default "这一课回答的问题" }}</p>
         <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
       </div>
       {{ end }}
       {{ with .Params.objectives }}
       <div>
-        <p class="lo-h">学完这一课,你能</p>
+        <p class="lo-h">{{ $.Parent.Params.objectives_label | default "学完这一课,你能" }}</p>
         <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
       </div>
       {{ end }}

@@ -677,4 +677,10 @@ print(numpy.__version__)
 
 - [Python 官方教程(中文)](https://docs.python.org/zh-cn/3/tutorial/): 第 3–5 章和这一课的内容对应,想多练可以看。
 
+<div class="frame">
+
+**课后练习**: [练习 1 · 一位病人的总剂量](/python/practice/01-one-patient/)。它属于一套独立的[主题练习](/python/practice/): 换了一份数据(宫颈癌近距离放疗的剂量审计),不给填空,把这一课学的东西从头用一遍。
+
+</div>
+
 **下一课**: 一位病人的记录是一个字典,一个队列就是一张表。第 2 课用 pandas 读入和整理整张表格。

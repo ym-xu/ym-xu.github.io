@@ -517,4 +517,10 @@ print(pd.read_csv("cohort_clean.csv").shape)
 
 - pandas 官方的入门教程: [Getting started tutorials](https://pandas.pydata.org/docs/getting_started/intro_tutorials/)。前 6 节和这一课的内容对应,例子换成了另一套数据。
 
+<div class="frame">
+
+**课后练习**: [练习 2 · 读入和清理审计数据](/python/practice/02-clean/)。它属于一套独立的[主题练习](/python/practice/): 换了一份数据(宫颈癌近距离放疗的剂量审计),不给填空,把这一课学的东西从头用一遍。
+
+</div>
+
 **下一课**: 现在能对整张表算一个数了。临床论文的 Table 1 需要的是"每一组各算一遍",而且一位病人有三套计划。第 3 课讲分组汇总、宽表和长表,最后做出一张 Table 1。

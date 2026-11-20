@@ -657,4 +657,10 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 - Wasserstein RL, Lazar NA. [The ASA statement on p-values: context, process, and purpose](https://doi.org/10.1080/00031305.2016.1154108). *The American Statistician* 2016;70:129–133。美国统计学会关于 P 值的六条声明,第 7 节的内容大多出自这里。
 - Altman DG, Bland JM. [Absence of evidence is not evidence of absence](https://www.bmj.com/content/311/7003/485). *BMJ* 1995;311:485。
 
+<div class="frame">
+
+**课后练习**: [练习 6 · 是不是碰巧,和一份审计报告](/python/practice/06-tests-report/)。它属于一套独立的[主题练习](/python/practice/): 换了一份数据(宫颈癌近距离放疗的剂量审计),不给填空,把这一课学的东西从头用一遍。
+
+</div>
+
 **下一课**: 读表、整理、Table 1、画图、区间、检验,都学过了,但都是在网页里、用准备好的数据。第 7 课在你自己的电脑上装好 Python,把一份 Excel 从头做到尾。

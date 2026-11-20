@@ -3,14 +3,14 @@
          so lessons that are not written yet still show (greyed, "准备中").
          Lesson n lives in a page with weight n*10. */ -}}
   {{ $parts := .Params.parts }}
-  {{ $pages := .Pages.ByWeight }}
+  {{ $pages := .RegularPages.ByWeight }}
   {{ $total := 0 }}{{ range $parts }}{{ $total = add $total (len .lessons) }}{{ end }}
 
   <header class="course-hero fx-title">
     <h1>{{ .Title }}</h1>
     {{ with .Params.subtitle }}<p class="course-hero-sub">{{ . }}</p>{{ end }}
     <ul class="course-meta">
-      <li><strong>{{ $total }}</strong> 节课</li>
+      <li><strong>{{ $total }}</strong> {{ .Params.unit_count | default "节课" }}</li>
       {{ range .Params.meta }}<li>{{ . }}</li>{{ end }}
     </ul>
   </header>
