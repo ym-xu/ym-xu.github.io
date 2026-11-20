@@ -1,19 +1,24 @@
 {{ define "main" }}
   <h1 class="page-title">Reading &amp; Writing</h1>
-  <p class="page-sub">Essays I write, and posts worth keeping, each with a few lines of my own.</p>
+  <p class="page-sub">Two parts: what I write, and what I keep from others, each with a few lines of my own.</p>
   {{ partial "habit.html" . }}
 
-  <section class="section reveal">
-    <div class="section-head"><h2>Essays</h2></div>
-    <div class="cards two">
-      {{ range .Pages.ByDate.Reverse }}{{ partial "post-card.html" . }}{{ end }}
-    </div>
+  <div class="twoparts">
+  <section class="section">
+    <div class="section-head"><h2>My writing</h2><span class="muted">{{ len .Pages }} essays</span></div>
+    <dl class="dated">
+      {{ range .Pages.ByDate.Reverse }}
+        <dt>{{ .Date.Format "Jan 2006" }}</dt>
+        <dd><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Params.summary }}<span class="sum">{{ . }}</span>{{ end }}</dd>
+      {{ end }}
+    </dl>
   </section>
 
   {{ with site.GetPage "/bookmarks" }}
-  <section class="section reveal">
-    <div class="section-head"><h2>Bookmarks</h2>{{ if .RegularPages }}<a href="{{ .RelPermalink }}">All {{ len .RegularPages }} →</a>{{ end }}</div>
-    {{ range first 5 .RegularPages.ByDate.Reverse }}{{ partial "clip.html" . }}{{ else }}<p class="muted">Nothing saved yet.</p>{{ end }}
+  <section class="section">
+    <div class="section-head"><h2>My bookmarks</h2>{{ if .RegularPages }}<a href="{{ .RelPermalink }}">All {{ len .RegularPages }} →</a>{{ end }}</div>
+    {{ range first 10 .RegularPages.ByDate.Reverse }}{{ partial "clip.html" . }}{{ else }}<p class="muted">Nothing saved yet.</p>{{ end }}
   </section>
   {{ end }}
+  </div>
 {{ end }}

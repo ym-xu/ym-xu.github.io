@@ -1,6 +1,8 @@
 baseURL = "https://ym-xu.github.io/"
 title = "Yiming Xu"
 languageCode = "en"
+# Dates and "today" (the writing-habit grid) in my time zone, not the CI runner's UTC.
+timeZone = "Europe/Madrid"
 theme = "mu-min"
 [pagination]
   pagerSize = 10
