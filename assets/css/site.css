@@ -87,7 +87,7 @@ pre { overflow: auto; }
 #content.container,
 .site-footer .footer { padding-left: var(--pad); padding-right: var(--pad); }
 #content.container { max-width: none; margin: 0; padding-top: 2.25rem; padding-bottom: 1rem; }
-body:is(.section-r-course, .section-python-ml).kind-page { --sheet: 1140px; }
+body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 1140px; }
 
 @media (max-width: 900px) { :root { --pad: 40px; } }
 @media (max-width: 720px) {
@@ -406,6 +406,10 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .content .code-card .chroma { margin: 0; border: 0; border-radius: 0; padding: .8rem .9rem; background: transparent; color: var(--code-fg); overflow-x: auto; font-size: .86rem; line-height: 1.5; }
 .content .code-card code { background: transparent; padding: 0; font-size: inherit; }
 .content .code-runnable pre { outline: none; }
+/* Chroma makes every .line a flex box; its children then count as blocks, and pasting
+   several lines into an editable block splits them into side-by-side boxes without line
+   breaks. Each line already ends with "\n", so inline lines look the same and paste cleanly. */
+.content :is(.code-runnable, .py-runnable) .chroma .line { display: inline; }
 .content .code-runnable pre:focus { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--link) 40%, transparent); }
 .content .code-output { border-top: 1px solid var(--code-border); padding: .6rem .9rem; background: color-mix(in oklab, var(--code-bar-bg) 60%, transparent); }
 .content .code-output > * { margin: 0; }
@@ -449,7 +453,7 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .lesson-row-arrow { color: var(--link); opacity: 0; transition: opacity var(--dur), transform var(--dur); }
 .lesson-row:hover .lesson-row-arrow { opacity: 1; transform: translateX(2px); }
 
-body:is(.section-r-course, .section-python-ml).kind-page { scroll-behavior: smooth; }
+body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { scroll-behavior: smooth; }
 .lesson-eyebrow { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .35rem; }
 .lesson-back { font-size: .95rem; font-style: italic; }
 .lesson-locator { font-size: .85rem; color: var(--muted); font-variant: small-caps; letter-spacing: .03em; }
@@ -468,11 +472,11 @@ body:is(.section-r-course, .section-python-ml).kind-page { scroll-behavior: smoo
 .lesson-toc #TableOfContents a { display: block; font-size: .88rem; line-height: 1.35; color: var(--muted); border-left: 2px solid var(--border); padding: .16rem 0 .16rem .8rem; transition: color var(--dur), border-color var(--dur); }
 .lesson-toc #TableOfContents a:hover { color: var(--fg); text-decoration: none; border-left-color: var(--muted); }
 .lesson-toc #TableOfContents a.active { color: var(--link); border-left-color: var(--link); }
-body:is(.section-r-course, .section-python-ml).kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24px; }
+body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24px; }
 .reading-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; pointer-events: none; }
 .reading-progress > span { display: block; height: 100%; width: 0; background: var(--link); transition: width .1s linear; }
 @media (max-width: 1000px) {
-  body:is(.section-r-course, .section-python-ml).kind-page { --sheet: 880px; }
+  body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 880px; }
   .lesson-layout, .lesson-layout.no-toc { grid-template-columns: 1fr; gap: 0; }
   .lesson-main, .lesson-toc { grid-column: auto; grid-row: auto; }
   .lesson-toc { margin: 0 0 1.5rem; }
@@ -480,10 +484,10 @@ body:is(.section-r-course, .section-python-ml).kind-page .content :is(h2, h3, h4
   .lesson-toc-label { padding-left: 0; }
   .lesson-toc #TableOfContents a { border-left: 0; padding-left: 0; }
 }
-@media (max-width: 600px) { body:is(.section-r-course, .section-python-ml) .lesson .post-header h1 { font-size: 1.7rem; } }
+@media (max-width: 600px) { body:is(.section-r-course, .section-python, .section-stat-ml) .lesson .post-header h1 { font-size: 1.7rem; } }
 @media (max-width: 480px) { .lesson-row { grid-template-columns: 1.8rem minmax(0, 1fr); } .lesson-row-arrow { display: none; } }
 
-/* ---------- python-ml course: method frame, demo, "写进论文", planned lessons ---------- */
+/* ---------- Python and stat-ml courses: method frame, demo, 写进论文, exercises, quizzes, planned lessons ---------- */
 .content .frame, .content .demo, .content .paper { margin: 1.3rem 0; padding: .75rem 1rem; border-radius: var(--radius-sm); }
 .content .frame > :first-child, .content .demo > :first-child, .content .paper > :first-child { margin-top: 0; }
 .content .frame > :last-child, .content .demo > :last-child, .content .paper > :last-child { margin-bottom: 0; }
@@ -503,6 +507,36 @@ body:is(.section-r-course, .section-python-ml).kind-page .content :is(h2, h3, h4
 .content .fold-row .cell { height: 1.7rem; display: flex; align-items: center; justify-content: center; border: .5px solid var(--border); border-radius: 3px; background: var(--surface); color: var(--muted); font-size: .8rem; }
 .content .fold-row .cell.test { background: var(--link); border-color: var(--link); color: var(--bg); }
 .content .folds-note { margin: .45rem 0 0; color: var(--muted); font-size: .86rem; }
+.lesson-prereq { margin: .5rem 0 0; font-size: .92rem; color: var(--muted); }
+.content .exercise { margin: 1.6rem 0; padding: .8rem 1rem; border: .5px solid var(--rule); border-top: 3px solid var(--rule); border-radius: var(--radius-sm); }
+.content .exercise > :first-child { margin-top: 0; }
+.content .exercise > :last-child { margin-bottom: 0; }
+.content .exercise details { margin: .6rem 0; }
+.content .code-output-check { margin: .2rem 0 0; font-size: .92rem; line-height: 1.5; font-weight: 700; }
+.content .code-output-check.ok { color: #1a7f37; }
+.content .code-output-check.fail { color: #cf222e; }
+:root[data-theme="dark"] .content .code-output-check.ok { color: #3fb950; }
+:root[data-theme="dark"] .content .code-output-check.fail { color: #ff7b72; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .content .code-output-check.ok { color: #3fb950; }
+  :root:not([data-theme="light"]) .content .code-output-check.fail,
+  :root:not([data-theme="light"]) .content .code-output-err { color: #ff7b72; }
+}
+.content .quiz { margin: 1.4rem 0; padding: .75rem 1rem; border: .5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.content .quiz > p { margin: 0 0 .55rem; }
+.content .quiz-opt { display: block; width: 100%; margin: .4rem 0; padding: .5rem .75rem; text-align: left; font: inherit; font-size: .95rem; line-height: 1.45; color: var(--fg); background: var(--bg); border: .5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
+.content .quiz-opt:hover { border-color: var(--muted); }
+.content .quiz-opt.right { border-color: #1a7f37; box-shadow: inset 3px 0 0 #1a7f37; }
+.content .quiz-opt.wrong { border-color: #cf222e; box-shadow: inset 3px 0 0 #cf222e; }
+.content .quiz-why { margin: .55rem 0 0; font-size: .93rem; line-height: 1.55; }
+.content .quiz-why b.ok { color: #1a7f37; }
+.content .quiz-why b.no { color: #cf222e; }
+:root[data-theme="dark"] .content .quiz-why b.ok { color: #3fb950; }
+:root[data-theme="dark"] .content .quiz-why b.no { color: #ff7b72; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .content .quiz-why b.ok { color: #3fb950; }
+  :root:not([data-theme="light"]) .content .quiz-why b.no { color: #ff7b72; }
+}
 .lesson-row.planned { cursor: default; }
 .lesson-row.planned:hover { background: none; }
 .lesson-row.planned .lesson-row-title, .lesson-row.planned .lesson-row-num { color: var(--muted); }

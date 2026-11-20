@@ -1,11 +1,13 @@
 ---
-title: "Lesson 8 · 在新病人身上表现如何 Cross-Validation"
+title: "Lesson 4 · 在新病人身上表现如何 Cross-Validation"
 summary: "训练集上的成绩为什么不可信;k 折和重复交叉验证;out-of-fold 预测。"
-weight: 80
+weight: 40
+aliases: ["/python-ml/08-cross-validation/"]
+prereq: "[Python 课](/python/)第 1–4 课;本课程第 1 课(线性回归)"
 toc: true
 ---
 
-第 7 课的回归用来**解释**: 壁厚每增加 1 mm,Δ 平均变多少。从这一课起,同一个模型换一种用法,用来**预测**: 来了一位新病人,只知道壁厚、施源器直径和治疗方式,能不能事先算出换成体积优化后,阴道 D2cc 会降多少?
+前三课把线性回归当作一个模型讲清楚了,也讲了它的两种用法。用来**解释**时,问的是壁厚每增加 1 mm,Δ 平均变多少。这一课用它来**预测**: 来了一位新病人,只知道壁厚、施源器直径和治疗方式,能不能事先算出换成体积优化后,阴道 D2cc 会降多少?
 
 用来预测,第一个问题就是: **它对新病人准不准**。这一课要说明,最顺手的那个答案(看模型在建模病人身上的误差)是错的,以及论文里通用的办法: 交叉验证。
 
@@ -18,6 +20,7 @@ toc: true
 - 用重复交叉验证,看结果随随机分组变化多少
 - 给每位病人算一个 out-of-fold 预测值,后面的校准和决策曲线都要用它
 - 结局是"是/否"时用分层的交叉验证
+- 做 4 道练习,每道都能当场检查对错
 
 ## 0. 准备: 模拟队列和要预测的量
 
@@ -28,7 +31,7 @@ import numpy as np
 import pandas as pd
 from cohort import make_cohort
 
-df = make_cohort().dropna()     # 先去掉缺壁厚测量的几位病人,更好的做法在第 9 课
+df = make_cohort().dropna()     # 先去掉缺壁厚测量的几位病人,更好的做法在第 5 课
 df["delta"] = df["d2cc_vol"] - df["d2cc_5mm"]
 print(len(df), "位病人")
 df[["wall_mean", "diameter", "n_fx", "d2cc_5mm", "d2cc_vol", "delta"]].head()
@@ -38,12 +41,44 @@ df[["wall_mean", "diameter", "n_fx", "d2cc_5mm", "d2cc_vol", "delta"]].head()
 
 ## 1. 问题: 训练集上的成绩偏乐观
 
-先建两个线性回归模型(第 7 课),都用来预测 `delta`:
+先回顾要用的模型。用**线性回归**做预测,就是用一条公式:
+
+> 预测的 Δ = b₀ + b₁ × 平均壁厚 + b₂ × 施源器直径 + b₃ × 近距离次数
+
+**它在算什么**
+
+1. 给 b₀、b₁、b₂、b₃ 随便一组值,对每位建模病人算出预测的 Δ,和实际的 Δ 相减,得到每个人的误差。
+2. 把每个误差平方,再全部加起来。
+3. 找出让这个"误差平方和"最小的那一组 b,这就是**最小二乘**。不用一组一组地试,有公式可以直接算出来。
+4. 来了一位新病人,把这位病人的三个数代进公式,就得到预测值。
+
+第 1 课专门讲这几步,包括为什么要平方。下面的代码做第 1–3 步,然后把第一位病人代进公式,手算一遍,和 scikit-learn 算的比一比:
+
+```python
+from sklearn.linear_model import LinearRegression
+
+y = df["delta"]
+X_a = df[["wall_mean", "diameter", "n_fx"]]
+model_a = LinearRegression().fit(X_a, y)          # 第 1–3 步: 找出让误差平方和最小的系数
+b0 = model_a.intercept_
+b1, b2, b3 = model_a.coef_
+print(f"预测 Δ = {b0:.2f} {b1:+.2f} × 壁厚 {b2:+.2f} × 直径 {b3:+.2f} × 次数")
+
+first = X_a.iloc[0]                                # 第 4 步: 把第一位病人代进公式
+by_hand = b0 + b1 * first["wall_mean"] + b2 * first["diameter"] + b3 * first["n_fx"]
+print(f"第一位病人: 手算 {by_hand:.2f} Gy,model_a.predict 算出 {model_a.predict(X_a.iloc[[0]])[0]:.2f} Gy,实际 {y.iloc[0]:.1f} Gy")
+```
+
+公式是: 预测 Δ = −9.94 + 1.57 × 壁厚 + 0.17 × 直径 − 1.21 × 次数。壁厚的系数 1.57 的意思是: 另外两个变量不变时,壁厚每增加 1 mm,预测的 Δ 增加 1.57 Gy,也就是降得少 1.57 Gy。第一位病人(壁厚 3.0 mm、直径 30 mm、近距离 2 次)手算是 −2.64 Gy,和 `model_a.predict` 一样;实际是 −4.0 Gy,差了 1.4 Gy 左右。`predict` 做的就是第 4 步。
+
+一个预测模型就是这样一条"公式",只是公式的样子可以不同: 后面的课会讲到树模型,它的"公式"是一串"是/否"的问题。不管什么样的模型,这一课讲的检验方法都一样用。
+
+下面建两个模型,都用来预测 `delta`:
 
 - **模型 A**: 用 3 个确实和 Δ 有关的变量: 平均壁厚、施源器直径、近距离次数。
 - **模型 B**: 在 A 的基础上,再加 50 列**随机数**。这 50 列是我们用随机数造的,和 Δ 毫无关系,模型 B 理应不会更好。
 
-衡量误差用 **MAE**(mean absolute error,平均绝对误差): 每位病人的预测值和实际值差几 Gy,不管正负,取平均。MAE = 1.5 Gy 就是"平均差 1.5 Gy"。第 13 课再细讲这类指标。
+衡量误差用 **MAE**(mean absolute error,平均绝对误差): 每位病人的预测值和实际值差几 Gy,不管正负,取平均。MAE = 1.5 Gy 就是"平均差 1.5 Gy"。第 9 课再细讲这类指标。
 
 <div class="demo">
 
@@ -86,7 +121,22 @@ print(f"  模型 A  {mean_absolute_error(new['delta'], model_a.predict(Xn_a)):.2
 print(f"  模型 B  {mean_absolute_error(new['delta'], model_b.predict(Xn_b)):.2f} Gy")
 ```
 
-为什么会这样?线性回归会尽量让每位建模病人的误差变小。50 列随机数里,总有几列在这 196 人身上**碰巧**和 Δ 有一点关系,模型就把这点巧合也用上了,于是在这 196 人身上误差变小。换一批病人,这些巧合不复存在,用上它们反而添乱。这叫**过拟合**(overfitting): 模型记住了这批病人的偶然,而不是学到了规律。
+为什么会这样?看看模型 B 的公式就明白了:
+
+```python
+coef_b = pd.Series(model_b.coef_, index=X_b.columns)
+z = coef_b.drop(["wall_mean", "diameter", "n_fx"])         # 50 列随机数的系数
+print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum()} 列,最大的是 {z.abs().max():.2f}")
+```
+
+这 50 列和 Δ 毫无关系,它们的系数本该是 0。可是最小二乘只管让**这 196 人**的误差平方和最小: 50 列随机数里,总有一些在这 196 人身上**碰巧**和 Δ 有一点关系,模型就给它们配上系数,把这点巧合也用上了(这里有 29 列的系数超过 0.1,最大的 0.35),于是在这 196 人身上误差变小。换一批病人,这些巧合不复存在,这些系数反而添乱。这叫**过拟合**(overfitting): 模型记住了这批病人的偶然,而不是学到了规律。
+
+<div class="quiz">
+<p><b>想一想</b>: 一位同事说: "我的模型在 200 位病人身上平均只差 0.5 Gy,所以很准。"你首先要问什么?</p>
+<button class="quiz-opt" data-correct data-why="这是第一件要弄清的事。如果 0.5 Gy 是在建模用的那 200 人身上算的,它就像模型 B 的 1.39 Gy 一样偏乐观,说明不了对新病人准不准。">这 0.5 Gy 是在建模用的那 200 人身上算的吗?</button>
+<button class="quiz-opt" data-why="模型种类不是关键: 任何模型在建模用的病人身上都会显得更准,越灵活的模型越明显。">用的是线性回归,还是机器学习模型?</button>
+<button class="quiz-opt" data-why="样本量很重要(第 13 课),但先要弄清 0.5 Gy 是在哪些病人身上算的。如果是建模用的病人,病人再多,这个数也偏乐观。">200 位病人够不够?</button>
+</div>
 
 可是真实研究里没有第二批病人。下一节的办法,是从手里这批病人里"造"出新病人来。
 
@@ -117,6 +167,13 @@ print(f"  模型 B  {mean_absolute_error(new['delta'], model_b.predict(Xn_b)):.2
 <div class="fold-row"><span class="fold-label">第 4 轮</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell test">预测</span><span class="cell">建模</span></div>
 <div class="fold-row"><span class="fold-label">第 5 轮</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell test">预测</span></div>
 <p class="folds-note">每一列是一份病人(约 39 人)。每一轮用 4 份建模,预测剩下的 1 份;5 轮下来,每份都被预测了一次。</p>
+</div>
+
+<div class="quiz">
+<p><b>想一想</b>: 5 折交叉验证做完,每位病人被预测了几次?参与建模几次?</p>
+<button class="quiz-opt" data-why="每一轮只预测被拿出来的那一份。5 轮里,每位病人只在其中一轮被拿出来。">预测 5 次,建模 5 次</button>
+<button class="quiz-opt" data-why="被拿出来的那一轮,这位病人不参与建模,否则就不算新病人了。">预测 1 次,建模 5 次</button>
+<button class="quiz-opt" data-correct data-why="被拿出来的那一轮被预测 1 次,其余 4 轮都在建模的那 4 份里。">预测 1 次,建模 4 次</button>
 </div>
 
 **为什么用它**: 常见的另一种做法,是一开始就留出一部分病人当测试集,比如 150 人建模、46 人测试,只考一次。病人多时这样可以;只有两百人时有两个问题: 只考 46 人,成绩好坏很大程度上取决于碰巧留出了哪 46 人;而且建模白白少用了四分之一的病人。交叉验证让每位病人都当一次"新病人",也都参与了 4 次建模。
@@ -176,6 +233,52 @@ print(f"平均 {-scores.mean():.2f} Gy")
 
 和手写的结果一模一样,只是带了负号。scikit-learn 规定"分数越大越好",误差是越小越好,所以它把误差取了负数(`neg_` 就是 negative),用的时候再取一次负号。
 
+<div class="exercise">
+
+**练习 1 · 换成 10 折**
+
+把模型 B 的交叉验证换成 10 折: 每一轮拿出 1/10 的病人来预测,用另外 9/10 建模。把 10 折的平均 MAE 存进 `mae10_b`,和 5 折的 2.04 Gy、新病人身上的 1.95 Gy 比一比。
+
+```python
+kf10 = KFold(n_splits=___, shuffle=True, random_state=1)
+scores = cross_val_score(LinearRegression(), X_b, y, cv=kf10, scoring="neg_mean_absolute_error")
+mae10_b = ___
+print(f"模型 B 的 10 折 MAE: {mae10_b:.2f} Gy")
+```
+
+```pycheck
+need("mae10_b")
+if close(mae10_b, 1.91, 0.006):
+    ok("对了: 1.91 Gy,比 5 折的 2.04 Gy 更接近新病人身上的 1.95 Gy。每一轮用 9/10 的病人建模,模型更接近用全部病人建的那个,偏保守的程度就小了;代价是要建 10 个模型。")
+elif close(mae10_b, -1.91, 0.006):
+    fail("差一个负号: scores 是取了负数的误差,mae10_b 要再取一次负号。")
+elif close(mae10_b, 2.04, 0.006):
+    fail("这是 5 折的结果: n_splits 填 10。")
+else:
+    fail(f"现在 mae10_b = {mae10_b:.2f}。它应该是 10 个分数的平均,再取负号。")
+```
+
+<details><summary>提示</summary>
+
+`n_splits=10`;`scores` 里是 10 个取了负数的 MAE,`mae10_b = -scores.mean()`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+kf10 = KFold(n_splits=10, shuffle=True, random_state=1)
+scores = cross_val_score(LinearRegression(), X_b, y, cv=kf10, scoring="neg_mean_absolute_error")
+mae10_b = -scores.mean()
+print(f"模型 B 的 10 折 MAE: {mae10_b:.2f} Gy")
+```
+
+5 折和 10 折是最常用的两种。病人越少、变量越多,折数多一些更合适;每多一折就多建一个模型。
+
+</details>
+
+</div>
+
 **回到目标**: 不需要第二批病人,交叉验证就给出了接近新病人的成绩,也挑对了模型。**接下来**: 每份是随机分的,换一种分法,结果会不会变?
 
 ## 3. 重复交叉验证
@@ -232,10 +335,52 @@ for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
 
 模型 A 平均 1.71 Gy(标准差 0.01),模型 B 平均 2.03 Gy(标准差 0.05)。随机分组和上面手写的不同,所以数字略有差别,结论一样。
 
+<div class="exercise">
+
+**练习 2 · 只用壁厚够不够**
+
+模型 A 用了三个变量。如果只用平均壁厚 `wall_mean` 一个变量,重复交叉验证的 MAE 是多少?用上面定义好的 `rkf`(5 折重复 10 次),结果存进 `mae_wall`。
+
+```python
+X_wall = df[[___]]
+scores = cross_val_score(LinearRegression(), X_wall, y, cv=rkf, scoring="neg_mean_absolute_error")
+mae_wall = -scores.mean()
+print(f"只用壁厚: {mae_wall:.2f} Gy")
+```
+
+```pycheck
+need("mae_wall", "X_wall")
+if list(X_wall.columns) != ["wall_mean"]:
+    fail(f"X_wall 现在的列是 {list(X_wall.columns)},应该只有 wall_mean 一列。")
+elif close(mae_wall, 1.79, 0.006):
+    ok("对了: 只用壁厚是 1.79 Gy,三个变量的模型 A 是 1.71 Gy。施源器直径和近距离次数帮了一点,主要的信息在壁厚里。反过来去掉壁厚、只用另外两个变量,是 2.17 Gy。这种'拿掉一组变量看成绩变多少'的做法叫消融,第 8 课会细讲。")
+else:
+    fail(f"现在 mae_wall = {mae_wall:.2f}。检查 cv 用的是不是 rkf。")
+```
+
+<details><summary>提示</summary>
+
+列名是文字,要加引号: `df[["wall_mean"]]`。两层方括号让结果还是一张表(只有一列),scikit-learn 要的是表。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+X_wall = df[["wall_mean"]]
+scores = cross_val_score(LinearRegression(), X_wall, y, cv=rkf, scoring="neg_mean_absolute_error")
+mae_wall = -scores.mean()
+print(f"只用壁厚: {mae_wall:.2f} Gy")
+```
+
+</details>
+
+</div>
+
 <details>
 <summary>展开: 重复能消除哪一种运气?</summary>
 
-重复交叉验证只能消除"这 196 人怎么分成 5 份"的运气,消除不了"研究里碰巧是这 196 人"的运气。换一家医院、换一批病人,成绩还会变,而且通常变得更多。前一种不确定性靠重复来减小;后一种要用置信区间来表达(第 14 课讲 bootstrap 区间),最终要靠外部验证: 在另一批病人身上检验。
+重复交叉验证只能消除"这 196 人怎么分成 5 份"的运气,消除不了"研究里碰巧是这 196 人"的运气。换一家医院、换一批病人,成绩还会变,而且通常变得更多。前一种不确定性靠重复来减小;后一种要用置信区间来表达(第 10 课讲 bootstrap 区间),最终要靠外部验证: 在另一批病人身上检验。
 
 </details>
 
@@ -245,7 +390,7 @@ for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
 
 <div class="frame">
 
-**背景**: 判断模型够不够好,不只看平均误差。第 15 课的校准图、第 16 课的决策曲线,都要对每位病人比较"预测的"和"实际的"。
+**背景**: 判断模型够不够好,不只看平均误差。第 11 课的校准图、第 12 课的决策曲线,都要对每位病人比较"预测的"和"实际的"。
 
 **目标**: 给每位病人一个预测值,而且做这个预测的模型没见过这位病人。
 
@@ -310,7 +455,47 @@ plt.show()
 
 只做一次 5 折时,scikit-learn 的 `cross_val_predict` 一行就能得到 out-of-fold 预测,例如 `cross_val_predict(LinearRegression(), X_a, y, cv=KFold(n_splits=5, shuffle=True, random_state=0))`。要重复多次再取平均,就像上面这样自己写循环。
 
-**回到目标**: 每位病人都有了一个诚实的预测值。第 15、16 课的校准和决策曲线就从这里开始。
+<div class="exercise">
+
+**练习 3 · 模型 A 的 out-of-fold 预测**
+
+模型 B 的 out-of-fold MAE 比训练集多了 0.5 Gy 还多(1.94 比 1.39)。模型 A 呢?用上面的 `oof_predict` 算出模型 A 的 out-of-fold 预测,再算它比训练集多差多少,存进 `gap_a`。
+
+```python
+oof_a = oof_predict(___, y)
+gap_a = mean_absolute_error(y, oof_a) - mean_absolute_error(y, model_a.predict(X_a))
+print(f"模型 A: out-of-fold 比训练集多差 {gap_a:.2f} Gy")
+```
+
+```pycheck
+need("gap_a")
+if close(gap_a, 0.04, 0.006):
+    ok("对了: 模型 A 只多差 0.04 Gy,模型 B 多差 0.5 Gy 还多。变量少,模型能'记住'的偶然就少,训练集上的成绩也就没那么乐观。所以变量越多,越不能看训练集上的成绩。")
+elif close(gap_a, 0.54, 0.01):
+    fail("这是模型 B 的结果: oof_predict 的第一个参数要传 X_a。")
+else:
+    fail(f"现在 gap_a = {gap_a:.2f}。oof_predict 的第一个参数是模型 A 的变量表。")
+```
+
+<details><summary>提示</summary>
+
+模型 A 的变量表是 `X_a`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+oof_a = oof_predict(X_a, y)
+gap_a = mean_absolute_error(y, oof_a) - mean_absolute_error(y, model_a.predict(X_a))
+print(f"模型 A: out-of-fold 比训练集多差 {gap_a:.2f} Gy")
+```
+
+</details>
+
+</div>
+
+**回到目标**: 每位病人都有了一个诚实的预测值。第 11、12 课的校准和决策曲线就从这里开始。
 
 ## 5. 结局是"是/否"时: 分层
 
@@ -355,6 +540,50 @@ for name, cv in [("普通 5 折", KFold(n_splits=5, shuffle=True, random_state=3
 
 给 `cross_val_score` 传 `cv=5` 这样的整数、模型又是分类模型时,它默认就用分层(但不打乱顺序);自己指定分法时要记得用 `StratifiedKFold`,重复时用 `RepeatedStratifiedKFold`。事件越少,分层越重要。
 
+<div class="exercise">
+
+**练习 4 · 图形优化的分层**
+
+换成图形优化计划: 5 mm 计划 ≥ 68 Gy、图形优化计划 < 68 Gy 的算一个事件。补全代码,用分层 5 折(`random_state=0`)数出每一份的事件数,存进 `counts_gra`。
+
+```python
+event_gra = ((df["d2cc_5mm"] >= 68) & (df["d2cc_gra"] < ___)).astype(int)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+counts_gra = [int(event_gra.iloc[test_idx].sum()) for _, test_idx in skf.split(X_a, ___)]
+print("事件数:", event_gra.sum(), " 每一份:", counts_gra)
+```
+
+```pycheck
+need("event_gra", "counts_gra")
+if int(event_gra.sum()) != 51:
+    fail(f"现在有 {int(event_gra.sum())} 个事件,应该是 51 个。检查定义: 5 mm 计划 ≥ 68 Gy,图形优化计划 < 68 Gy。")
+elif sum(counts_gra) != 51:
+    fail("每一份的事件数加起来应该等于事件总数 51。")
+elif max(counts_gra) - min(counts_gra) > 1:
+    fail(f"每一份是 {counts_gra},差得有点多: split 的第二个参数要传 event_gra,分层才会按它来分。")
+else:
+    ok(f"对了: 51 位病人换成图形优化后降到 68 Gy 以下,分层后每一份是 {counts_gra}。图形优化降得比体积优化多(51 比 34)。")
+```
+
+<details><summary>提示</summary>
+
+阈值还是 68。`skf.split(X, 结局)` 的第二个参数告诉它按什么分层,这里是 `event_gra`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+event_gra = ((df["d2cc_5mm"] >= 68) & (df["d2cc_gra"] < 68)).astype(int)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+counts_gra = [int(event_gra.iloc[test_idx].sum()) for _, test_idx in skf.split(X_a, event_gra)]
+print("事件数:", event_gra.sum(), " 每一份:", counts_gra)
+```
+
+</details>
+
+</div>
+
 **回到目标**: 分层以后,每一轮考的都是事件数相近的一份病人。
 
 ## 6. 交叉验证之后: 最终用哪个模型?
@@ -368,6 +597,13 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 ```
 
 交叉验证的成绩,估计的是"用这种做法、在这么多病人上建出来的模型"用于新病人时的表现。最终模型用了全部病人,通常比交叉验证里的每个模型都稍好一点,所以用交叉验证的成绩来描述它,是保守的。
+
+<div class="quiz">
+<p><b>想一想</b>: 论文的表格里要报告模型的系数。这些系数应该来自哪个模型?</p>
+<button class="quiz-opt" data-why="挑成绩最好的一折,等于挑了一次运气;而且那个模型只用了 4/5 的病人。">5 折里成绩最好的那一个</button>
+<button class="quiz-opt" data-why="通常不这样做。交叉验证里的模型只用来打分,用完就丢掉。">5 个模型的系数取平均</button>
+<button class="quiz-opt" data-correct data-why="交叉验证只用来估计成绩;报告和以后使用的,是用全部病人重新拟合的那一个。">用全部病人重新拟合的模型</button>
+</div>
 
 ## 小结
 
@@ -388,11 +624,11 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 
 **审稿人可能问**: 为什么没有独立的测试集,或者外部验证?
 
-**怎么回答**: 两百例左右的队列,留出一部分做测试集,测试集太小,估计不稳,建模也少用了病人;重复交叉验证让每位病人都参与建模和评估,是小样本内部验证的常用做法,报告指南(TRIPOD)也推荐用交叉验证或 bootstrap 做内部验证,而不是一次性地拆分数据。同时在局限性里写明: 还没有外部验证,需要在其他中心的病人身上检验。
+**怎么回答**: 两百例左右的队列,留出一部分做测试集,测试集太小,估计不稳,建模也少用了病人;重复交叉验证让每位病人都参与建模和评估,是小样本内部验证的常用做法,报告指南(TRIPOD)也推荐用交叉验证或 bootstrap 做内部验证,而不是一次性地拆分数据,可以引用 Collins 等 2024 年在 BMJ 上的综述(见延伸阅读)。同时在局限性里写明: 还没有外部验证,需要在其他中心的病人身上检验。
 
 **审稿人可能问**: 交叉验证的结果还会不会偏乐观?
 
-**怎么回答**: 如果挑模型、挑变量和报告成绩用的是同一份交叉验证,会偏乐观一些。要么事先固定模型和变量,要么用嵌套交叉验证(第 9 课),并如实写明用了哪一种。
+**怎么回答**: 如果挑模型、挑变量和报告成绩用的是同一份交叉验证,会偏乐观一些。要么事先固定模型和变量,要么用嵌套交叉验证(第 5 课),并如实写明用了哪一种。
 
 **审稿人可能问**: 结果随随机分组变化多大?
 
@@ -404,8 +640,8 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 
 | 报错或现象 | 原因和办法 |
 |---|---|
-| `ValueError: Input X contains NaN` | 数据里有缺失值,线性回归不接受。这一课先用 `dropna()` 去掉;第 9 课讲怎样在交叉验证里正确地补缺失值。 |
-| `ValueError: n_splits=5 cannot be greater than the number of members in each class` | 用分层交叉验证时,某一类(通常是事件)的病人少于 5 个。减少折数,或者先想想这么少的事件够不够建模(第 17 课)。 |
+| `ValueError: Input X contains NaN` | 数据里有缺失值,线性回归不接受。这一课先用 `dropna()` 去掉;第 5 课讲怎样在交叉验证里正确地补缺失值。 |
+| `ValueError: n_splits=5 cannot be greater than the number of members in each class` | 用分层交叉验证时,某一类(通常是事件)的病人少于 5 个。减少折数,或者先想想这么少的事件够不够建模(第 13 课)。 |
 | 交叉验证的分数是负数 | `neg_` 开头的评分把误差取了负数,再取一次负号就是 MAE。 |
 | 结果和网页上写的不一样 | 检查 `random_state` 有没有改动;本页的代码块要从上往下依次运行。 |
 | 运行很慢 | 建模次数 = 折数 × 重复次数,模型复杂时会慢。浏览器里比自己电脑上慢不少。 |
@@ -413,6 +649,6 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 ## 延伸阅读 Further reading
 
 - scikit-learn 用户指南: [Cross-validation: evaluating estimator performance](https://scikit-learn.org/stable/modules/cross_validation.html)。本课用到的 `KFold`、`StratifiedKFold`、`RepeatedKFold`、`cross_val_score`、`cross_val_predict` 都在这一页。
-- Collins GS, et al. Evaluation of clinical prediction models (part 1): from development to external validation. *BMJ* 2024. 讲内部验证和外部验证的区别,写论文时可以引用。
+- Collins GS, et al. [Evaluation of clinical prediction models (part 1): from development to external validation](https://www.bmj.com/content/384/bmj-2023-074819). *BMJ* 2024;384:e074819。讲内部验证和外部验证的区别,写论文时可以引用。
 
-**下一课**: 这一课有两处走了捷径: 先用 `dropna()` 去掉了缺失值,模型 A 的变量也是事先就知道的。真实研究里,补缺失值、标准化、挑变量、挑模型,只要有一步用到了被拿出来的那份病人,交叉验证就会偏乐观。第 9 课讲这些"数据泄漏"和怎样避免。
+**下一课**: 这一课有两处走了捷径: 先用 `dropna()` 去掉了缺失值,模型 A 的变量也是事先就知道的。真实研究里,补缺失值、标准化、挑变量、挑模型,只要有一步用到了被拿出来的那份病人,交叉验证就会偏乐观。第 5 课讲这些"数据泄漏"和怎样避免。

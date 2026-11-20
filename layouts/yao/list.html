@@ -9,12 +9,15 @@
       <div class="section-head"><h2>{{ .title }}</h2></div>
       <div class="cards two">
         {{ range .items }}
-          {{ $lessons := 0 }}
-          {{ with .section }}{{ with site.GetPage . }}{{ $lessons = len .RegularPages }}{{ end }}{{ end }}
+          {{ $lessons := 0 }}{{ $planned := 0 }}
+          {{ with .section }}{{ with site.GetPage . }}
+            {{ $lessons = len .RegularPages }}
+            {{ range .Params.parts }}{{ $planned = add $planned (len .lessons) }}{{ end }}
+          {{ end }}{{ end }}
           {{ if .url }}<a class="card" href="{{ .url | relURL }}">{{ else }}<div class="card card-soon">{{ end }}
             <div class="card-kicker">
               {{ with .kicker }}<span>{{ . }}</span>{{ end }}
-              {{ if $lessons }}<span class="n">{{ $lessons }} 节课</span>{{ end }}
+              {{ if $planned }}<span class="n">已上线 {{ $lessons }} / {{ $planned }} 课</span>{{ else if $lessons }}<span class="n">{{ $lessons }} 节课</span>{{ end }}
               {{ with .status }}<span class="push">{{ . }}</span>{{ end }}
             </div>
             <h3 class="card-title">{{ .title }}</h3>

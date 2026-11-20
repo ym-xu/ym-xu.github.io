@@ -2,6 +2,7 @@
 title: "Lesson 1 · 第一次运行 Python First Steps"
 summary: "在浏览器里运行第一行代码;变量、列表、字典、函数和包;看懂报错,读懂别人或 AI 写的代码。"
 weight: 10
+aliases: ["/python-ml/01-first-steps/"]
 toc: true
 ---
 
@@ -19,6 +20,7 @@ toc: true
 - 用循环找出哪几套计划超过 68 Gy
 - 看懂 6 种最常见的报错,并把它们改好
 - 拿到一段别人(或 AI)写的代码,能一行一行读懂
+- 做 5 道练习,每道都能当场检查对错
 
 ## 1. 运行第一行代码
 
@@ -61,7 +63,16 @@ eqd2
 - `#` 后面是**注释**,Python 不管它,是写给人看的。好的注释写"这个数是什么",比如单位。
 - 名字区分大小写,`D` 和 `d` 是两个名字。名字用英文字母、数字和下划线,不能以数字开头: `d2cc_5mm` 可以,`5mm_d2cc` 不行。
 
-还有一条和 Excel 不一样,最容易出错。运行下面的代码:
+还有一条和 Excel 不一样,最容易出错。先猜一猜:
+
+<div class="quiz">
+<p><b>想一想</b>: 上面算出 <code>eqd2</code> 是 42.0。现在运行 <code>d = 6</code>,再看 <code>eqd2</code>,它是多少?</p>
+<button class="quiz-opt" data-why="Excel 的单元格公式会自动重算,Python 不会。运行下面的代码就能看到。">按 6 Gy 重新算出的 32.4</button>
+<button class="quiz-opt" data-correct data-why="eqd2 里存的是当时算出来的数 42.0,不是公式。d 后来变了,它不会跟着变。">还是 42.0</button>
+<button class="quiz-opt" data-why="不会报错: d 和 eqd2 都已经定义过了,只是 eqd2 不会自动重算。">报错</button>
+</div>
+
+运行下面的代码验证:
 
 ```python
 d = 6
@@ -113,6 +124,59 @@ print(len(d2cc), max(d2cc), min(d2cc), sum(d2cc) / len(d2cc))
 - `len` 是个数,`max`、`min`、`sum` 是最大、最小、总和。
 - `d2cc` 这个名字上一节存的是 `71.4`,这里又存了一个列表。同一个名字再赋值,旧的值就被换掉了。
 
+<div class="quiz">
+<p><b>想一想</b>: <code>plans = ["5mm", "vol", "gra"]</code>,<code>plans[1]</code> 是哪一个?</p>
+<button class="quiz-opt" data-why="位置从 0 开始数: plans[0] 才是 5mm。">"5mm"</button>
+<button class="quiz-opt" data-correct data-why="位置从 0 开始数: [0] 是 5mm,[1] 是 vol,[2] 是 gra。">"vol"</button>
+<button class="quiz-opt" data-why="[2] 才是 gra。plans[1] 是第二个。">"gra"</button>
+</div>
+
+<div class="exercise">
+
+**练习 1 · 图形优化比 5 mm 降了多少**
+
+还是这位病人,`d2cc` 里的三个数依次是 5 mm、体积优化、图形优化计划的阴道 D2cc。算出**图形优化减 5 mm** 的差,存进 `delta_gra`。把 `___` 换成数字,再点"运行并检查"。
+
+```python
+d2cc = [71.4, 67.9, 66.2]
+delta_gra = d2cc[___] - d2cc[___]
+print(f"图形优化比 5 mm 变了 {delta_gra:.1f} Gy")
+```
+
+```pycheck
+need("delta_gra")
+if close(delta_gra, -5.2):
+    ok("对了: 66.2 − 71.4 = −5.2 Gy,负数表示降低。")
+elif close(delta_gra, 5.2):
+    fail("差的大小对了,符号反了: 要用图形优化减 5 mm。")
+elif close(delta_gra, -1.7):
+    fail("这是图形优化减体积优化。5 mm 在第几个位置?")
+elif close(delta_gra, -3.5):
+    fail("这是体积优化减 5 mm。图形优化在第几个位置?")
+else:
+    fail(f"现在 delta_gra = {delta_gra:.1f}。位置从 0 开始数: 5 mm 是 [0]。")
+```
+
+<details><summary>提示</summary>
+
+位置从 0 开始数: 5 mm 是 `d2cc[0]`,图形优化是第三个。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+d2cc = [71.4, 67.9, 66.2]
+delta_gra = d2cc[2] - d2cc[0]
+print(f"图形优化比 5 mm 变了 {delta_gra:.1f} Gy")
+```
+
+也可以写 `d2cc[-1] - d2cc[0]`,`-1` 是最后一个。
+
+</details>
+
+</div>
+
 ## 5. 字典: 有名字的一组数
 
 列表只按位置找,`d2cc[1]` 是哪套计划得自己记住。**字典**给每个值配一个名字(叫"键"),用花括号:
@@ -142,6 +206,58 @@ for plan, dose in zip(plans, d2cc):
 - `if 条件:` 条件成立才做下面的事,否则做 `else:` 下面的事。
 - **缩进就是结构**。`for`、`if`、`else` 那一行以冒号结尾,下面缩进 4 个空格的几行属于它。别的语言用括号,Python 用缩进,所以缩进不能随便加减。
 
+<div class="exercise">
+
+**练习 2 · 数一数有几位病人达到 68 Gy**
+
+下面是 8 位病人 5 mm 计划的阴道 D2cc。补上 `if` 后面的条件,数出**达到 68 Gy**(大于或等于 68)的有几位,结果在 `n_high` 里。
+
+```python
+doses = [71.4, 66.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
+n_high = 0
+for dose in doses:
+    if ___:
+        n_high = n_high + 1
+print(n_high, "位病人达到 68 Gy")
+```
+
+```pycheck
+need("n_high")
+if n_high == 5:
+    ok("对了: 71.4、69.0、73.2、68.0、70.5,一共 5 位。")
+elif n_high == 4:
+    fail("差一位: 正好 68.0 Gy 的那位算不算达到 68 Gy?用 >= 而不是 >。")
+elif n_high == 3:
+    fail("你数的是低于 68 Gy 的病人。")
+elif n_high == 8:
+    fail("每一位都数进去了: if 后面的条件是不是总是成立?")
+else:
+    fail(f"现在 n_high = {n_high}。条件应该比较 dose 和 68。")
+```
+
+<details><summary>提示</summary>
+
+条件写成 `dose >= 68`。"达到"包括正好等于 68。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+doses = [71.4, 66.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
+n_high = 0
+for dose in doses:
+    if dose >= 68:
+        n_high = n_high + 1
+print(n_high, "位病人达到 68 Gy")
+```
+
+学了第 8 节的 numpy 以后,也可以一行写完: `(np.array(doses) >= 68).sum()`。
+
+</details>
+
+</div>
+
 ## 7. 函数: 把公式存起来反复用
 
 第 2 节说过,改了 `d` 以后 `eqd2` 不会自己重算。把公式写成**函数**,每次用不同的数去调用它:
@@ -161,6 +277,98 @@ print(eqd2(1.8, 25) + eqd2(5.5, 2))     # 外照射 1.8 Gy × 25 次,加近距�
 - 三引号里的一句话是函数的说明,写给以后的自己和合作者看。
 
 函数就像一张印好的处方模板: 格式和算法固定,每次只填剂量和次数。论文里的每一步分析,最后都会写成这样的函数,同一个算法对每位病人、每套计划都一样地用。
+
+<div class="exercise">
+
+**练习 3 · 用函数算总 EQD2**
+
+一位病人先做外照射 2 Gy × 25 次,再做近距离 6 Gy × 2 次。用上面的 `eqd2` 函数,算阴道黏膜(α/β = 3)的总 EQD2,存进 `total`。
+
+```python
+total = eqd2(___, ___) + eqd2(___, ___)
+print(f"总 EQD2 = {total:.1f} Gy")
+```
+
+```pycheck
+need("total")
+if close(total, 71.6):
+    ok("对了: 外照射 50.0 Gy,加近距离 21.6 Gy,总 EQD2 = 71.6 Gy。")
+elif close(total, 292.0):
+    fail("每次剂量和次数填反了: eqd2(每次剂量, 次数),每次剂量在前。")
+elif close(total, 66.0):
+    fail("阴道黏膜按 α/β = 3 算: 不写 ab 就是 3,不要写 ab=10。")
+else:
+    fail(f"现在 total = {total:.1f} Gy。对照题目检查四个数: 外照射每次 2 Gy、25 次,近距离每次 6 Gy、2 次。")
+```
+
+<details><summary>提示</summary>
+
+`eqd2(每次剂量, 次数)`: 外照射是 `eqd2(2, 25)`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+total = eqd2(2, 25) + eqd2(6, 2)
+print(f"总 EQD2 = {total:.1f} Gy")
+```
+
+</details>
+
+</div>
+
+<div class="exercise">
+
+**练习 4 · 自己写一个函数: BED**
+
+生物等效剂量 BED = 次数 × 每次剂量 × (1 + 每次剂量 / (α/β))。仿照 `eqd2`,把 `bed` 函数写完整。
+
+```python
+def bed(d, n, ab=3):
+    """每次剂量 d(Gy)、照射 n 次、α/β = ab 时的 BED(Gy)。"""
+    return ___
+
+print(bed(7, 3), bed(7, 3, ab=10))
+```
+
+```pycheck
+need("bed")
+if not callable(bed):
+    fail("bed 应该是一个函数,用 def bed(d, n, ab=3): 来定义。")
+try:
+    a, b, c = bed(7, 3), bed(7, 3, ab=10), bed(6, 2)
+except TypeError:
+    fail("调用 bed(7, 3, ab=10) 出错了: 参数要写成 d, n, ab=3 这三个。")
+if a is None:
+    fail("函数没有交回结果: 别忘了 return。")
+elif close(a, 70) and close(b, 35.7) and close(c, 36):
+    ok("对了: bed(7, 3) = 70.0 Gy,bed(7, 3, ab=10) = 35.7 Gy。顺便验证一下: EQD2 = BED / (1 + 2/(α/β)),70.0 / (1 + 2/3) = 42.0,和 eqd2(7, 3) 一样。")
+elif close(a, 70):
+    fail("α/β = 3 时对了,换成 ab=10 就不对: 公式里要用参数 ab,不要直接写 3。")
+else:
+    fail(f"bed(7, 3) 现在是 {a},应该是 70.0。公式: n × d × (1 + d / ab)。")
+```
+
+<details><summary>提示</summary>
+
+乘法写 `*`,除法写 `/`,注意括号: `n * d * (1 + d / ab)`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+def bed(d, n, ab=3):
+    """每次剂量 d(Gy)、照射 n 次、α/β = ab 时的 BED(Gy)。"""
+    return n * d * (1 + d / ab)
+
+print(bed(7, 3), bed(7, 3, ab=10))
+```
+
+</details>
+
+</div>
 
 ## 8. 包: 别人写好的函数
 
@@ -244,6 +452,50 @@ d2cc[3]
 
 这六种报错,占了初学时遇到的大部分。剩下的,把最后一行原样复制去搜索,或者问 AI(见下一节的注意事项),一般都能找到原因。
 
+<div class="exercise">
+
+**练习 5 · 改错**
+
+这段代码想找出 D2cc 超过 68 Gy 的病人编号,但有两处错误。先运行,读报错,改好一处再运行,直到通过检查。`patients.items()` 每次同时取出一个键(病人编号)和它的值(D2cc);`high.append(pid)` 把一个编号加到列表 `high` 的末尾。
+
+```python
+patients = {"P001": 71.4, "P002": 66.0, "P003": 69.5}
+high = []
+for pid, dose in patients.items()
+    if dose > 68:
+    high.append(pid)
+print(high)
+```
+
+```pycheck
+need("high")
+if high == ["P001", "P003"]:
+    ok("对了: for 那一行补上冒号,high.append(pid) 缩进到 if 下面。")
+else:
+    fail(f"现在 high = {high},应该是 ['P001', 'P003']。")
+```
+
+<details><summary>提示</summary>
+
+报错一次只指出一处。第一处: `for` 那一行少了什么?改好再运行,看第二处报的是什么。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+patients = {"P001": 71.4, "P002": 66.0, "P003": 69.5}
+high = []
+for pid, dose in patients.items():
+    if dose > 68:
+        high.append(pid)
+print(high)
+```
+
+</details>
+
+</div>
+
 ## 10. 读懂别人或 AI 写的代码
 
 以后你会经常读到合作者或 AI 写的代码。不必一眼看懂,按这四步读:
@@ -304,11 +556,11 @@ print(sys.version)
 print(numpy.__version__)
 ```
 
-浏览器里显示的是这个网页用的版本。论文里要写的是你在自己电脑上做分析时的版本(第 18 课讲安装)。
+浏览器里显示的是这个网页用的版本。论文里要写的是你在自己电脑上做分析时的版本(第 7 课讲安装)。
 
 **审稿人可能问**: 分析能重复吗?代码能公开吗?
 
-**怎么回答**: 写明软件版本;用到随机数的地方固定随机种子(第 8 课起会用到);把分析代码整理好,放进代码仓库或附在补充材料里,病人数据不放。论文里可以写 "The analysis code is available from the corresponding author on request",或者直接给出仓库地址。
+**怎么回答**: 写明软件版本;用到随机数的地方固定随机种子(统计机器学习课里会经常用到);把分析代码整理好,放进代码仓库或附在补充材料里,病人数据不放。论文里可以写 "The analysis code is available from the corresponding author on request",或者直接给出仓库地址。
 
 </div>
 

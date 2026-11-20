@@ -6,9 +6,13 @@
 // - blocks are editable before running.
 // Packages (numpy, pandas, scikit-learn, matplotlib ...) are fetched from the
 // imports of the code being run, the first time they are needed.
+// Exercises: a code block inside <div class="exercise"> that also holds a hidden
+// "pycheck" block (rendered as pre.py-check) is checked after it runs. The check
+// code reads the learner's variables and calls ok(...) or fail(...); need("x")
+// fails with a standard message when x is not defined yet.
 const PYODIDE_VERSION = '314.0.7';
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-const COURSE_FILES = ['cohort.py'];            // served next to the lessons, at /python-ml/
+const COURSE_FILES = ['cohort.py'];            // served at /python/ (static/python/), used by both courses
 const LOCAL_DEPS = { cohort: ['numpy', 'pandas'] };
 const HEAVY = new Set(['numpy', 'pandas', 'scipy', 'sklearn', 'matplotlib', 'statsmodels']);
 
@@ -43,7 +47,7 @@ HINTS = {
     "TypeError": "类型不对,比如把文字和数字相加,或者给函数传错了参数。最后一行会说是哪两种类型。",
     "IndexError": "位置超出了范围。Python 从 0 开始数: 有 3 个元素的列表,最后一个是 [2]。",
     "KeyError": "找不到这个键(字典的键,或者表格的列名)。检查拼写和大小写。",
-    "ModuleNotFoundError": "找不到这个包。检查包名;浏览器里只有常用的科学计算包,其他的要在自己电脑上安装(第 18 课)。",
+    "ModuleNotFoundError": "找不到这个包。检查包名;浏览器里只有常用的科学计算包,其他的要在自己电脑上安装(Python 课第 7 课)。",
     "AttributeError": "这个对象没有这个属性或方法。检查拼写,或者用 type() 看看它到底是什么。",
     "ValueError": "值不合要求,看最后一行的说明。建模时最常见的原因是数据里有缺失值(NaN)。",
     "ZeroDivisionError": "除以了 0。",
@@ -106,6 +110,35 @@ async def run(code):
     except Exception as e:
         res["text"] += "\\n(图没能画出来: " + repr(e) + ")"
     return res
+
+class _Stop(Exception):
+    pass
+
+async def check(code):
+    found = []
+    def ok(msg="对了。"):
+        found.append(["ok", msg]); raise _Stop
+    def fail(msg):
+        found.append(["fail", msg]); raise _Stop
+    def need(*names):
+        for name in names:
+            if name not in ns:
+                fail(f"还没有定义 {name}。按题目把结果存进 {name},再运行。")
+    def close(a, b, tol=0.05):
+        try:
+            return abs(float(a) - float(b)) <= tol
+        except (TypeError, ValueError):
+            return False
+    g = dict(ns)
+    g.update(ok=ok, fail=fail, need=need, close=close)
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            await eval_code_async(code, globals=g, filename="<检查>")
+    except _Stop:
+        pass
+    except Exception as e:
+        found.append(["fail", f"检查没能完成({type(e).__name__}: {e})。对照题目看看结果的类型对不对。"])
+    return found[0] if found else ["fail", "检查没有得到结果。"]
 ''', _runner.__dict__)
 sys.modules["_runner"] = _runner
 `;
@@ -118,7 +151,7 @@ function boot(setStatus) {
       const py = await loadPyodide({ indexURL: INDEX_URL });
       for (const name of COURSE_FILES) {
         try {
-          const r = await fetch(new URL('/python-ml/' + name, location.href));
+          const r = await fetch(new URL('/python/' + name, location.href));
           if (r.ok) py.FS.writeFile('/home/pyodide/' + name, await r.text());
         } catch (_) { /* the lesson will report the missing module */ }
       }
@@ -203,7 +236,15 @@ function render(out, res) {
     add('pre', 'code-output-err', res.error);
     if (res.hint) add('p', 'code-output-hint', '提示: ' + res.hint);
   }
+  if (res.check) add('p', 'code-output-check ' + res.check[0], (res.check[0] === 'ok' ? '✓ ' : '✗ ') + res.check[1]);
   if (!out.childNodes.length) add('pre', 'code-output-text code-output-status', '(运行完毕,没有输出)');
+}
+
+// The hidden answer check of the exercise a code card belongs to, if any.
+function checkCodeFor(card) {
+  const ex = card.closest('.exercise');
+  const el = ex && ex.querySelector('pre.py-check');
+  return el ? el.textContent : null;
 }
 
 async function runCard(card) {
@@ -213,7 +254,16 @@ async function runCard(card) {
   if (!codeEl || !out || !btn) return;
 
   const code = codeText(codeEl);
+  const checkCode = checkCodeFor(card);
   out.hidden = false;
+  if (checkCode && code.includes('___')) {
+    out.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'code-output-check fail';
+    p.textContent = '先把代码里的 ___ 换成你的答案,再点运行。';
+    out.appendChild(p);
+    return;
+  }
   const setStatus = (msg) => { out.innerHTML = '<pre class="code-output-text code-output-status"></pre>'; out.firstChild.textContent = msg; };
   const paint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   const label = btn.textContent;
@@ -229,6 +279,11 @@ async function runCard(card) {
     const proxy = await runner.run(code);
     const res = proxy.toJs({ dict_converter: Object.fromEntries });
     proxy.destroy();
+    if (checkCode && !res.error) {
+      const c = await runner.check(checkCode);
+      res.check = c.toJs();
+      c.destroy();
+    }
     runner.destroy();
     render(out, res);
   } catch (err) {
@@ -251,6 +306,9 @@ function init() {
     pre.setAttribute('autocapitalize', 'off');
     pre.setAttribute('autocorrect', 'off');
     pre.setAttribute('title', '可以直接在这里改代码,再点 Run');
+  });
+  document.querySelectorAll('.exercise .py-run').forEach((btn) => {
+    if (checkCodeFor(btn.closest('.code-card'))) btn.textContent = '▶ 运行并检查';
   });
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.py-run');

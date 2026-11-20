@@ -1,4 +1,9 @@
 {{- $lang := .Type | default "text" -}}
+{{- /* A "pycheck" block is the hidden answer check of an exercise (see pyodide-run.js):
+       it is not shown, the runner runs it after the learner's code in the same exercise. */ -}}
+{{- if eq $lang "pycheck" -}}
+<pre class="py-check" hidden>{{ .Inner }}</pre>
+{{- else -}}
 {{- $code := .Inner -}}
 {{- $norun := false -}}
 {{- /* A leading "#| norun" line opts a block out of the in-browser Run button
@@ -25,3 +30,4 @@
   {{ highlight $code $lang "" }}
   {{ if or $runnable $pyRunnable }}<div class="code-output" hidden></div>{{ end }}
 </div>
+{{- end -}}

@@ -20,6 +20,7 @@
     <header class="post-header fx-title">
       <h1>{{ .Title }}</h1>
       {{ with .Params.summary }}<p class="page-sub">{{ . }}</p>{{ end }}
+      {{ with .Params.prereq }}<p class="lesson-prereq">先会: {{ . | markdownify }}</p>{{ end }}
     </header>
 
     <div class="lesson-layout{{ if not $showToc }} no-toc{{ end }}">

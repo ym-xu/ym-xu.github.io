@@ -1,5 +1,5 @@
 {{ define "main" }}
-  {{- /* The syllabus comes from the "parts" outline in content/python-ml/_index.md,
+  {{- /* The syllabus comes from the "parts" outline in the course's _index.md (content/python/, content/stat-ml/), shared via "type: course";
          so lessons that are not written yet still show (greyed, "准备中").
          Lesson n lives in a page with weight n*10. */ -}}
   {{ $parts := .Params.parts }}
@@ -11,9 +11,7 @@
     {{ with .Params.subtitle }}<p class="course-hero-sub">{{ . }}</p>{{ end }}
     <ul class="course-meta">
       <li><strong>{{ $total }}</strong> 节课</li>
-      <li>浏览器里直接运行</li>
-      <li>零基础起步</li>
-      <li>为预测模型的论文打基础</li>
+      {{ range .Params.meta }}<li>{{ . }}</li>{{ end }}
     </ul>
   </header>
 
