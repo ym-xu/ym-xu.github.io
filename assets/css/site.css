@@ -525,6 +525,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .exercise > :first-child { margin-top: 0; }
 .content .exercise > :last-child { margin-bottom: 0; }
 .content .exercise details { margin: .6rem 0; }
+.content .exercise.homework { border-top-color: var(--link); }
+.content textarea.hw-write { display: block; width: 100%; margin: .6rem 0; padding: .55rem .7rem; font: inherit; font-size: .95rem; line-height: 1.5; color: var(--fg); background: var(--bg); border: .5px solid var(--muted); border-radius: var(--radius-sm); resize: vertical; }
 .content .code-output-check { margin: .2rem 0 0; font-size: .92rem; line-height: 1.5; }
 .content .code-output-check.ok { color: #1a7f37; }
 .content .code-output-check.fail { color: #cf222e; }

@@ -26,7 +26,7 @@ def blocks(text):
     buf = []
     for line in text.split('\n'):
         if fence is None:
-            if line.startswith('<div class="exercise">'):
+            if line.startswith('<div class="exercise'):
                 in_ex = True
             elif line.startswith('<details'):
                 in_details = True

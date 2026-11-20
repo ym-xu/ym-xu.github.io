@@ -515,6 +515,171 @@ print(f"50 位: {ci50_gra},200 位: {ci200_gra},宽度是 {ratio:.1f} 倍")
 
 </div>
 
+## 课后练习 Homework
+
+选做,约 20 分钟。和课文里的练习不一样: 这里**不给填空**,代码要自己从头写;有一题要用到前面几课的内容;还有读论文和写一句结果。隔一两天再做,记得更牢。
+
+先运行这一块,把数据和函数准备好(和课文里的一样)。这样隔天回来,不用把本页前面的代码重新运行一遍:
+
+```python
+import numpy as np
+import pandas as pd
+from cohort import make_cohort, make_followup
+
+df = make_cohort()
+df["delta_vol"] = df["d2cc_vol"] - df["d2cc_5mm"]
+df["delta_gra"] = df["d2cc_gra"] - df["d2cc_5mm"]
+fu = make_followup()
+
+def boot_ci(values, stat=np.median, n_boot=2000, seed=1):
+    """bootstrap 的 95% 区间(百分位数法)。"""
+    rng = np.random.default_rng(seed)
+    boot = np.array([stat(rng.choice(values, size=len(values), replace=True)) for _ in range(n_boot)])
+    return np.percentile(boot, [2.5, 97.5])
+
+print("准备好了:", df.shape, fu.shape)
+```
+
+<div class="exercise homework">
+
+**课后 1 · 从头写: 中位随访时间**
+
+论文里通常要报告中位随访时间。算出随访时间(`fu["fu_months"]`)的中位数,和这个中位数的 95% 区间(用 `boot_ci`),分别存进 `med_fu` 和 `ci_fu`。
+
+```python
+# 在这里写你的代码。结果存进 med_fu 和 ci_fu。
+```
+
+```pycheck
+need("med_fu", "ci_fu")
+try:
+    lo, hi = float(ci_fu[0]), float(ci_fu[1])
+except Exception:
+    fail("ci_fu 应该是两个数(区间的下限和上限): boot_ci 交回的结果就是这样。")
+if close(med_fu, 41.21, 0.02):
+    fail("med_fu 现在是均值(41.2)。题目要的是中位数。")
+if not close(med_fu, 37, 0.01):
+    fail(f"med_fu 现在是 {med_fu},应该是 37。")
+if close(lo, 38.74, 0.02) and close(hi, 43.72, 0.02):
+    fail("这是均值的区间。中位数的区间,boot_ci 用默认的 stat 就行,不要写 stat=np.mean。")
+if close(lo, 34, 0.01) and close(hi, 41, 0.01):
+    ok("对了: 中位随访时间 37 个月(95% CI 34 到 41)。随访时间有长尾(均值是 41.2 个月),所以报中位数。")
+fail(f"区间现在是 {lo:.1f} 到 {hi:.1f},应该是 34 到 41。把 fu[\"fu_months\"] 这一列交给 boot_ci。")
+```
+
+<details><summary>提示 1: 思路</summary>
+
+分两步。中位数直接用 pandas 算;区间,把这一列数交给 `boot_ci`。
+
+</details>
+
+<details><summary>提示 2: 用到的函数</summary>
+
+`fu["fu_months"].median()`;`boot_ci(fu["fu_months"].to_numpy())`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+med_fu = fu["fu_months"].median()
+ci_fu = boot_ci(fu["fu_months"].to_numpy())
+print(f"中位随访时间 {med_fu:.0f} 个月(95% CI {ci_fu[0]:.0f} 到 {ci_fu[1]:.0f})")
+```
+
+</details>
+
+</div>
+
+<div class="exercise homework">
+
+**课后 2 · 回顾第 3 课: 两种治疗方式分开算**
+
+换成体积优化后 D2cc 的变化(`delta_vol`),两种治疗方式的病人各自的中位数,95% 区间分别是多少?结果存进一个字典 `ci_by_arm`: 键是 `"VCB"` 和 `"EBRT+VCB"`,值是 `boot_ci` 交回的区间。要用到第 2 课的筛选,或者第 3 课的分组。
+
+```python
+# 在这里写你的代码。结果存进字典 ci_by_arm。
+```
+
+```pycheck
+need("ci_by_arm")
+try:
+    a = [float(v) for v in ci_by_arm["VCB"]]
+    b = [float(v) for v in ci_by_arm["EBRT+VCB"]]
+except Exception:
+    fail('ci_by_arm 应该是一个字典,有 "VCB" 和 "EBRT+VCB" 两个键,每个键下面是区间的两个数。')
+if close(a[0], -2.4, 0.01) and close(a[1], -1.5, 0.01) and close(b[0], -2.4, 0.01):
+    fail("两组的区间一模一样,而且就是全部病人的区间: 每一组要先筛出这一组的病人,再交给 boot_ci。")
+if close(a[0], -2.0, 0.01) and close(b[0], -4.2, 0.01):
+    fail("两组的结果放反了: 检查每个键下面放的是不是这一组的病人。")
+if close(a[0], -4.2, 0.01) and close(a[1], -2.2, 0.01) and close(b[0], -2.0, 0.01) and close(b[1], -0.9, 0.01):
+    ok("对了: 单纯近距离组 −2.9 Gy(95% CI −4.2 到 −2.2),外照射加近距离组 −1.4 Gy(−2.0 到 −0.9)。两个区间没有重叠: 单纯近距离的病人降得更多(近距离做了 3 次,变化累计得更多)。合在一起的 −2.0 Gy 掩盖了这个差别,所以这类结果要分组报告。单纯近距离组的区间更宽: 病人少一些(91 位),数据也更散。")
+fail(f"现在是 VCB {a},EBRT+VCB {b},应该是 [-4.2, -2.2] 和 [-2.0, -0.9]。")
+```
+
+<details><summary>提示 1: 思路</summary>
+
+对每一组做三件事: 筛出这一组的病人,取出 `delta_vol` 这一列,交给 `boot_ci`。两组可以各写一遍;也可以用第 3 课的 `groupby` 写成一个循环。
+
+</details>
+
+<details><summary>提示 2: 用到的写法</summary>
+
+先写 `ci_by_arm = {}` 准备一个空字典。循环是 `for arm, d in df.groupby("arm"):`,循环里 `ci_by_arm[arm] = boot_ci(d["delta_vol"].to_numpy())`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+ci_by_arm = {}
+for arm, d in df.groupby("arm"):
+    ci_by_arm[arm] = boot_ci(d["delta_vol"].to_numpy())
+    print(f"{arm}: {len(d)} 位,中位数 {d['delta_vol'].median():.1f} Gy,95% 区间 {ci_by_arm[arm]}")
+```
+
+</details>
+
+</div>
+
+<div class="quiz">
+<p><b>课后 3 · 读论文</b>: 那篇已发表的论文(Table 5,34 位病人)报告: 体积优化和图形优化两种计划,阴道 D2cc 的总 EQD2 平均相差 1.12 Gy,95% 区间是 −1.05 到 3.30 Gy(按三个比较做过校正)。下面哪个说法对?</p>
+<button class="quiz-opt" data-why="区间包含 0,只说明'没有差别'是和数据相容的一种可能。区间同样包含 3 Gy,数据也和'相差 3 Gy'相容,所以不能说没有差别。">区间包含 0,所以两种计划没有差别</button>
+<button class="quiz-opt" data-correct data-why="区间里的每个值都是和数据相容的候选。这个区间从 −1 到 3.3 Gy,宽了 4 Gy 多,主要是因为只有 34 位病人。要下结论,需要更多的病人把区间缩窄。">这 34 位病人的数据,既和'没有差别'相容,也和'相差 3 Gy'相容,还下不了结论</button>
+<button class="quiz-opt" data-why="置信区间不是病人数据的范围。它说的是'平均相差多少'这个数估计得准不准。">95% 的病人,两种计划的差在 −1.05 到 3.30 Gy 之间</button>
+</div>
+
+<div class="quiz">
+<p><b>课后 4 · 想一想</b>: 一项研究有 50 位病人,结果的 95% 区间宽 4 Gy。想把区间缩到 2 Gy 宽,大约需要多少位病人?</p>
+<button class="quiz-opt" data-why="人数翻倍,区间只缩到原来的 0.71 倍(1 ÷ √2),大约 2.8 Gy 宽,还不到一半。">100 位</button>
+<button class="quiz-opt" data-correct data-why="区间的宽度和 √人数 成反比: 人数变成 4 倍,√4 = 2,区间窄一半。把结果估计得准一倍,要付出 4 倍的病人。">200 位</button>
+<button class="quiz-opt" data-why="区间的宽度不是按人数的比例缩的,而是和 √人数 成反比。75 位病人时,区间大约还有 3.3 Gy 宽。">75 位</button>
+</div>
+
+<div class="exercise homework">
+
+**课后 5 · 写一句结果**
+
+把课后 2 的结果写成论文结果部分的**一句英文**: 两种治疗方式各自的中位数和 95% 区间。先自己写在下面的框里,再点开参考写法对照。这一题不自动检查。
+
+<textarea class="hw-write" data-save rows="5" aria-label="你写的句子" placeholder="在这里写。内容只保存在你自己的浏览器里。"></textarea>
+
+<details><summary>参考写法和自查</summary>
+
+> After volume-based optimisation, vaginal D2cc changed by a median of −2.9 Gy (95% CI −4.2 to −2.2) in the 91 patients treated with VCB alone and by −1.4 Gy (95% CI −2.0 to −0.9) in the 109 patients treated with EBRT and VCB.
+
+对照你写的,看这几样有没有:
+
+- 每个估计值都带单位(Gy)。
+- 每个估计值后面都跟着它的 95% 区间。
+- 写了每一组的病人数。
+- 方向说清楚了: 负数表示降低,或者直接写 "decreased by 2.9 Gy"。
+- 没有写 "significantly": 这一课只算了区间,还没有做检验(第 6 课)。
+
+</details>
+
+</div>
+
 ## 常见报错 Troubleshooting
 
 | 报错或现象 | 原因和办法 |

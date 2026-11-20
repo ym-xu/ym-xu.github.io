@@ -34,4 +34,17 @@
     var btn = e.target.closest && e.target.closest('.quiz-opt');
     if (btn) choose(btn);
   });
+
+  // Free-text answers in the homework (<textarea data-save>): kept in this browser only.
+  function notes() {
+    Array.prototype.forEach.call(document.querySelectorAll('textarea[data-save]'), function (box, i) {
+      var key = 'course-notes:v1:' + location.pathname.replace(/index\.html$/, '') + ':' + i;
+      try { var saved = localStorage.getItem(key); if (saved) box.value = saved; } catch (e) { /* no storage */ }
+      box.addEventListener('input', function () {
+        try { localStorage.setItem(key, box.value); } catch (e) { /* no storage */ }
+      });
+    });
+  }
+  if (document.readyState !== 'loading') notes();
+  else document.addEventListener('DOMContentLoaded', notes);
 })();

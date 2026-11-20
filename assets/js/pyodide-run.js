@@ -259,16 +259,28 @@ function checkedExercises() {
 function readProgress() {
   try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch (_) { return {}; }
 }
+// In-lesson exercises and homework (.exercise.homework, at the end of a lesson) are counted apart,
+// so a lesson reads as complete without its optional homework.
+function tally(all, done) {
+  const t = { core: 0, coreDone: 0, hw: 0, hwDone: 0 };
+  all.forEach((ex, i) => {
+    const kind = ex.classList.contains('homework') ? 'hw' : 'core';
+    t[kind] += 1;
+    if (done[i]) t[kind + 'Done'] += 1;
+  });
+  return t;
+}
 function showProgress() {
   const all = checkedExercises();
   if (!all.length) return;
   const done = readProgress().done || [];
   all.forEach((ex, i) => ex.classList.toggle('passed', !!done[i]));
-  const n = all.filter((_, i) => done[i]).length;
+  const t = tally(all, done);
   const chip = document.querySelector('[data-lesson-progress]');
   if (chip) {
     chip.hidden = false;
-    chip.textContent = n === all.length ? `练习 ${n} / ${all.length} 全部通过 ✓` : `练习 已通过 ${n} / ${all.length}`;
+    chip.textContent = (t.coreDone === t.core ? `练习 ${t.core} / ${t.core} 全部通过 ✓` : `练习 已通过 ${t.coreDone} / ${t.core}`)
+      + (t.hw ? ` · 课后 ${t.hwDone} / ${t.hw}` : '');
   }
 }
 function markPassed(card) {
@@ -279,11 +291,18 @@ function markPassed(card) {
   p.done = p.done || [];
   const first = !p.done[i];
   p.done[i] = true;
+  const t = tally(all, p.done);
   p.total = all.length;
+  p.core = t.core;                                // the syllabus shows progress on the in-lesson exercises
+  p.coreDone = t.coreDone;
+  p.hw = t.hw;
+  p.hwDone = t.hwDone;
   try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch (_) { /* private mode: no progress kept */ }
   showProgress();
-  // fireworks (assets/js/fireworks.js) from the Run button; a bigger show when this was the last exercise left
-  const allDone = first && all.every((_, k) => p.done[k]);
+  // fireworks (assets/js/fireworks.js) from the Run button; a bigger show when this was the last one
+  // left of its kind (in-lesson exercises, or homework)
+  const isHw = all[i].classList.contains('homework');
+  const allDone = first && (isHw ? t.hwDone === t.hw : t.coreDone === t.core);
   const r = card.querySelector('.py-run').getBoundingClientRect();
   if (window.courseFireworks) window.courseFireworks(r.left + r.width / 2, r.top + r.height / 2, allDone);
 }

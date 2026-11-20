@@ -61,11 +61,14 @@
     try {
       document.querySelectorAll('.lesson-row[data-progress-path]').forEach(function (row) {
         var p = JSON.parse(localStorage.getItem('course-progress:v1:' + row.getAttribute('data-progress-path')) || 'null');
-        var n = p && p.total ? (p.done || []).filter(Boolean).length : 0;
-        if (!n) return;
+        if (!p || !p.total) return;
+        // in-lesson exercises; older records have no split and count everything
+        var core = p.core != null ? p.core : p.total;
+        var n = p.core != null ? p.coreDone : (p.done || []).filter(Boolean).length;
+        if (!n && !p.hwDone) return;
         var tag = document.createElement('span');
         tag.className = 'lesson-row-tag done';
-        tag.textContent = n >= p.total ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + p.total;
+        tag.textContent = (n >= core ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + core) + (p.hw && p.hwDone >= p.hw ? ' · 课后 ✓' : '');
         row.querySelector('.lesson-row-title').appendChild(tag);
       });
     } catch (e) {}
