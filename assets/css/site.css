@@ -566,6 +566,16 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-dot { fill: var(--muted); opacity: .6; }
 .widget .w-dot.now { fill: var(--link); opacity: 1; }
 .widget .w-mean { stroke: var(--link); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.widget { --w-bad: #cf222e; }
+:root[data-theme="dark"] .widget { --w-bad: #ff7b72; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .widget { --w-bad: #ff7b72; } }
+.widget .w-int { stroke: var(--muted); stroke-width: 1; opacity: .8; }
+.widget .w-int.miss { stroke: var(--w-bad); stroke-width: 2.4; opacity: 1; }
+.widget .w-int-dot { fill: var(--fg); }
+.widget .w-int-dot.miss { fill: var(--w-bad); }
+.widget .w-hist { fill: var(--muted); opacity: .55; }
+.widget .w-hist.miss { fill: var(--w-bad); opacity: 1; }
+.widget svg + svg { margin-top: .5rem; }
 .widget .w-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .15rem 1rem; margin: .25rem 0 .6rem; font-size: .84rem; color: var(--muted); }
 .widget .w-legend span { display: inline-flex; align-items: center; gap: .35em; white-space: nowrap; }
 .widget .w-key { display: inline-block; width: .62em; height: .62em; border-radius: 50%; background: var(--link); }

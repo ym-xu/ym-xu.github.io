@@ -9,6 +9,8 @@
 //   overfit + data-cv  the same, with the 5-fold cross-validation error as a third bar
 //   kfold              step through the five rounds of one 5-fold cross-validation
 //   repeatcv           repeat the 5-fold cross-validation with new random splits
+//   ci                 many studies, each with its 95% interval: how many contain the true value
+//   shuffle            a P value by shuffling the group labels of two groups
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -305,7 +307,151 @@
     add(1);
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv };
+  // ---------- figure 4: what a 95% interval means ----------
+  // Each "study" draws 30 patients from a population whose true mean change is -2.0 Gy and
+  // computes the usual 95% interval of the mean (mean +- 2.045 standard errors). About 95 of
+  // 100 such intervals contain the true value; with this seed exactly 95 of the first 100 do.
+  function ci(root) {
+    var TRUE = -2.0, SD = 2.8, n = 30, T = 2.045, MAX = 100, rng, studies;
+    var w = 360, top = 16, row = 3.1, base = top + MAX * row + 6, hh = base + 36, lo = -4.5, hi = 0.5;
+    function px(v) { return 24 + (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (w - 36); }
+    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hh, role: 'img', 'aria-label': '每个研究的平均值和 95% 区间' }, root);
+    el('line', { x1: 16, x2: w - 8, y1: base, y2: base, 'class': 'w-axis' }, svg);
+    for (var v = -4; v <= 0; v++) {
+      el('line', { x1: px(v), x2: px(v), y1: base, y2: base + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: base + 16, 'text-anchor': 'middle' }, svg, minus(v));
+    }
+    el('text', { x: w / 2, y: hh - 3, 'text-anchor': 'middle' }, svg, '一个研究里 Δ 的平均值 (Gy)');
+    el('line', { x1: px(TRUE), x2: px(TRUE), y1: top - 4, y2: base, 'class': 'w-mean' }, svg);
+    el('text', { x: px(TRUE) + 5, y: top - 5 }, svg, '真实值 −2.0');
+    var g = el('g', {}, svg);
+    var ctls = h('div', 'w-ctls', root);
+    var one = button(ctls, '做 1 个研究', 'primary'), many = button(ctls, '做 20 个'), again = button(ctls, '重来');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+
+    function add(k) {
+      for (var j = 0; j < k && studies.length < MAX; j++) {
+        var x = [], i, m, ss = 0;
+        for (i = 0; i < n; i++) x.push(TRUE + SD * normal(rng));
+        m = mean(x);
+        for (i = 0; i < n; i++) ss += (x[i] - m) * (x[i] - m);
+        var half = T * Math.sqrt(ss / (n - 1)) / Math.sqrt(n);
+        studies.push({ m: m, lo: m - half, hi: m + half, hit: m - half <= TRUE && TRUE <= m + half });
+      }
+      render();
+    }
+    function render() {
+      while (g.firstChild) g.removeChild(g.firstChild);
+      studies.forEach(function (st, i) {
+        var y = top + (i + 0.5) * row;
+        el('line', { x1: px(st.lo), x2: px(st.hi), y1: y, y2: y, 'class': 'w-int' + (st.hit ? '' : ' miss') }, g);
+        el('circle', { cx: px(st.m), cy: y, r: 1.3, 'class': 'w-int-dot' + (st.hit ? '' : ' miss') }, g);
+      });
+      var hits = studies.filter(function (st) { return st.hit; }).length, N = studies.length;
+      one.disabled = many.disabled = N >= MAX;
+      status.textContent = N === 0
+        ? '所有这类病人里,换方案后 Δ 的真实平均值是 −2.0 Gy(竖线)。点"做 1 个研究": 随机抽 30 位病人,算出平均值(圆点)和它的 95% 区间(横线)。'
+        : '已经做了 ' + N + ' 个研究,每个研究 30 位病人。' + hits + ' 个研究的 95% 区间包含了真实值' + (N >= 10 ? '(占 ' + Math.round(hits / N * 100) + '%)' : '') + ';没包含的 ' + (N - hits) + ' 个画成红色粗线。' + (N >= MAX ? '图里最多画 ' + MAX + ' 个。' : '');
+    }
+    function reset() { rng = mulberry32(68); studies = []; render(); }
+    one.addEventListener('click', function () { add(1); });
+    many.addEventListener('click', function () { add(20); });
+    again.addEventListener('click', reset);
+    reset();
+  }
+
+  // ---------- figure 5: a P value by shuffling the group labels ----------
+  // 40 simulated patients in two groups of 20. Shuffling the labels shows how large a difference
+  // between the group means turns up by chance alone; P is the share of shuffles at least as far
+  // from 0 as the real difference (about 0.03 here).
+  function shuffleTest(root) {
+    var rngData = mulberry32(115), vals = [], i, MAX = 2000;
+    for (i = 0; i < 20; i++) vals.push(Math.round((-3.2 + 2.6 * normal(rngData)) * 10) / 10);
+    for (i = 0; i < 20; i++) vals.push(Math.round((-1.6 + 2.6 * normal(rngData)) * 10) / 10);
+    var real = vals.map(function (_, k) { return k < 20 ? 0 : 1; });
+    function diffOf(lab) {
+      var a = 0, b = 0;
+      vals.forEach(function (v, k) { if (lab[k]) b += v; else a += v; });
+      return { a: a / 20, b: b / 20, d: a / 20 - b / 20 };
+    }
+    var obs = diffOf(real), rng, lab, diffs;
+    var w = 360, lo = -11, hi = 5;
+    function px(v) { return 16 + (v - lo) / (hi - lo) * (w - 28); }
+
+    // top: the 40 patients, one row per group
+    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 104', role: 'img', 'aria-label': '两组病人的 Δ' }, root);
+    var capA = el('text', { x: 16, y: 11 }, svg1), capB = el('text', { x: 16, y: 53 }, svg1);
+    el('line', { x1: 12, x2: w - 8, y1: 82, y2: 82, 'class': 'w-axis' }, svg1);
+    [-10, -8, -6, -4, -2, 0, 2, 4].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: 82, y2: 86, 'class': 'w-axis' }, svg1);
+      el('text', { x: px(v), y: 97, 'text-anchor': 'middle' }, svg1, minus(v));
+    });
+    var meanA = el('line', { y1: 15, y2: 39, 'class': 'w-res' }, svg1), meanB = el('line', { y1: 57, y2: 81, 'class': 'w-res' }, svg1);
+    var dots = vals.map(function (v) { return el('circle', { cx: px(v), r: 3.2 }, svg1); });
+
+    // bottom: the differences from the shuffles
+    var hh = 150, base = 116, dlo = -3.4, dhi = 3.4, bin = 0.2, nb = Math.round((dhi - dlo) / bin);
+    function dx(v) { return 16 + (v - dlo) / (dhi - dlo) * (w - 28); }
+    var svg2 = el('svg', { viewBox: '0 0 ' + w + ' ' + hh, role: 'img', 'aria-label': '打乱以后两组的差' }, root);
+    el('line', { x1: 12, x2: w - 8, y1: base, y2: base, 'class': 'w-axis' }, svg2);
+    [-3, -2, -1, 0, 1, 2, 3].forEach(function (v) {
+      el('line', { x1: dx(v), x2: dx(v), y1: base, y2: base + 4, 'class': 'w-axis' }, svg2);
+      el('text', { x: dx(v), y: base + 16, 'text-anchor': 'middle' }, svg2, minus(v));
+    });
+    el('text', { x: w / 2, y: hh - 3, 'text-anchor': 'middle' }, svg2, '打乱后两组平均值的差 (Gy)');
+    [obs.d, -obs.d].forEach(function (v) { el('line', { x1: dx(v), x2: dx(v), y1: 12, y2: base, 'class': 'w-mean' }, svg2); });
+    el('text', { x: dx(obs.d) + 4, y: 10 }, svg2, '实际的差 ' + minus(obs.d.toFixed(2)));
+    var bars = el('g', {}, svg2);
+
+    var ctls = h('div', 'w-ctls', root);
+    var one = button(ctls, '打乱 1 次', 'primary'), many = button(ctls, '打乱 200 次'), again = button(ctls, '恢复实际分组');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+
+    function shuffleOnce() {
+      var order = [], j, t, k;
+      for (k = 0; k < 40; k++) order.push(k);
+      for (k = 39; k > 0; k--) { j = Math.floor(rng() * (k + 1)); t = order[k]; order[k] = order[j]; order[j] = t; }
+      lab = vals.map(function () { return 1; });
+      for (k = 0; k < 20; k++) lab[order[k]] = 0;
+      diffs.push(diffOf(lab).d);
+    }
+    function render() {
+      var cur = diffOf(lab), N = diffs.length, count = [], extreme = 0, k;
+      dots.forEach(function (d, k) {
+        d.setAttribute('cy', (lab[k] ? 69 : 27) + ((k * 7) % 5 - 2) * 2.2);
+        d.setAttribute('class', 'w-pt' + (lab[k] ? ' new' : ''));
+      });
+      meanA.setAttribute('x1', px(cur.a)); meanA.setAttribute('x2', px(cur.a));
+      meanB.setAttribute('x1', px(cur.b)); meanB.setAttribute('x2', px(cur.b));
+      capA.textContent = (N ? '打乱后的"单纯近距离"组' : '单纯近距离组') + ': 平均 ' + minus(cur.a.toFixed(2)) + ' Gy';
+      capB.textContent = (N ? '打乱后的"外照射加近距离"组' : '外照射加近距离组') + ': 平均 ' + minus(cur.b.toFixed(2)) + ' Gy';
+      for (k = 0; k < nb; k++) count.push(0);
+      diffs.forEach(function (d) {
+        if (Math.abs(d) >= Math.abs(obs.d) - 1e-9) extreme++;
+        count[Math.min(nb - 1, Math.max(0, Math.floor((d - dlo) / bin)))]++;
+      });
+      while (bars.firstChild) bars.removeChild(bars.firstChild);
+      var unit = Math.min(7, (base - 16) / Math.max.apply(null, count.concat([1])));
+      count.forEach(function (c, k) {
+        if (!c) return;
+        var x0 = dlo + k * bin, out = Math.abs(x0 + bin / 2) >= Math.abs(obs.d);
+        el('rect', { x: dx(x0) + 0.5, width: dx(x0 + bin) - dx(x0) - 1, y: base - c * unit, height: c * unit, 'class': 'w-hist' + (out ? ' miss' : '') }, bars);
+      });
+      one.disabled = many.disabled = N >= MAX;
+      status.textContent = N === 0
+        ? '实际的分组: 单纯近距离组平均 ' + minus(obs.a.toFixed(2)) + ' Gy,外照射加近距离组平均 ' + minus(obs.b.toFixed(2)) + ' Gy,相差 ' + Math.abs(obs.d).toFixed(2) + ' Gy。点"打乱 1 次": 把 40 位病人的组别随机重新分配,再算一次两组的差。'
+        : '打乱了 ' + N + ' 次。这一次两组相差 ' + Math.abs(cur.d).toFixed(2) + ' Gy。到现在,有 ' + extreme + ' 次的差不小于实际的 ' + Math.abs(obs.d).toFixed(2) + ' Gy(红色),占 ' + extreme + ' / ' + N + ' = ' + (extreme / N).toFixed(3) + '。' + (N >= MAX ? '图里最多打乱 ' + MAX + ' 次。' : '');
+    }
+    function reset() { rng = mulberry32(115 * 13 + 5); lab = real.slice(); diffs = []; render(); }
+    one.addEventListener('click', function () { shuffleOnce(); render(); });
+    many.addEventListener('click', function () { for (var k = 0; k < 200 && diffs.length < MAX; k++) shuffleOnce(); render(); });
+    again.addEventListener('click', reset);
+    reset();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

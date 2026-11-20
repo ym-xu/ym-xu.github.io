@@ -29,6 +29,12 @@
 <script defer src="{{ $widgets.RelPermalink }}" integrity="{{ $widgets.Data.Integrity }}"></script>
 {{- end }}
 
+{{- /* Fireworks for a correct answer (exercises and "想一想"). */ -}}
+{{- if or (strings.Contains .Content "quiz-opt") (strings.Contains .Content "py-check") }}
+{{- $fw := resources.Get "js/fireworks.js" | minify | fingerprint }}
+<script defer src="{{ $fw.RelPermalink }}" integrity="{{ $fw.Data.Integrity }}"></script>
+{{- end }}
+
 {{- /* "想一想" quizzes in the course lessons. */ -}}
 {{- if strings.Contains .Content "quiz-opt" }}
 {{- $quiz := resources.Get "js/quiz.js" | minify | fingerprint }}

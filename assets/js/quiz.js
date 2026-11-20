@@ -25,6 +25,10 @@
     tag.textContent = right ? '对。' : '不对。';
     why.appendChild(tag);
     why.appendChild(document.createTextNode(btn.getAttribute('data-why') || ''));
+    if (right && window.courseFireworks) {
+      var r = btn.getBoundingClientRect();
+      window.courseFireworks(r.left + r.width / 2, r.top + r.height / 2, false);
+    }
   }
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.quiz-opt');

@@ -9,14 +9,17 @@
 
 用法:
 
-    from cohort import make_cohort
+    from cohort import make_cohort, make_followup
     df = make_cohort()                   # 200 位病人, 一人一行
     new = make_cohort(n=5000, seed=99)   # 另一批"新病人", 产生方式完全相同
+    fu = make_followup()                 # 随访表: 有随访的病人一人一行
 
 列(一人一行):
 
     id          病人编号
     age         年龄(岁)
+    height_cm   身高(cm)
+    weight_kg   体重(kg)
     arm         治疗方式: "VCB"(单纯近距离)或 "EBRT+VCB"(外照射加近距离)
     stage       分期: "IA" "IB" "II"
     grade       分级: 1 2 3
@@ -31,6 +34,12 @@
     d90_5mm     靶区 CTV 的 D90, 总 EQD2(Gy, α/β = 10), 5 mm 计划
     d90_vol     同上, 体积优化计划
     d90_gra     同上, 图形优化计划
+
+随访表(make_followup)的列:
+
+    id          病人编号
+    fu_months   随访时间(月)
+    tox         晚期阴道毒性: 1 = 出现过(G1 及以上), 0 = 没有
 """
 
 import numpy as np
@@ -72,9 +81,17 @@ def make_cohort(n=200, seed=22):
     d_d90_vol = k * 1.2 * (wall_mean - 5) + 0.9 * shared + rng.normal(0, 0.8, n)
     d_d90_gra = k * (1.5 * (wall_mean - 5) - 0.6) + 1.2 * shared + rng.normal(0, 1.3, n)
 
+    # 身高和体重: 另用一串随机数, 不影响上面各列
+    rng_b = np.random.default_rng([seed, 1])
+    height = np.clip(rng_b.normal(159, 6, n), 142, 178).round()
+    bmi = np.exp(rng_b.normal(np.log(28.5), 0.19, n))
+    weight = (bmi * (height / 100) ** 2).round(1)
+
     df = pd.DataFrame({
         "id": [f"P{i:03d}" for i in range(1, n + 1)],
         "age": age.astype(int),
+        "height_cm": height.astype(int),
+        "weight_kg": weight,
         "arm": arm,
         "stage": stage,
         "grade": grade,
@@ -95,3 +112,18 @@ def make_cohort(n=200, seed=22):
     missing = rng.choice(n, size=max(1, n // 50), replace=False)
     df.loc[missing, ["wall_min", "wall_mean", "wall_max"]] = np.nan
     return df
+
+
+def make_followup(n=200, seed=22):
+    """随访表: 有随访的病人一人一行, 少数病人失访, 不在表里; 行的顺序是打乱的。
+
+    晚期阴道毒性的概率随 5 mm 计划的阴道 D2cc 升高而升高(同样是编的)。
+    """
+    df = make_cohort(n, seed)
+    rng = np.random.default_rng([seed, 2])
+    p = 1 / (1 + np.exp(-(-1.9 + 0.13 * (df["d2cc_5mm"] - 68))))
+    tox = (rng.random(n) < p).astype(int)
+    months = np.clip(rng.gamma(4.0, 9.0, n) + 6, 6, 96).round().astype(int)
+    out = pd.DataFrame({"id": df["id"], "fu_months": months, "tox": tox})
+    out = out[rng.random(n) > 0.06]                      # 约 6% 的病人失访
+    return out.sample(frac=1, random_state=seed).reset_index(drop=True)

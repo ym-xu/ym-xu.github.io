@@ -12,7 +12,7 @@
 // fails with a standard message when x is not defined yet.
 const PYODIDE_VERSION = '314.0.7';
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-const COURSE_FILES = ['cohort.py'];            // served at /python/ (static/python/), used by both courses
+const COURSE_FILES = ['cohort.py', 'cohort.csv', 'followup.csv'];   // served at /python/ (static/python/), used by both courses
 const LOCAL_DEPS = { cohort: ['numpy', 'pandas'] };
 const HEAVY = new Set(['numpy', 'pandas', 'scipy', 'sklearn', 'matplotlib', 'statsmodels']);
 
@@ -277,10 +277,15 @@ function markPassed(card) {
   if (i < 0) return;
   const p = readProgress();
   p.done = p.done || [];
+  const first = !p.done[i];
   p.done[i] = true;
   p.total = all.length;
   try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch (_) { /* private mode: no progress kept */ }
   showProgress();
+  // fireworks (assets/js/fireworks.js) from the Run button; a bigger show when this was the last exercise left
+  const allDone = first && all.every((_, k) => p.done[k]);
+  const r = card.querySelector('.py-run').getBoundingClientRect();
+  if (window.courseFireworks) window.courseFireworks(r.left + r.width / 2, r.top + r.height / 2, allDone);
 }
 
 // The hidden answer check of the exercise a code card belongs to, if any.
