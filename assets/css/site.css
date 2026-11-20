@@ -87,7 +87,7 @@ pre { overflow: auto; }
 #content.container,
 .site-footer .footer { padding-left: var(--pad); padding-right: var(--pad); }
 #content.container { max-width: none; margin: 0; padding-top: 2.25rem; padding-bottom: 1rem; }
-body.section-r-course.kind-page { --sheet: 1140px; }
+body:is(.section-r-course, .section-python-ml).kind-page { --sheet: 1140px; }
 
 @media (max-width: 900px) { :root { --pad: 40px; } }
 @media (max-width: 720px) {
@@ -412,6 +412,7 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .content .code-output > * + * { margin-top: .5rem; }
 .content .code-output-text { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; white-space: pre-wrap; color: var(--code-fg); background: transparent; padding: 0; }
 .content .code-output-status { color: var(--muted); }
+.content .code-output-hint { margin: .1rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--muted); }
 .content .code-output-err { font-family: var(--font-mono); font-size: .82rem; white-space: pre-wrap; color: #cf222e; background: transparent; padding: 0; }
 :root[data-theme="dark"] .content .code-output-err { color: #ff7b72; }
 .content .code-output-plot { max-width: 100%; height: auto; display: block; background: #fff; border-radius: var(--radius-sm); }
@@ -448,7 +449,7 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .lesson-row-arrow { color: var(--link); opacity: 0; transition: opacity var(--dur), transform var(--dur); }
 .lesson-row:hover .lesson-row-arrow { opacity: 1; transform: translateX(2px); }
 
-body.section-r-course.kind-page { scroll-behavior: smooth; }
+body:is(.section-r-course, .section-python-ml).kind-page { scroll-behavior: smooth; }
 .lesson-eyebrow { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .35rem; }
 .lesson-back { font-size: .95rem; font-style: italic; }
 .lesson-locator { font-size: .85rem; color: var(--muted); font-variant: small-caps; letter-spacing: .03em; }
@@ -467,11 +468,11 @@ body.section-r-course.kind-page { scroll-behavior: smooth; }
 .lesson-toc #TableOfContents a { display: block; font-size: .88rem; line-height: 1.35; color: var(--muted); border-left: 2px solid var(--border); padding: .16rem 0 .16rem .8rem; transition: color var(--dur), border-color var(--dur); }
 .lesson-toc #TableOfContents a:hover { color: var(--fg); text-decoration: none; border-left-color: var(--muted); }
 .lesson-toc #TableOfContents a.active { color: var(--link); border-left-color: var(--link); }
-body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24px; }
+body:is(.section-r-course, .section-python-ml).kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24px; }
 .reading-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; pointer-events: none; }
 .reading-progress > span { display: block; height: 100%; width: 0; background: var(--link); transition: width .1s linear; }
 @media (max-width: 1000px) {
-  body.section-r-course.kind-page { --sheet: 880px; }
+  body:is(.section-r-course, .section-python-ml).kind-page { --sheet: 880px; }
   .lesson-layout, .lesson-layout.no-toc { grid-template-columns: 1fr; gap: 0; }
   .lesson-main, .lesson-toc { grid-column: auto; grid-row: auto; }
   .lesson-toc { margin: 0 0 1.5rem; }
@@ -479,8 +480,33 @@ body.section-r-course.kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24
   .lesson-toc-label { padding-left: 0; }
   .lesson-toc #TableOfContents a { border-left: 0; padding-left: 0; }
 }
-@media (max-width: 600px) { body.section-r-course .lesson .post-header h1 { font-size: 1.7rem; } }
+@media (max-width: 600px) { body:is(.section-r-course, .section-python-ml) .lesson .post-header h1 { font-size: 1.7rem; } }
 @media (max-width: 480px) { .lesson-row { grid-template-columns: 1.8rem minmax(0, 1fr); } .lesson-row-arrow { display: none; } }
+
+/* ---------- python-ml course: method frame, demo, "写进论文", planned lessons ---------- */
+.content .frame, .content .demo, .content .paper { margin: 1.3rem 0; padding: .75rem 1rem; border-radius: var(--radius-sm); }
+.content .frame > :first-child, .content .demo > :first-child, .content .paper > :first-child { margin-top: 0; }
+.content .frame > :last-child, .content .demo > :last-child, .content .paper > :last-child { margin-bottom: 0; }
+.content .frame { border-left: 3px solid var(--link); background: var(--surface); }
+.content .frame p { margin: .3rem 0; }
+.content .demo { border: .5px dashed var(--muted); }
+.content .demo p { margin: .25rem 0; }
+.content .paper { border: .5px solid var(--rule); }
+.content .paper-label, .content .demo-label { margin: 0 0 .4rem; font-weight: 700; }
+.content .paper blockquote { font-style: normal; color: var(--fg); }
+.content details { margin: 1rem 0; padding: .5rem .9rem; border: .5px solid var(--border); border-radius: var(--radius-sm); }
+.content details > summary { cursor: pointer; color: var(--link); }
+.content details[open] > summary { margin-bottom: .5rem; }
+.content .folds { margin: 1rem 0 1.3rem; font-size: .88rem; }
+.content .fold-row { display: grid; grid-template-columns: 3.4rem repeat(5, minmax(0, 1fr)); gap: 4px; margin: 4px 0; align-items: center; }
+.content .fold-label { color: var(--muted); }
+.content .fold-row .cell { height: 1.7rem; display: flex; align-items: center; justify-content: center; border: .5px solid var(--border); border-radius: 3px; background: var(--surface); color: var(--muted); font-size: .8rem; }
+.content .fold-row .cell.test { background: var(--link); border-color: var(--link); color: var(--bg); }
+.content .folds-note { margin: .45rem 0 0; color: var(--muted); font-size: .86rem; }
+.lesson-row.planned { cursor: default; }
+.lesson-row.planned:hover { background: none; }
+.lesson-row.planned .lesson-row-title, .lesson-row.planned .lesson-row-num { color: var(--muted); }
+.lesson-row-tag { margin-left: .5em; font-size: .78rem; color: var(--muted); white-space: nowrap; border: .5px solid var(--border); border-radius: 3px; padding: 0 .35em; vertical-align: .1em; }
 
 /* ---------- 404 ---------- */
 .err { padding: 2rem 0 3rem; }

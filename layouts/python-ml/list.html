@@ -1,0 +1,59 @@
+{{ define "main" }}
+  {{- /* The syllabus comes from the "parts" outline in content/python-ml/_index.md,
+         so lessons that are not written yet still show (greyed, "准备中").
+         Lesson n lives in a page with weight n*10. */ -}}
+  {{ $parts := .Params.parts }}
+  {{ $pages := .Pages.ByWeight }}
+  {{ $total := 0 }}{{ range $parts }}{{ $total = add $total (len .lessons) }}{{ end }}
+
+  <header class="course-hero fx-title">
+    <h1>{{ .Title }}</h1>
+    {{ with .Params.subtitle }}<p class="course-hero-sub">{{ . }}</p>{{ end }}
+    <ul class="course-meta">
+      <li><strong>{{ $total }}</strong> 节课</li>
+      <li>浏览器里直接运行</li>
+      <li>零基础起步</li>
+      <li>为预测模型的论文打基础</li>
+    </ul>
+  </header>
+
+  <div class="content course-intro fx-after">{{ .Content }}</div>
+
+  <div class="syllabus">
+    {{ range $pi, $part := $parts }}
+      <section class="phase reveal">
+        <div class="phase-head">
+          <span class="phase-index">{{ index (slice "I" "II" "III" "IV" "V" "VI" "VII" "VIII") $pi }}</span>
+          <div>
+            <h2 class="phase-title">{{ $part.title }}</h2>
+            <p class="phase-sub">{{ $part.sub }}</p>
+          </div>
+        </div>
+        <div class="phase-lessons">
+          {{ range $part.lessons }}
+            {{ $match := where $pages "Weight" (mul .n 10) }}
+            {{ if $match }}
+              {{ $p := index $match 0 }}
+              <a class="lesson-row spot" href="{{ $p.RelPermalink }}">
+                <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
+                <span class="lesson-row-body">
+                  <span class="lesson-row-title">{{ .title }}</span>
+                  <span class="lesson-row-sum">{{ .sum }}</span>
+                </span>
+                <span class="lesson-row-arrow" aria-hidden="true">→</span>
+              </a>
+            {{ else }}
+              <div class="lesson-row planned">
+                <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
+                <span class="lesson-row-body">
+                  <span class="lesson-row-title">{{ .title }}<span class="lesson-row-tag">准备中</span></span>
+                  <span class="lesson-row-sum">{{ .sum }}</span>
+                </span>
+              </div>
+            {{ end }}
+          {{ end }}
+        </div>
+      </section>
+    {{ end }}
+  </div>
+{{ end }}

@@ -1,0 +1,56 @@
+{{ define "main" }}
+  {{- /* Lesson n has weight n*10; its part and the course length come from the
+         "parts" outline in the section's _index.md. */ -}}
+  {{ $n := div .Weight 10 }}
+  {{ $total := 0 }}{{ $partTitle := "" }}
+  {{ range .Parent.Params.parts }}
+    {{ $total = add $total (len .lessons) }}
+    {{ $pt := .title }}
+    {{ range .lessons }}{{ if eq .n $n }}{{ $partTitle = $pt }}{{ end }}{{ end }}
+  {{ end }}
+  {{ $sibs := .Parent.Pages.ByWeight }}
+  {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
+
+  <article class="lesson" data-lesson>
+    <div class="lesson-eyebrow fx-after">
+      <a class="lesson-back" href="{{ .Parent.RelPermalink }}">← 课程目录 Syllabus</a>
+      <span class="lesson-locator">第 {{ $n }} / {{ $total }} 课{{ with $partTitle }} · {{ . }}{{ end }}</span>
+    </div>
+
+    <header class="post-header fx-title">
+      <h1>{{ .Title }}</h1>
+      {{ with .Params.summary }}<p class="page-sub">{{ . }}</p>{{ end }}
+    </header>
+
+    <div class="lesson-layout{{ if not $showToc }} no-toc{{ end }}">
+      {{ if $showToc }}
+        {{ with .TableOfContents }}
+          <aside class="lesson-toc">
+            <div class="lesson-toc-inner">
+              <p class="lesson-toc-label">本课目录</p>
+              {{ . }}
+            </div>
+          </aside>
+        {{ end }}
+      {{ end }}
+
+      <div class="lesson-main">
+        <div class="content">{{ .Content }}</div>
+
+        {{ $prev := false }}{{ $next := false }}
+        {{ range $i, $p := $sibs }}
+          {{ if eq $p.RelPermalink $.RelPermalink }}
+            {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
+            {{ if lt (add $i 1) (len $sibs) }}{{ $next = index $sibs (add $i 1) }}{{ end }}
+          {{ end }}
+        {{ end }}
+        <nav class="pager">
+          {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+          {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+        </nav>
+      </div>
+    </div>
+  </article>
+
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
+{{ end }}

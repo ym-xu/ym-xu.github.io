@@ -16,8 +16,15 @@
 <script type="module" src="{{ $webr.RelPermalink }}" integrity="{{ $webr.Data.Integrity }}"></script>
 {{- end }}
 
+{{- /* Pyodide in-browser Python runner (python-ml course): same idea as WebR above.
+       Pyodide itself is fetched lazily, on the first "Run" click. */ -}}
+{{- if strings.Contains .Content "py-runnable" }}
+{{- $pyrun := resources.Get "js/pyodide-run.js" | fingerprint }}
+<script type="module" src="{{ $pyrun.RelPermalink }}" integrity="{{ $pyrun.Data.Integrity }}"></script>
+{{- end }}
+
 {{- /* Lesson reading UI: progress bar + scroll-spy TOC, lesson pages only. */ -}}
-{{- if and .IsPage (eq .Section "r-course") }}
+{{- if and .IsPage (in (slice "r-course" "python-ml") .Section) }}
 {{- $lesson := resources.Get "js/lesson-ui.js" | minify | fingerprint }}
 <script defer src="{{ $lesson.RelPermalink }}" integrity="{{ $lesson.Data.Integrity }}"></script>
 {{- end }}

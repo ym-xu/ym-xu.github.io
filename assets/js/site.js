@@ -97,6 +97,25 @@
     });
   }, { passive: true });
 
+  // The code of a code card as plain text. innerText would double every line
+  // break: Chroma wraps each line in a flex span that already ends with "\n".
+  // Edits made in the browser may add <br> or <div>, and &nbsp; for spaces.
+  function codeText(pre) {
+    var s = '';
+    (function walk(node) {
+      for (var ch = node.firstChild; ch; ch = ch.nextSibling) {
+        if (ch.nodeType === 3) { s += ch.nodeValue; continue; }
+        if (ch.nodeType !== 1) continue;
+        if (ch.nodeName === 'BR') { s += '\n'; continue; }
+        var block = ch.nodeName === 'DIV' || ch.nodeName === 'P';
+        if (block && s && s.slice(-1) !== '\n') s += '\n';
+        walk(ch);
+        if (block && s.slice(-1) !== '\n') s += '\n';
+      }
+    })(pre);
+    return s.replace(/\u00a0/g, ' ');
+  }
+
   // Copy button for the code-card render hook.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.code-copy');
@@ -104,7 +123,7 @@
     var card = btn.closest('.code-card');
     var pre = card && card.querySelector('pre');
     if (!pre || !navigator.clipboard) return;
-    navigator.clipboard.writeText(pre.innerText).then(function () {
+    navigator.clipboard.writeText(codeText(pre)).then(function () {
       var old = btn.textContent;
       btn.textContent = 'Copied';
       btn.classList.add('copied');
