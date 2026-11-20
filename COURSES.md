@@ -1,12 +1,10 @@
 # 两门课的写作规范
 
-给继续写这两门课的人(和 Claude 会话)看。课程不在站点导航里,有两个入口:
+给继续写这两门课的人(和 Claude 会话)看。课程和目录页 `/yao/` 都**只给拿到链接的人看**: 不在站点导航里,带 noindex,
+站内任何公开页面都不链接它们(用户 2026-11-21 定)。
 
-- `/yao/`: 学习和研究的目录页,只给拿到链接的人看,不从站内任何公开页面链接过去。
-- Projects 里的项目页 `content/projects/clinical-data-tutorials.md`(英文,Data Science Tutorials for Clinicians): 直接链接三门课和主题练习,
-  **不链接 `/yao/`**,也不提研究讲解页(用户 2026-11-21 定)。课程页面里也不要加回到 `/yao/` 的链接。
-
-课程和 `/yao/` 仍带 noindex。课程数目、上线状态变了,记得同时改项目页里的那几句。
+Projects 里有一页讲这套教程(`content/projects/clinical-data-tutorials.md`,英文,Data Science Tutorials for Clinicians):
+只讲怎么设计、怎么教,**不放任何通向课程或 `/yao/` 的链接**。改课程的设计或教法时,看一下这一页的说法还对不对。
 
 | 课程 | 地址 | 课文 | 状态 |
 |---|---|---|---|

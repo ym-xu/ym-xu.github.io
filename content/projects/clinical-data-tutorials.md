@@ -5,28 +5,33 @@ weight: 40
 year: "2026"
 role: "Author · Teaching"
 tags: ["Teaching", "Clinical ML", "Interactive"]
-summary: "Interactive courses, in Chinese, that take clinical researchers from their first line of code to prediction models they can validate and report. Code runs and is checked in the browser."
+summary: "Interactive courses, in Chinese, that take clinical researchers from their first line of code to prediction models they can validate and report. This page is about how they are designed and taught."
 ---
 
 A set of interactive tutorials for medical students and clinician-researchers, written in Chinese. I started them for the clinicians I work with on radiotherapy research: people who already collect cohorts, read dose–volume histograms and run survival analyses, and who want to build prediction models on their own data instead of handing the data to someone else.
 
-## What is in it
+There are three courses and a practice project: seven lessons of Python, a six-part practice project that goes with them, a course on statistical machine learning (fourteen lessons planned, in progress) and an earlier course in R. They are not listed on this site and are shared by link with the people they are written for, so this page describes the design and the teaching and does not link to them. The notes below are about the Python and machine-learning courses and the practice project, which share one design.
 
-- **[Python for medical students](/python/)**: seven lessons, from the first line of code to a baseline table, figures for a paper and the common tests. It starts from analyses the reader already runs in R or SPSS and turns them into code.
-- **[A themed practice](/python/practice/)** for the Python course: an audit of brachytherapy dosimetry in cervical cancer on a simulated department dataset. Six parts, one task per screen, from the EQD2 of a single patient to a written audit conclusion.
-- **[Statistical machine learning for medical students](/stat-ml/)**: fourteen lessons planned, from regression models to cross-validation, calibration, decision curves, sample size and reporting with TRIPOD+AI. The thread is the step from "which factors are associated with the outcome" to "how good is the prediction for the next patient". In progress; the lesson on cross-validation is online.
-- **[R for Cancer Research](/r-course/)**: thirteen lessons, from setup and data wrangling to survival analysis, competing risks and EQD2.
+## How it is designed
+
+- **Backwards from the goal.** The destination is a prediction model the reader can build, validate and report. The route is laid out from there: Python for handling clinical data, then regression, cross-validation, calibration, decision curves, sample size and reporting.
+- **Forwards from the reader.** Each course is described by where it starts: what the reader already does, such as a baseline table, a Wilcoxon test or a hazard ratio, and what is not required. The Python course opens by turning familiar analyses into code; the machine-learning course moves from "which factors are associated with the outcome" to "how good is the prediction for the next patient".
+- **Two formats for two jobs.** Lessons are long-form: explanation, runnable code, short exercises right after each idea. Practice is a separate project on an unfamiliar dataset, one task per screen, with no explanation and almost no scaffolding: the reader writes the code, gets it checked, and can open two levels of hints before the answer.
+- **One clinical thread.** Examples come from the reader's own field, and each course keeps one simulated cohort from beginning to end. The practice project is a complete analysis, from the dose of a single patient to a written conclusion, built so that a crude comparison and a stratified one disagree and the reader has to find out why.
+- **No patient data.** Every cohort is simulated with a fixed seed. Code runs in the reader's browser, and the Python course ends on the reader's own computer, so real data never have to leave it.
+- **Read on a phone.** Pages, figures and exercises are tested at phone width, because that is where they are read.
 
 ## How it teaches
 
-- **Start from what the reader already does.** A baseline table, a Wilcoxon test, a hazard ratio: familiar analyses come first, as code; what is new is added on top.
-- **Mechanism before name.** Each method is written out as a few concrete steps with a clinical example and coded by hand once; only then comes the library call. Interactive figures let the reader watch resampling, label shuffling, k-fold splits and overfitting before the terms appear.
+- **Mechanism before name.** Each method is written out as a few concrete steps with a clinical example and coded by hand once; only then comes the library call. The rule is not to explain one term with another.
+- **See it, then name it.** Interactive figures let the reader watch resampling, label shuffling, k-fold splits and overfitting before the words appear.
 - **Worked example, then your turn.** The text works one case and the exercise repeats the analysis on another plan or metric. Every exercise is checked on the spot, and a wrong answer gets a message aimed at that particular mistake.
-- **Written towards the paper.** Lessons in the Python and machine-learning courses end with how the step reads in an English Methods section and what a reviewer may ask.
+- **Questions without code.** Each lesson has a few "think about it" questions; every option, right or wrong, explains itself when chosen.
+- **Written towards the paper.** Lessons end with how the step reads in an English Methods section and what a reviewer may ask. Terms are given in Chinese with the English beside them.
+- **Honest about limits.** Each lesson says what it did not cover, and the machine-learning course says up front which kind of outcome it leaves out.
 
 ## How it is built
 
-- A static Hugo site. Python runs in the browser through Pyodide and R through WebR, so there is nothing to install and the reader's code stays on their own device.
-- Exercises carry hidden checks; progress is kept in the browser.
-- In the Python and machine-learning courses every cohort is simulated with a fixed seed, in the shape of real brachytherapy data. The only real numbers are quoted from a published paper, with the reference.
+- A static Hugo site. Python runs in the browser through Pyodide and R through WebR, so there is nothing to install.
+- Exercises carry hidden checks; progress is kept in the reader's browser.
 - Before a lesson goes online, a headless browser runs every code block and every reference answer at phone width.
