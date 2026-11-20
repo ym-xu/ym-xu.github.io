@@ -4,23 +4,25 @@ summary: "在浏览器里运行第一行代码;变量、列表、字典、函数
 weight: 10
 aliases: ["/python-ml/01-first-steps/"]
 toc: true
+duration: "约 90 分钟,可以分三次学: 第 1–3 节,第 4–7 节,第 8–10 节"
+questions:
+  - "不装任何软件,怎么运行 Python?"
+  - "一位病人的几个数怎么存?一个公式怎么写成可以反复用的函数?"
+  - "代码报错了怎么办?别人或 AI 写的代码怎么读?"
+objectives:
+  - "在浏览器里运行 Python,改了代码再运行"
+  - "用变量、列表和字典存一位病人的三套计划"
+  - "用循环和条件找出达到 68 Gy 的计划"
+  - "把 EQD2 公式写成一个可以反复用的函数"
+  - "读懂 6 种最常见的报错,并把它们改好"
+  - "一行一行读懂别人或 AI 写的代码"
 ---
 
-这门课最后要做的是预测模型,而做预测模型的工具几乎都是用 Python 写的(最常用的是 scikit-learn)。所以第一步是能读、能改、能写 Python。
+整理数据、做基线表、画图、做统计检验,这门课都用 Python 来做。第一步是能读、能改、能写几行 Python。
 
 这一课不讲统计,只讲 Python 本身: 怎么给一个数起名字,怎么把一位病人的几个数放在一起,怎么把一个公式写成函数,出错了怎么看。例子都是放疗里熟悉的计算: EQD2、68 Gy 阈值、一位病人的三套计划。
 
 > 🔬 不用先装任何东西。每个代码块右上角都有 **▶ Run**,点一下就在浏览器里运行。
-
-## 这一课你会做出什么
-
-- 在浏览器里运行 Python,改了代码再运行
-- 把 EQD2 公式写成一个函数,算单纯近距离和外照射加近距离两种情况
-- 用列表和字典存一位病人的三套计划
-- 用循环找出哪几套计划超过 68 Gy
-- 看懂 6 种最常见的报错,并把它们改好
-- 拿到一段别人(或 AI)写的代码,能一行一行读懂
-- 做 5 道练习,每道都能当场检查对错
 
 ## 1. 运行第一行代码
 
@@ -81,6 +83,8 @@ eqd2
 
 `eqd2` 还是 `42.0`,并没有因为 `d` 变成 6 而跟着变。Excel 的单元格公式会自动重算,Python 不会: `eqd2` 里存的是**当时算出来的数**,不是公式。要得到新结果,得把算 `eqd2` 的那一行再运行一次。第 7 节的"函数"就是为了解决这个问题。
 
+**打个比方**: 变量像贴在值上的标签。`d = 7` 是把写着 `d` 的标签贴到 7 上;再写 `d = 6`,标签挪到了 6 上。`eqd2` 这张标签贴着的还是当初算出来的 42.0,没有人去动它。
+
 ## 3. 数字、文字和真假
 
 Python 里的值有不同的类型。最常用的四种:
@@ -95,6 +99,13 @@ print(high)
 ```
 
 `str` 是文字,`int` 是整数,`float` 是小数,`bool` 是真假。比较用 `>`、`>=`、`<`、`<=`,**"等于"要写两个等号 `==`**(一个等号是存值),"不等于"写 `!=`。几个条件可以用 `and`、`or`、`not` 连起来。
+
+<div class="quiz">
+<p><b>想一想</b>: <code>arm</code> 里存着治疗方式。要判断它是不是 <code>"VCB"</code>,应该写哪一个?</p>
+<button class="quiz-opt" data-why="一个等号是存值: 这一句会把 arm 改成 &quot;VCB&quot;,而不是去比较。">arm = "VCB"</button>
+<button class="quiz-opt" data-correct data-why="两个等号才是比较,结果是 True 或 False。文字要加引号。">arm == "VCB"</button>
+<button class="quiz-opt" data-why="没有引号,Python 会把 VCB 当成一个变量的名字去找,找不到就报 NameError。文字要加引号。">arm == VCB</button>
+</div>
 
 把数字放进一句话里显示,用 **f 字符串**: 引号前加 `f`,花括号里放名字:
 
@@ -189,6 +200,13 @@ print(patient)
 ```
 
 这就是表格里的**一行**: 列名对应值。第 2 课的 pandas 表格,可以想成很多个这样的字典排在一起,每位病人一行。
+
+<div class="quiz">
+<p><b>想一想</b>: 上面的 <code>patient</code> 里有一项 <code>"age": 63</code>。运行 <code>patient["Age"]</code> 会怎样?</p>
+<button class="quiz-opt" data-why="键区分大小写: &quot;Age&quot; 和 &quot;age&quot; 是两个不同的键,字典里没有 &quot;Age&quot;。">得到 63</button>
+<button class="quiz-opt" data-correct data-why="键区分大小写,字典里只有 &quot;age&quot;。找不到键时,Python 报 KeyError。以后在表格里把列名的大小写写错,报的也是这个错。">报错: KeyError</button>
+<button class="quiz-opt" data-why="找不到键时,Python 不会悄悄给一个空值,而是直接报错(KeyError),这样拼写错误才不会被漏掉。">得到一个空值</button>
+</div>
 
 ## 6. 循环和条件: 一个一个地检查
 
@@ -385,7 +403,14 @@ print(doses >= 68)
 
 `import numpy as np` 拿进来 numpy(数值计算的包),并约定用简称 `np`,这是大家通用的写法。numpy 的数组可以整列一起算: `doses - 68` 对每个数都减 68,不用写循环。普通列表不行,第 9 节会看到。
 
-后面的课还会用到 pandas(表格)、matplotlib(画图)、scikit-learn(机器学习)。浏览器里第一次导入一个大包要先下载,会多等一会儿。
+这门课后面会用到 pandas(表格)和 matplotlib(画图),统计机器学习课还会用到 scikit-learn。浏览器里第一次导入一个大包要先下载,会多等一会儿。
+
+<div class="quiz">
+<p><b>想一想</b>: <code>doses &gt;= 68</code> 得到一串 True 和 False。那么 <code>(doses &gt;= 68).sum()</code> 算出来的是什么?</p>
+<button class="quiz-opt" data-why="求和的对象是那一串 True 和 False,不是剂量本身。">达到 68 Gy 的那几个剂量加起来</button>
+<button class="quiz-opt" data-correct data-why="求和时 True 算 1,False 算 0,所以得到的是 True 的个数,这里是 3。数人数最常用的就是这个写法。">达到 68 Gy 的病人有几位</button>
+<button class="quiz-opt" data-why="可以相加: Python 把 True 当 1,把 False 当 0。">报错: True 和 False 不能相加</button>
+</div>
 
 ## 9. 看懂报错
 
@@ -538,6 +563,30 @@ print(sum(flags), "位病人降到 68 Gy 以下")
 - `for` 和 `if` 那一行以冒号结尾,下面的内容靠缩进。
 - 函数把一个算法存起来,对每位病人都一样地用。
 - 读报错从最后一行读起;读别人的代码时打印中间结果,用小例子核对。
+
+## 本课术语 Key terms
+
+| 中文 | English | 一句话 |
+|---|---|---|
+| 变量 | variable | 给一个值起的名字 |
+| 字符串 | string (`str`) | 文字,要加引号 |
+| 整数、小数 | integer (`int`)、float | 两种数字 |
+| 布尔值 | boolean (`bool`) | True 或 False |
+| 列表 | list | 一串值,按位置取,从 0 开始数 |
+| 字典 | dictionary (`dict`) | 一组"键: 值",按键取 |
+| 循环 | loop (`for`) | 对每一项做同样的事 |
+| 条件 | condition (`if`) | 条件成立才做 |
+| 函数 | function | 存起来可以反复用的一段算法 |
+| 参数 | argument | 调用函数时填进去的值 |
+| 包 | package、library | 别人写好的一批函数 |
+| 报错 | error、traceback | 出错时 Python 给出的说明 |
+| 注释 | comment | `#` 后面写给人看的话 |
+
+## 这一课没讲什么
+
+- **读文件和表格**: 第 2 课。
+- **`while` 循环、自己定义"类"(class)**: 整理临床数据很少用到,遇到时再学也来得及。
+- **在自己电脑上安装 Python、把代码存成文件**: 第 7 课。
 
 ## 写进论文 Writing it up
 

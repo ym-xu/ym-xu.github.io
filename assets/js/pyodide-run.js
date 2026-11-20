@@ -49,21 +49,29 @@ HINTS = {
     "KeyError": "找不到这个键(字典的键,或者表格的列名)。检查拼写和大小写。",
     "ModuleNotFoundError": "找不到这个包。检查包名;浏览器里只有常用的科学计算包,其他的要在自己电脑上安装(Python 课第 7 课)。",
     "AttributeError": "这个对象没有这个属性或方法。检查拼写,或者用 type() 看看它到底是什么。",
-    "ValueError": "值不合要求,看最后一行的说明。建模时最常见的原因是数据里有缺失值(NaN)。",
+    "ValueError": "值不合要求,看最后一行的说明。",
     "ZeroDivisionError": "除以了 0。",
 }
 
 def _hint(e):
+    msg = str(e)
+    if isinstance(e, ValueError):
+        if "NaN" in msg:
+            return "数据里有缺失值(NaN),这个模型不接受。先处理缺失值,比如用 dropna() 去掉。"
+        if "feature names" in msg or "features, but" in msg:
+            return "给模型的变量表,和建模时用的不一样。用哪张表建的模型,预测时就要给它同样的那几列。"
+        if "reshape" in msg:
+            return "形状对不上: 元素的个数和要整理成的行数、列数不符。检查上一步得到了几个数。"
     for cls in type(e).__mro__:
         if cls.__name__ in HINTS:
             return HINTS[cls.__name__]
     return None
 
 def _format_error(e):
-    tb = e.__traceback__
-    while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
-        tb = tb.tb_next
-    return "".join(traceback.format_exception(type(e), e, tb, chain=False)).rstrip()
+    # only the learner's own lines: frames inside the runner or inside libraries are left out
+    te = traceback.TracebackException.from_exception(e)
+    te.stack = traceback.StackSummary.from_list([f for f in te.stack if f.filename == FILE])
+    return "".join(te.format(chain=False)).rstrip()
 
 def _is_mpl(v):
     if isinstance(v, (list, tuple)) and v:
@@ -240,6 +248,41 @@ function render(out, res) {
   if (!out.childNodes.length) add('pre', 'code-output-text code-output-status', '(运行完毕,没有输出)');
 }
 
+// ---- exercise progress, kept in this browser only (localStorage) ----
+// A lesson's exercises are the .exercise boxes that hold a hidden check. Passing one (with the
+// learner's own block, not the folded reference answer) marks it, and the overview box at the
+// top of the lesson and the course syllabus show how many have passed.
+const PROGRESS_KEY = 'course-progress:v1:' + location.pathname.replace(/index\.html$/, '');
+function checkedExercises() {
+  return [...document.querySelectorAll('.exercise')].filter((ex) => ex.querySelector('pre.py-check'));
+}
+function readProgress() {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch (_) { return {}; }
+}
+function showProgress() {
+  const all = checkedExercises();
+  if (!all.length) return;
+  const done = readProgress().done || [];
+  all.forEach((ex, i) => ex.classList.toggle('passed', !!done[i]));
+  const n = all.filter((_, i) => done[i]).length;
+  const chip = document.querySelector('[data-lesson-progress]');
+  if (chip) {
+    chip.hidden = false;
+    chip.textContent = n === all.length ? `练习 ${n} / ${all.length} 全部通过 ✓` : `练习 已通过 ${n} / ${all.length}`;
+  }
+}
+function markPassed(card) {
+  if (card.closest('details')) return;          // the reference answer does not count
+  const all = checkedExercises(), i = all.indexOf(card.closest('.exercise'));
+  if (i < 0) return;
+  const p = readProgress();
+  p.done = p.done || [];
+  p.done[i] = true;
+  p.total = all.length;
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(p)); } catch (_) { /* private mode: no progress kept */ }
+  showProgress();
+}
+
 // The hidden answer check of the exercise a code card belongs to, if any.
 function checkCodeFor(card) {
   const ex = card.closest('.exercise');
@@ -283,6 +326,7 @@ async function runCard(card) {
       const c = await runner.check(checkCode);
       res.check = c.toJs();
       c.destroy();
+      if (res.check[0] === 'ok') markPassed(card);
     }
     runner.destroy();
     render(out, res);
@@ -310,6 +354,7 @@ function init() {
   document.querySelectorAll('.exercise .py-run').forEach((btn) => {
     if (checkCodeFor(btn.closest('.code-card'))) btn.textContent = '▶ 运行并检查';
   });
+  showProgress();
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.py-run');
     if (btn) runCard(btn.closest('.code-card'));

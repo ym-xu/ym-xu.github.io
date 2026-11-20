@@ -32,7 +32,7 @@
             {{ $match := where $pages "Weight" (mul .n 10) }}
             {{ if $match }}
               {{ $p := index $match 0 }}
-              <a class="lesson-row spot" href="{{ $p.RelPermalink }}">
+              <a class="lesson-row spot" href="{{ $p.RelPermalink }}" data-progress-path="{{ $p.RelPermalink }}">
                 <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
                 <span class="lesson-row-body">
                   <span class="lesson-row-title">{{ .title }}</span>
@@ -54,4 +54,21 @@
       </section>
     {{ end }}
   </div>
+
+  {{- /* Exercise progress is kept in this browser only (see pyodide-run.js). */ -}}
+  <script>
+  (function () {
+    try {
+      document.querySelectorAll('.lesson-row[data-progress-path]').forEach(function (row) {
+        var p = JSON.parse(localStorage.getItem('course-progress:v1:' + row.getAttribute('data-progress-path')) || 'null');
+        var n = p && p.total ? (p.done || []).filter(Boolean).length : 0;
+        if (!n) return;
+        var tag = document.createElement('span');
+        tag.className = 'lesson-row-tag done';
+        tag.textContent = n >= p.total ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + p.total;
+        row.querySelector('.lesson-row-title').appendChild(tag);
+      });
+    } catch (e) {}
+  })();
+  </script>
 {{ end }}

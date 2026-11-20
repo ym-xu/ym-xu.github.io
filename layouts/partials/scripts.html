@@ -23,6 +23,12 @@
 <script type="module" src="{{ $pyrun.RelPermalink }}" integrity="{{ $pyrun.Data.Integrity }}"></script>
 {{- end }}
 
+{{- /* Interactive figures in the course lessons. */ -}}
+{{- if strings.Contains .Content "data-widget" }}
+{{- $widgets := resources.Get "js/course-widgets.js" | minify | fingerprint }}
+<script defer src="{{ $widgets.RelPermalink }}" integrity="{{ $widgets.Data.Integrity }}"></script>
+{{- end }}
+
 {{- /* "想一想" quizzes in the course lessons. */ -}}
 {{- if strings.Contains .Content "quiz-opt" }}
 {{- $quiz := resources.Get "js/quiz.js" | minify | fingerprint }}

@@ -20,8 +20,33 @@
     <header class="post-header fx-title">
       <h1>{{ .Title }}</h1>
       {{ with .Params.summary }}<p class="page-sub">{{ . }}</p>{{ end }}
-      {{ with .Params.prereq }}<p class="lesson-prereq">先会: {{ . | markdownify }}</p>{{ end }}
     </header>
+
+    {{- /* Overview box: the questions this lesson answers, what the learner can do afterwards,
+           time, prerequisites, and (filled in by pyodide-run.js) how many exercises have passed. */ -}}
+    {{ if or .Params.questions .Params.objectives }}
+    <aside class="lesson-overview" aria-label="本课概览">
+      {{ with .Params.questions }}
+      <div>
+        <p class="lo-h">这一课回答的问题</p>
+        <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
+      </div>
+      {{ end }}
+      {{ with .Params.objectives }}
+      <div>
+        <p class="lo-h">学完这一课,你能</p>
+        <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
+      </div>
+      {{ end }}
+      <p class="lo-meta">
+        {{ with .Params.duration }}<span><b>用时</b>{{ . | markdownify }}</span>{{ end }}
+        {{ with .Params.prereq }}<span><b>先会</b>{{ . | markdownify }}</span>{{ end }}
+        <span class="lesson-progress" data-lesson-progress hidden></span>
+      </p>
+    </aside>
+    {{ else }}
+      {{ with .Params.prereq }}<p class="lesson-prereq">先会: {{ . | markdownify }}</p>{{ end }}
+    {{ end }}
 
     <div class="lesson-layout{{ if not $showToc }} no-toc{{ end }}">
       {{ if $showToc }}

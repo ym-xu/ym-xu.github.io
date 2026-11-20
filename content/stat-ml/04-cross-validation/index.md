@@ -3,28 +3,32 @@ title: "Lesson 4 · 在新病人身上表现如何 Cross-Validation"
 summary: "训练集上的成绩为什么不可信;k 折和重复交叉验证;out-of-fold 预测。"
 weight: 40
 aliases: ["/python-ml/08-cross-validation/"]
-prereq: "[Python 课](/python/)第 1–4 课;本课程第 1 课(线性回归)"
 toc: true
+duration: "约 80 分钟,可以分两次学: 第 0–3 节,第 4–7 节"
+prereq: "[Python 课](/python/)第 1–4 课;本课程第 1 课(线性回归)"
+questions:
+  - "模型在建模用的病人身上很准,对新病人也一样准吗?"
+  - "手里只有一批病人,怎么估计模型对新病人的误差?"
+  - "论文里报告的成绩该怎么算?最后用的是哪个模型?"
+objectives:
+  - "说明训练集上的成绩为什么偏乐观,什么是过拟合"
+  - "手写一遍 5 折交叉验证,再用 scikit-learn 一行得到同样的结果"
+  - "用重复交叉验证报告成绩和它随分组的波动"
+  - "给每位病人算一个 out-of-fold 预测值"
+  - '结局是"是/否"时,用分层的交叉验证'
 ---
 
-前三课把线性回归当作一个模型讲清楚了,也讲了它的两种用法。用来**解释**时,问的是壁厚每增加 1 mm,Δ 平均变多少。这一课用它来**预测**: 来了一位新病人,只知道壁厚、施源器直径和治疗方式,能不能事先算出换成体积优化后,阴道 D2cc 会降多少?
+前三课把线性回归当作一个模型讲清楚了,也讲了它的两种用法。用来**解释**时,问的是: 壁厚每增加 1 mm,Δ 平均变多少?回归表里的系数、置信区间和 P 值,回答的是这个问题。
 
-用来预测,第一个问题就是: **它对新病人准不准**。这一课要说明,最顺手的那个答案(看模型在建模病人身上的误差)是错的,以及论文里通用的办法: 交叉验证。
+这一课换一个问题,回归表回答不了: 来了一位新病人,只知道壁厚、施源器直径和治疗方式,模型事先算出的 Δ,和这位病人实际的 Δ 会差多少?这是**预测**的问题。最顺手的回答,是看模型在建模病人身上差多少。这一课先让你亲眼看到这个办法为什么不行,再讲论文里通用的办法: 交叉验证。
 
 > 🔬 预测模型论文的结果部分,几乎每个数字(误差、AUC、校准、决策曲线)都来自交叉验证。审稿人第一件要确认的事,也是"这些数是不是在模型没见过的病人身上算的"。
 
-## 这一课你会做出什么
-
-- 亲眼看到训练集上的成绩为什么偏乐观,变量越多越乐观
-- 手写一遍 5 折交叉验证,再用 scikit-learn 的一行代码得到同样的结果
-- 用重复交叉验证,看结果随随机分组变化多少
-- 给每位病人算一个 out-of-fold 预测值,后面的校准和决策曲线都要用它
-- 结局是"是/否"时用分层的交叉验证
-- 做 4 道练习,每道都能当场检查对错
+**练习怎么做**: 讲解里预测的是**体积优化**计划的 Δ。练习都换成**图形优化**计划: 每讲完一步,你就对图形优化把这一步再做一遍。5 道练习做完,图形优化的全套结果就是你自己算出来的。
 
 ## 0. 准备: 模拟队列和要预测的量
 
-和前几课一样,用课程的模拟队列(数字都是编的,[源码](/python-ml/cohort.py))。要预测的量叫 `delta`: 换成体积优化计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
+和前几课一样,用课程的模拟队列(数字都是编的,[源码](/python/cohort.py))。要预测的量叫 `delta`: 换成体积优化计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
 
 ```python
 import numpy as np
@@ -39,9 +43,9 @@ df[["wall_mean", "diameter", "n_fx", "d2cc_5mm", "d2cc_vol", "delta"]].head()
 
 第一次运行要下载 numpy 和 pandas,会多等一会儿。表里是前 5 位病人: 平均壁厚(mm)、施源器直径(mm)、近距离次数、两套计划的 D2cc 和它们的差。
 
-## 1. 问题: 训练集上的成绩偏乐观
+## 1. 回顾: 用线性回归做预测
 
-先回顾要用的模型。用**线性回归**做预测,就是用一条公式:
+用**线性回归**做预测,就是用一条公式:
 
 > 预测的 Δ = b₀ + b₁ × 平均壁厚 + b₂ × 施源器直径 + b₃ × 近距离次数
 
@@ -73,41 +77,65 @@ print(f"第一位病人: 手算 {by_hand:.2f} Gy,model_a.predict 算出 {model_a
 
 一个预测模型就是这样一条"公式",只是公式的样子可以不同: 后面的课会讲到树模型,它的"公式"是一串"是/否"的问题。不管什么样的模型,这一课讲的检验方法都一样用。
 
-下面建两个模型,都用来预测 `delta`:
+## 2. 模型在建模病人身上的成绩,可信吗?
 
-- **模型 A**: 用 3 个确实和 Δ 有关的变量: 平均壁厚、施源器直径、近距离次数。
-- **模型 B**: 在 A 的基础上,再加 50 列**随机数**。这 50 列是我们用随机数造的,和 Δ 毫无关系,模型 B 理应不会更好。
-
-衡量误差用 **MAE**(mean absolute error,平均绝对误差): 每位病人的预测值和实际值差几 Gy,不管正负,取平均。MAE = 1.5 Gy 就是"平均差 1.5 Gy"。第 9 课再细讲这类指标。
+模型有了,建模用的病人也在手里。看模型准不准,最顺手的办法是直接比一比它对这些病人的预测值和实际值。先用一张图看看这个办法会出什么问题。
 
 <div class="demo">
 
-**设定**: 两个模型用同样的 196 位病人建模;另外再造 4900 位**新病人**,产生方式和这 196 人完全一样。模拟数据的好处就在这里: 真的能拿到一批新病人。
+**设定**: 30 位模拟病人(蓝点),横轴是平均壁厚,纵轴是换方案后的 Δ。黑线是用这 30 位病人建的模型。空心点是另外的新病人: 产生方式和这 30 位完全一样,但模型没见过他们。灵活度是 1 时,模型是一条直线;数字越大,曲线越可以弯向附近的病人。
 
-**你做什么**: 依次运行下面两个代码块,先看训练集上的误差,再看新病人身上的误差。
+**你做什么**: 把滑块从 1 慢慢拖到 10,看曲线怎么变,再看下面两根条。
 
-**你会看到**: 在建模的 196 人身上,模型 B 的误差更小(1.39 Gy,A 是 1.67 Gy);换到新病人身上,B 反而更大(1.95 Gy,A 是 1.73 Gy)。
+**你会看到**: 曲线越来越贴近蓝点,最后几乎穿过每一个蓝点: 在建模的 30 位病人身上,平均误差从 1.53 Gy 一路降到 0.24 Gy。新病人身上的误差却从 1.66 Gy 升到了 2.22 Gy。
 
-**这说明**: 模型在建模病人身上的成绩不能代表它在新病人身上的成绩,而且变量越多,两者差得越远。
+**这说明**: 模型在建模病人身上的误差,想要多小就可以有多小;它对新病人准不准,是另一回事。
+
+<div class="widget" data-widget="overfit">这里是一张可以操作的图,需要浏览器打开 JavaScript 才能显示。</div>
 
 </div>
 
+曲线为什么会这样?这 30 位病人的 Δ,一部分来自壁厚决定的规律(在这个模拟里,真实的规律就是一条直线),另一部分只是每位病人各自的偶然。模型越灵活,越有本事把偶然也一起"学"进去: 曲线为了凑近某一位病人而拐的弯,换一批病人就对不上了。
+
+模型把建模病人的偶然当成规律学了进去,这叫**过拟合**(overfitting)。它的后果是: 模型在建模病人身上的误差(叫**训练误差**)比它在新病人身上的误差小;模型越灵活,两者差得越多。所以训练误差不能当作模型的成绩。
+
+<details>
+<summary>展开: 图里的模型是怎么变灵活的?</summary>
+
+先拟合一条直线,算出每位病人离直线差多少;再让曲线在每个位置朝附近病人的方向弯过去,弯多少由附近几位病人的平均差距决定。灵活度越高,"附近"的范围越小(从 1.5 mm 缩到 0.02 mm);到 10 时,曲线在每个位置几乎只听最近一位病人的。
+
+</details>
+
+真实研究里,灵活度更常见的来源不是曲线,而是**变量太多**。换成课程的队列和线性回归,再看一遍。建两个模型,都用来预测 `delta`:
+
+- **模型 A**: 就是上一节的模型,用 3 个确实和 Δ 有关的变量: 平均壁厚、施源器直径、近距离次数。
+- **模型 B**: 在 A 的基础上,再加 50 列**随机数**。这 50 列是用随机数造的,和 Δ 毫无关系,模型 B 理应不会更好。
+
+衡量误差用 **MAE**(mean absolute error,平均绝对误差): 每位病人的预测值和实际值差几 Gy,不管正负,取平均。图里的"平均误差"就是它。第 9 课再细讲这类指标。
+
+<div class="quiz">
+<p><b>先猜一猜</b>: 在建模用的 196 位病人身上,哪个模型的平均误差更小?</p>
+<button class="quiz-opt" data-why="直觉上是这样: 随机数里没有信息。可是多出来的 50 个系数,让模型多了 50 处可以去凑这 196 位病人的地方,和上面曲线多拐的弯是一回事。运行下面的代码看看。">模型 A: 随机数帮不上忙,只会添乱</button>
+<button class="quiz-opt" data-correct data-why="多出来的 50 个系数,让模型多了 50 处可以去凑这 196 位病人的地方,和上面曲线多拐的弯是一回事。运行下面的代码,看差多少。">模型 B: 变量多,更能贴近这些病人</button>
+<button class="quiz-opt" data-why="不会一样。只要能让这 196 人的误差平方和再小一点,最小二乘就会用上新加的变量。运行下面的代码看看。">一样: 随机数的系数会是 0</button>
+</div>
+
+先看训练误差:
+
 ```python
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 
-y = df["delta"]
-X_a = df[["wall_mean", "diameter", "n_fx"]]                 # 模型 A 的 3 个变量
 noise = pd.DataFrame(np.random.default_rng(0).normal(size=(len(df), 50)),
                      index=df.index, columns=[f"z{i}" for i in range(1, 51)])
 X_b = pd.concat([X_a, noise], axis=1)                       # 模型 B: 再加 50 列随机数
-
-model_a = LinearRegression().fit(X_a, y)
 model_b = LinearRegression().fit(X_b, y)
+
 print("训练集上的平均误差(MAE):")
 print(f"  模型 A  {mean_absolute_error(y, model_a.predict(X_a)):.2f} Gy")
 print(f"  模型 B  {mean_absolute_error(y, model_b.predict(X_b)):.2f} Gy")
 ```
+
+模型 B 是 1.39 Gy,比模型 A 的 1.67 Gy 小。再造 4900 位新病人(模拟数据的好处就在这里: 真的能拿到一批新病人),看两个模型在他们身上的误差:
 
 ```python
 new = make_cohort(n=5000, seed=99).dropna()                 # 另一批病人,产生方式完全相同
@@ -121,7 +149,7 @@ print(f"  模型 A  {mean_absolute_error(new['delta'], model_a.predict(Xn_a)):.2
 print(f"  模型 B  {mean_absolute_error(new['delta'], model_b.predict(Xn_b)):.2f} Gy")
 ```
 
-为什么会这样?看看模型 B 的公式就明白了:
+和图里一样: 在新病人身上,模型 B 是 1.95 Gy,反而比模型 A 的 1.73 Gy 差。看看模型 B 的公式,就知道它把什么学了进去:
 
 ```python
 coef_b = pd.Series(model_b.coef_, index=X_b.columns)
@@ -129,7 +157,7 @@ z = coef_b.drop(["wall_mean", "diameter", "n_fx"])         # 50 列随机数的�
 print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum()} 列,最大的是 {z.abs().max():.2f}")
 ```
 
-这 50 列和 Δ 毫无关系,它们的系数本该是 0。可是最小二乘只管让**这 196 人**的误差平方和最小: 50 列随机数里,总有一些在这 196 人身上**碰巧**和 Δ 有一点关系,模型就给它们配上系数,把这点巧合也用上了(这里有 29 列的系数超过 0.1,最大的 0.35),于是在这 196 人身上误差变小。换一批病人,这些巧合不复存在,这些系数反而添乱。这叫**过拟合**(overfitting): 模型记住了这批病人的偶然,而不是学到了规律。
+这 50 列和 Δ 毫无关系,它们的系数本该是 0。可是最小二乘只管让**这 196 人**的误差平方和最小: 50 列随机数里,总有一些在这 196 人身上**碰巧**和 Δ 有一点关系,模型就给它们配上系数,把这点巧合也用上了(这里有 29 列的系数超过 0.1,最大的 0.35)。换一批病人,这些巧合不复存在,这些系数反而添乱。
 
 <div class="quiz">
 <p><b>想一想</b>: 一位同事说: "我的模型在 200 位病人身上平均只差 0.5 Gy,所以很准。"你首先要问什么?</p>
@@ -138,15 +166,67 @@ print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum
 <button class="quiz-opt" data-why="样本量很重要(第 13 课),但先要弄清 0.5 Gy 是在哪些病人身上算的。如果是建模用的病人,病人再多,这个数也偏乐观。">200 位病人够不够?</button>
 </div>
 
-可是真实研究里没有第二批病人。下一节的办法,是从手里这批病人里"造"出新病人来。
+<div class="exercise">
 
-## 2. k 折交叉验证
+**练习 1 · 轮到你: 图形优化的训练误差**
+
+把结局换成图形优化计划的 Δ(`d2cc_gra` 减 `d2cc_5mm`),存进 `y_gra`。用同样的两张变量表各建一个模型,算它们在训练集上的 MAE,存进 `train_a` 和 `train_b`。
+
+```python
+y_gra = df[___] - df["d2cc_5mm"]             # 图形优化计划的 Δ
+fit_a = LinearRegression().fit(X_a, y_gra)
+fit_b = LinearRegression().fit(X_b, y_gra)
+train_a = mean_absolute_error(y_gra, fit_a.predict(X_a))
+train_b = mean_absolute_error(y_gra, fit_b.predict(___))
+print(f"训练集上的 MAE: 模型 A {train_a:.2f} Gy,模型 B {train_b:.2f} Gy")
+```
+
+```pycheck
+need("y_gra", "train_a", "train_b")
+expected = df["d2cc_gra"] - df["d2cc_5mm"]
+if not hasattr(y_gra, "__len__") or len(y_gra) != len(expected):
+    fail("y_gra 应该是每位病人一个数,一共 196 个。")
+if not close(abs(y_gra - expected).max(), 0, 1e-9):
+    if close(abs(y_gra - y).max(), 0, 1e-9):
+        fail("y_gra 现在还是体积优化的 Δ: 第一处要填图形优化那一列的列名 \"d2cc_gra\"。")
+    fail("y_gra 不对: 它应该是图形优化计划的 D2cc 减 5 mm 计划的 D2cc。")
+if not close(train_a, 2.42, 0.006):
+    fail(f"train_a 现在是 {train_a:.2f},应该是 2.42。")
+if not close(train_b, 2.13, 0.006):
+    fail(f"train_b 现在是 {train_b:.2f},应该是 2.13: 模型 B 预测时要用它自己的变量表 X_b。")
+ok("对了: 在建模病人身上,模型 A 2.42 Gy,模型 B 2.13 Gy,B 又显得更好。图形优化的 Δ 本身变化更大,所以两个误差都比体积优化的(1.67 和 1.39 Gy)大。")
+```
+
+<details><summary>提示</summary>
+
+列名是文字,要加引号: `df["d2cc_gra"]`。模型 B 是用 `X_b` 建的,预测时也要给它 `X_b`。
+
+</details>
+
+<details><summary>参考答案</summary>
+
+```python
+y_gra = df["d2cc_gra"] - df["d2cc_5mm"]      # 图形优化计划的 Δ
+fit_a = LinearRegression().fit(X_a, y_gra)
+fit_b = LinearRegression().fit(X_b, y_gra)
+train_a = mean_absolute_error(y_gra, fit_a.predict(X_a))
+train_b = mean_absolute_error(y_gra, fit_b.predict(X_b))
+print(f"训练集上的 MAE: 模型 A {train_a:.2f} Gy,模型 B {train_b:.2f} Gy")
+```
+
+</details>
+
+</div>
+
+真实研究里没有第二批病人可以用来检验。下一节的办法,是从手里这批病人里"造"出新病人来。
+
+## 3. 没有新病人怎么办: 5 折交叉验证
 
 <div class="frame">
 
-**背景**: 训练集上的误差偏乐观,而手里只有这 196 位病人,没有第二批。
+**背景**: 训练误差偏乐观,而手里只有这一批病人,没有第二批。
 
-**目标**: 只用这 196 人,估计模型用在新病人身上时的误差。
+**目标**: 只用手里的病人,估计模型用在新病人身上时的误差。
 
 **做法**: **5 折交叉验证**(5-fold cross-validation): 轮流把五分之一的病人藏起来,当作新病人来考模型。
 
@@ -154,11 +234,11 @@ print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum
 
 **它在算什么**
 
-1. 把 196 位病人随机分成 5 份,每份约 39 人。
-2. 拿出第 1 份放在一边,用其余 4 份(约 157 人)建模。
+1. 把病人随机分成 5 份(196 位病人,每份约 39 人)。
+2. 拿出第 1 份放在一边,用其余 4 份建模。
 3. 用这个模型预测第 1 份的病人,算 MAE。这个模型没见过这些病人,所以对它来说,他们就是新病人。
 4. 换成拿出第 2 份、第 3 份……重复第 2–3 步,一共建 5 次模型。
-5. 每位病人都恰好被预测了一次,而且预测他的模型都没见过他。5 个 MAE 的平均,就是交叉验证的 MAE。
+5. 每位病人都恰好被预测了一次,而且预测这位病人的模型没见过这位病人。5 个 MAE 的平均,就是交叉验证的 MAE。
 
 <div class="folds" role="img" aria-label="5 折交叉验证: 每一轮拿出一份病人来预测,用另外四份建模">
 <div class="fold-row"><span class="fold-label">第 1 轮</span><span class="cell test">预测</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span></div>
@@ -166,7 +246,7 @@ print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum
 <div class="fold-row"><span class="fold-label">第 3 轮</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell test">预测</span><span class="cell">建模</span><span class="cell">建模</span></div>
 <div class="fold-row"><span class="fold-label">第 4 轮</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell test">预测</span><span class="cell">建模</span></div>
 <div class="fold-row"><span class="fold-label">第 5 轮</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell">建模</span><span class="cell test">预测</span></div>
-<p class="folds-note">每一列是一份病人(约 39 人)。每一轮用 4 份建模,预测剩下的 1 份;5 轮下来,每份都被预测了一次。</p>
+<p class="folds-note">每一列是一份病人。每一轮用 4 份建模,预测剩下的 1 份;5 轮下来,每份都被预测了一次。</p>
 </div>
 
 <div class="quiz">
@@ -178,19 +258,23 @@ print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum
 
 **为什么用它**: 常见的另一种做法,是一开始就留出一部分病人当测试集,比如 150 人建模、46 人测试,只考一次。病人多时这样可以;只有两百人时有两个问题: 只考 46 人,成绩好坏很大程度上取决于碰巧留出了哪 46 人;而且建模白白少用了四分之一的病人。交叉验证让每位病人都当一次"新病人",也都参与了 4 次建模。
 
-**打个比方**: 带规培医生时,考试不能用讲过的病例出题,背下来的病例考得再好,也说明不了会不会看新病人。交叉验证相当于把病例分成 5 组,每次讲 4 组、用没讲过的 1 组来考,轮 5 次,取平均分。
+**打个比方**: 带规培医生时,考试不能用讲过的病例出题: 背下来的病例考得再好,也说明不了会不会看新病人。交叉验证相当于把病例分成 5 组,每次讲 4 组、用没讲过的 1 组来考,轮 5 次,取平均分。
 
 <div class="demo">
 
-**设定**: 还是模型 A 和模型 B,还是这 196 位病人,这次不用新病人。
+**设定**: 还是图里那 30 位模拟病人,模型是一条直线。他们已经被随机分成 5 份,每份 6 人。
 
-**你做什么**: 运行下面的代码。函数 `cv_mae` 就是上面的 5 步,注释标出了每一步。
+**你做什么**: 点"开始第 1 轮",然后一轮一轮点下去,5 轮之后看合计。
 
-**你会看到**: 模型 A 的交叉验证 MAE 是 1.73 Gy,模型 B 是 2.04 Gy。
+**你会看到**: 每一轮,蓝点是拿出来的 6 位,直线只用灰点拟合,所以每一轮的直线都略有不同。5 份的误差有大有小(0.82 到 2.33 Gy),平均 1.65 Gy;用全部 30 位病人拟合的直线,在 2000 位新病人身上是 1.66 Gy。
 
-**这说明**: 只用手里的病人,交叉验证得到的成绩就和新病人身上的成绩(A 1.73,B 1.95)很接近;训练集认为 B 更好,交叉验证和新病人都认为 A 更好。
+**这说明**: 交叉验证里的每一次预测,都是模型在预测它没见过的病人,所以平均下来接近新病人身上的误差。
+
+<div class="widget" data-widget="kfold">这里是一张可以操作的图,需要浏览器打开 JavaScript 才能显示。</div>
 
 </div>
+
+下面对课程的队列做同样的事,先自己写一遍。函数 `cv_mae` 就是上面的 5 步,注释标出了每一步:
 
 ```python
 from sklearn.model_selection import KFold
@@ -218,9 +302,9 @@ for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
 | 模型 A(3 个有关的变量) | 1.67 | 1.73 | 1.73 |
 | 模型 B(再加 50 列随机数) | 1.39 | 2.04 | 1.95 |
 
-模型 B 的交叉验证结果比新病人身上还差一点(2.04 比 1.95)。这是因为交叉验证每一轮只用 4/5 的病人建模,模型比用全部病人建的稍差;变量越多,这一点越明显。所以交叉验证的估计**略偏保守**,论文里一般不需要为此修正。
+训练集认为 B 更好;交叉验证和新病人都认为 A 更好。模型 B 的交叉验证结果比新病人身上还差一点(2.04 比 1.95): 交叉验证每一轮只用 4/5 的病人建模,模型比用全部病人建的稍差,变量越多,这一点越明显。所以交叉验证的估计**略偏保守**,论文里一般不需要为此修正。
 
-实际写代码时不用自己写循环。scikit-learn 的 `cross_val_score` 一行就做完上面的 5 步:
+**不用自己写循环**。scikit-learn 的 `cross_val_score` 一行就做完上面的 5 步:
 
 ```python
 from sklearn.model_selection import cross_val_score
@@ -231,57 +315,70 @@ print(scores.round(2))
 print(f"平均 {-scores.mean():.2f} Gy")
 ```
 
-和手写的结果一模一样,只是带了负号。scikit-learn 规定"分数越大越好",误差是越小越好,所以它把误差取了负数(`neg_` 就是 negative),用的时候再取一次负号。
+和手写的结果一模一样,只是带了负号。scikit-learn 规定"分数越大越好",误差是越小越好,所以它把误差取了负数(`neg_` 就是 negative),用的时候再取一次负号。最常用的是 5 折和 10 折: 折数越多,每一轮建模用的病人越多,要建的模型也越多。
+
+现在回到开头那张图,给它加上第三根条: 对每一档灵活度,都只用那 30 位病人做一遍 5 折交叉验证。
+
+<div class="demo">
+
+**设定**: 和第 2 节是同一张图,多了"5 折交叉验证"这根条。算它的时候,没有用到任何一位新病人。
+
+**你做什么**: 再把滑块从 1 拖到 10,这次盯着中间这根条。
+
+**你会看到**: 交叉验证的条从 1.65 Gy 升到 2.16 Gy,大体跟着新病人的那根走(1.66 到 2.22 Gy),不跟着训练误差走(1.53 降到 0.24 Gy)。
+
+**这说明**: 只用手里的病人,交叉验证就能看出: 更灵活的模型其实更差。
+
+<div class="widget" data-widget="overfit" data-cv>这里是一张可以操作的图,需要浏览器打开 JavaScript 才能显示。</div>
+
+</div>
+
+仔细看会发现,灵活度是 6 的时候,交叉验证的条比新病人的短了一截(1.62 对 1.74 Gy)。这是因为图里只用了一种分法,有运气的成分。下一节讲怎么办。
 
 <div class="exercise">
 
-**练习 1 · 换成 10 折**
+**练习 2 · 轮到你: 图形优化的 5 折交叉验证**
 
-把模型 B 的交叉验证换成 10 折: 每一轮拿出 1/10 的病人来预测,用另外 9/10 建模。把 10 折的平均 MAE 存进 `mae10_b`,和 5 折的 2.04 Gy、新病人身上的 1.95 Gy 比一比。
+用上面写好的 `cv_mae`,对图形优化的 Δ(`y_gra`)算模型 A 和模型 B 的交叉验证 MAE,存进 `cv_a` 和 `cv_b`。
 
 ```python
-kf10 = KFold(n_splits=___, shuffle=True, random_state=1)
-scores = cross_val_score(LinearRegression(), X_b, y, cv=kf10, scoring="neg_mean_absolute_error")
-mae10_b = ___
-print(f"模型 B 的 10 折 MAE: {mae10_b:.2f} Gy")
+cv_a, errors_a = cv_mae(X_a, ___)
+cv_b, errors_b = cv_mae(___, y_gra)
+print(f"5 折交叉验证的 MAE: 模型 A {cv_a:.2f} Gy,模型 B {cv_b:.2f} Gy")
 ```
 
 ```pycheck
-need("mae10_b")
-if close(mae10_b, 1.91, 0.006):
-    ok("对了: 1.91 Gy,比 5 折的 2.04 Gy 更接近新病人身上的 1.95 Gy。每一轮用 9/10 的病人建模,模型更接近用全部病人建的那个,偏保守的程度就小了;代价是要建 10 个模型。")
-elif close(mae10_b, -1.91, 0.006):
-    fail("差一个负号: scores 是取了负数的误差,mae10_b 要再取一次负号。")
-elif close(mae10_b, 2.04, 0.006):
-    fail("这是 5 折的结果: n_splits 填 10。")
-else:
-    fail(f"现在 mae10_b = {mae10_b:.2f}。它应该是 10 个分数的平均,再取负号。")
+need("cv_a", "cv_b")
+if close(cv_a, 2.46, 0.006) and close(cv_b, 2.97, 0.006):
+    ok("对了: 交叉验证下,模型 A 2.46 Gy,模型 B 2.97 Gy。训练集上 B 显得更好(2.13 比 2.42),交叉验证把顺序反了过来。在 4900 位新病人身上,它们是 2.55 和 2.86 Gy: 确实是 A 更好。")
+if close(cv_a, 1.73, 0.006):
+    fail("cv_a 现在是体积优化的结果(1.73): 第二个参数要传 y_gra。")
+if close(cv_b, 2.46, 0.006):
+    fail("cv_b 现在和模型 A 的一样: 模型 B 的变量表是 X_b。")
+fail(f"现在 cv_a = {cv_a:.2f},cv_b = {cv_b:.2f},应该是 2.46 和 2.97。cv_mae 的两个参数依次是变量表和结局。")
 ```
 
 <details><summary>提示</summary>
 
-`n_splits=10`;`scores` 里是 10 个取了负数的 MAE,`mae10_b = -scores.mean()`。
+`cv_mae(变量表, 结局)`: 模型 A 是 `cv_mae(X_a, y_gra)`。函数交回两样东西(平均值和每一份的误差),所以等号左边写了两个名字。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-kf10 = KFold(n_splits=10, shuffle=True, random_state=1)
-scores = cross_val_score(LinearRegression(), X_b, y, cv=kf10, scoring="neg_mean_absolute_error")
-mae10_b = -scores.mean()
-print(f"模型 B 的 10 折 MAE: {mae10_b:.2f} Gy")
+cv_a, errors_a = cv_mae(X_a, y_gra)
+cv_b, errors_b = cv_mae(X_b, y_gra)
+print(f"5 折交叉验证的 MAE: 模型 A {cv_a:.2f} Gy,模型 B {cv_b:.2f} Gy")
 ```
-
-5 折和 10 折是最常用的两种。病人越少、变量越多,折数多一些更合适;每多一折就多建一个模型。
 
 </details>
 
 </div>
 
-**回到目标**: 不需要第二批病人,交叉验证就给出了接近新病人的成绩,也挑对了模型。**接下来**: 每份是随机分的,换一种分法,结果会不会变?
+**回到目标**: 不需要第二批病人,交叉验证就给出了接近新病人的成绩,也挑对了模型。**接下来**: 5 份是随机分的,换一种分法,结果会不会变?
 
-## 3. 重复交叉验证
+## 4. 换一种分法,结果会变吗: 重复交叉验证
 
 <div class="frame">
 
@@ -295,31 +392,37 @@ print(f"模型 B 的 10 折 MAE: {mae10_b:.2f} Gy")
 
 **它在算什么**
 
-1. 用种子 0 把病人分成 5 份,做一遍 5 折,得到一个 MAE。
-2. 换种子 1、2……9,各重新分一次、做一遍,一共得到 10 个 MAE。
+1. 用一种随机分法把病人分成 5 份,做一遍 5 折,得到一个 MAE。
+2. 换一种分法重新分、重新做,一共做 10 遍,得到 10 个 MAE。
 3. 10 个 MAE 取平均作为成绩,再看它们的范围或标准差,知道结果随分法变化多大。
 
-**为什么用它**: 只做一次 5 折,结果里混着"这一次怎么分"的运气。做 10 次取平均,运气大体抵消,代价只是多建一些模型(这里是 10 × 5 = 50 个)。病人少、结局事件少时,分法的影响更大,论文里常见重复 10 到 20 次。
+**为什么用它**: 只做一次 5 折,结果里混着"这一次怎么分"的运气。做 10 次取平均,运气大体抵消,代价只是多建一些模型(10 × 5 = 50 个)。病人少、结局事件少时,分法的影响更大,论文里常见重复 10 到 20 次。
 
 **打个比方**: 一套考卷可能碰上偏题,考 10 套卷子取平均,更能反映真实水平。
 
 <div class="demo">
 
-**设定**: 同样的两个模型,种子从 0 到 9,各做一遍 5 折交叉验证。
+**设定**: 还是那 30 位模拟病人和直线模型。每个点是一次完整的 5 折交叉验证的平均误差;第一个点就是上一节那种分法的 1.65 Gy。
 
-**你做什么**: 运行下面的代码。
+**你做什么**: 点几次"再分 1 次",再点"再分 20 次"。
 
-**你会看到**: 模型 A 的 10 个结果在 1.70 到 1.73 Gy 之间,模型 B 在 1.92 到 2.08 Gy 之间。
+**你会看到**: 每换一种分法,结果都不一样: 前 5 次是 1.65、1.63、1.63、1.57、1.61 Gy;做到 25 次,最小 1.56,最大 1.76。它们的平均(竖线)却很快稳定在 1.64 Gy 左右。
 
-**这说明**: 换一种分法,结果确实会变,变量多的模型变得更多。只报一次 5 折,等于在碰运气。
+**这说明**: 只做一次 5 折,报告的数字带着运气;换不同的分法多做几次、取平均,数字就稳定了。
+
+<div class="widget" data-widget="repeatcv">这里是一张可以操作的图,需要浏览器打开 JavaScript 才能显示。</div>
 
 </div>
+
+对课程的队列,用种子 0 到 9 各做一遍 5 折:
 
 ```python
 for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
     results = [cv_mae(X, y, seed=s)[0] for s in range(10)]
     print(f"{name}  10 次: {min(results):.2f} 到 {max(results):.2f} Gy,平均 {np.mean(results):.2f} Gy")
 ```
+
+模型 A 的 10 个结果在 1.70 到 1.73 Gy 之间,模型 B 在 1.92 到 2.08 Gy 之间: 变量多的模型,随分法变得更多。
 
 scikit-learn 里对应的是 `RepeatedKFold`。它一次给出 10 × 5 = 50 个分数,按每次重复整理成 10 行 5 列,每行取平均,就是 10 次重复各自的成绩:
 
@@ -335,58 +438,61 @@ for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
 
 模型 A 平均 1.71 Gy(标准差 0.01),模型 B 平均 2.03 Gy(标准差 0.05)。随机分组和上面手写的不同,所以数字略有差别,结论一样。
 
+<details>
+<summary>展开: 重复能消除哪一种运气?</summary>
+
+重复交叉验证只能消除"这批病人怎么分成 5 份"的运气,消除不了"研究里碰巧是这批病人"的运气。换一家医院、换一批病人,成绩还会变,而且通常变得更多。前一种不确定性靠重复来减小;后一种要用置信区间来表达(第 10 课讲 bootstrap 区间),最终要靠外部验证: 在另一批病人身上检验。
+
+</details>
+
 <div class="exercise">
 
-**练习 2 · 只用壁厚够不够**
+**练习 3 · 轮到你: 图形优化,重复 10 次**
 
-模型 A 用了三个变量。如果只用平均壁厚 `wall_mean` 一个变量,重复交叉验证的 MAE 是多少?用上面定义好的 `rkf`(5 折重复 10 次),结果存进 `mae_wall`。
+用上面定义好的 `rkf`(5 折重复 10 次),对图形优化的 Δ 算模型 A 的成绩: 10 次重复的平均存进 `rep_mean`,10 次之间的标准差存进 `rep_sd`。
 
 ```python
-X_wall = df[[___]]
-scores = cross_val_score(LinearRegression(), X_wall, y, cv=rkf, scoring="neg_mean_absolute_error")
-mae_wall = -scores.mean()
-print(f"只用壁厚: {mae_wall:.2f} Gy")
+scores = -cross_val_score(LinearRegression(), X_a, y_gra, cv=___, scoring="neg_mean_absolute_error")
+per_repeat = scores.reshape(10, 5).mean(axis=1)     # 10 次重复各自的成绩
+rep_mean = per_repeat.mean()
+rep_sd = ___
+print(f"图形优化,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
 ```
 
 ```pycheck
-need("mae_wall", "X_wall")
-if list(X_wall.columns) != ["wall_mean"]:
-    fail(f"X_wall 现在的列是 {list(X_wall.columns)},应该只有 wall_mean 一列。")
-elif close(mae_wall, 1.79, 0.006):
-    ok("对了: 只用壁厚是 1.79 Gy,三个变量的模型 A 是 1.71 Gy。施源器直径和近距离次数帮了一点,主要的信息在壁厚里。反过来去掉壁厚、只用另外两个变量,是 2.17 Gy。这种'拿掉一组变量看成绩变多少'的做法叫消融,第 8 课会细讲。")
-else:
-    fail(f"现在 mae_wall = {mae_wall:.2f}。检查 cv 用的是不是 rkf。")
+need("rep_mean", "rep_sd")
+if not close(rep_mean, 2.46, 0.006):
+    fail(f"rep_mean 现在是 {rep_mean:.2f},应该是 2.46。cv 要填上面定义好的 rkf。")
+if close(rep_sd, 0.28, 0.02):
+    fail("这是 50 个分数的标准差。题目要的是 10 次重复各自的成绩(per_repeat)之间的标准差。")
+if close(rep_sd, 0.02, 0.006):
+    ok("对了: 重复 10 次,平均 2.46 Gy,各次之间的标准差只有 0.02 Gy。论文里可以写成 2.46 Gy (SD 0.02)。")
+fail(f"rep_sd 现在是 {rep_sd:.2f},应该是 0.02: 对 per_repeat 求标准差。")
 ```
 
 <details><summary>提示</summary>
 
-列名是文字,要加引号: `df[["wall_mean"]]`。两层方括号让结果还是一张表(只有一列),scikit-learn 要的是表。
+`cv=rkf`。标准差是 `per_repeat.std(ddof=1)`;`ddof=1` 表示除以 n − 1,是统计里通常报告的那一种。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-X_wall = df[["wall_mean"]]
-scores = cross_val_score(LinearRegression(), X_wall, y, cv=rkf, scoring="neg_mean_absolute_error")
-mae_wall = -scores.mean()
-print(f"只用壁厚: {mae_wall:.2f} Gy")
+scores = -cross_val_score(LinearRegression(), X_a, y_gra, cv=rkf, scoring="neg_mean_absolute_error")
+per_repeat = scores.reshape(10, 5).mean(axis=1)     # 10 次重复各自的成绩
+rep_mean = per_repeat.mean()
+rep_sd = per_repeat.std(ddof=1)
+print(f"图形优化,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
 ```
 
 </details>
 
 </div>
 
-<details>
-<summary>展开: 重复能消除哪一种运气?</summary>
-
-重复交叉验证只能消除"这 196 人怎么分成 5 份"的运气,消除不了"研究里碰巧是这 196 人"的运气。换一家医院、换一批病人,成绩还会变,而且通常变得更多。前一种不确定性靠重复来减小;后一种要用置信区间来表达(第 10 课讲 bootstrap 区间),最终要靠外部验证: 在另一批病人身上检验。
-
-</details>
-
 **回到目标**: 重复 10 次取平均,成绩不再取决于某一次分法,还能顺便报告它随分法变化有多大。**接下来**: 后面的课不只需要一个平均误差,还需要每位病人一个预测值。
 
-## 4. out-of-fold 预测
+## 5. 每位病人一个诚实的预测值: out-of-fold 预测
 
 <div class="frame">
 
@@ -402,10 +508,10 @@ print(f"只用壁厚: {mae_wall:.2f} Gy")
 
 1. 给每位病人准备一个空格。
 2. 做一遍 5 折。每一轮建好模型后,只预测被拿出来的那一份病人,把预测值填进他们的格子。
-3. 5 轮做完,每个格子都填上了,每个值都来自没见过这位病人的模型。
+3. 5 轮做完,每个格子都填上了,每个值都来自没见过这位病人的模型。第 3 节那张图最后的"合计",画的就是这些预测值。
 4. 用 10 种分法各做一遍,每位病人就有 10 个预测值,取平均。
 
-**为什么用它**: 如果拿训练集上的预测值去画校准图、算决策曲线,就会和第 1 节一样偏乐观: 模型对见过的病人总是"预测得"特别准。out-of-fold 预测和交叉验证的成绩是同一回事,只是没有先取平均,而是把每位病人的预测都留了下来。
+**为什么用它**: 如果拿训练集上的预测值去画校准图、算决策曲线,就会和第 2 节一样偏乐观: 模型对见过的病人总是"预测得"特别准。out-of-fold 预测和交叉验证的成绩是同一回事,只是没有先取平均,而是把每位病人的预测都留了下来。
 
 <div class="demo">
 
@@ -430,8 +536,8 @@ def oof_predict(X, y, n_repeats=10):
     return pred.mean(axis=0)                          # 10 个预测值取平均
 
 oof_b = oof_predict(X_b, y)
-train_b = model_b.predict(X_b)
-print(f"训练集上的预测  MAE {mean_absolute_error(y, train_b):.2f} Gy")
+train_b_pred = model_b.predict(X_b)
+print(f"训练集上的预测  MAE {mean_absolute_error(y, train_b_pred):.2f} Gy")
 print(f"out-of-fold 预测  MAE {mean_absolute_error(y, oof_b):.2f} Gy")
 ```
 
@@ -440,7 +546,7 @@ import matplotlib.pyplot as plt
 
 lims = [y.min() - 1, y.max() + 1]
 fig, axes = plt.subplots(2, 1, figsize=(4.2, 7), sharex=True, sharey=True)
-for ax, pred, title in [(axes[0], train_b, "Training predictions"),
+for ax, pred, title in [(axes[0], train_b_pred, "Training predictions"),
                         (axes[1], oof_b, "Out-of-fold predictions")]:
     ax.scatter(pred, y, s=12, alpha=0.6)
     ax.plot(lims, lims, color="grey", lw=1)           # 预测 = 实际
@@ -457,38 +563,39 @@ plt.show()
 
 <div class="exercise">
 
-**练习 3 · 模型 A 的 out-of-fold 预测**
+**练习 4 · 轮到你: 图形优化的 out-of-fold 预测**
 
-模型 B 的 out-of-fold MAE 比训练集多了 0.5 Gy 还多(1.94 比 1.39)。模型 A 呢?用上面的 `oof_predict` 算出模型 A 的 out-of-fold 预测,再算它比训练集多差多少,存进 `gap_a`。
+用 `oof_predict` 给每位病人算一个图形优化 Δ 的 out-of-fold 预测值(模型 A),存进 `oof_gra`;再算它的 MAE 比练习 1 的训练误差 `train_a` 多多少,存进 `gap_gra`。
 
 ```python
-oof_a = oof_predict(___, y)
-gap_a = mean_absolute_error(y, oof_a) - mean_absolute_error(y, model_a.predict(X_a))
-print(f"模型 A: out-of-fold 比训练集多差 {gap_a:.2f} Gy")
+oof_gra = oof_predict(X_a, ___)
+gap_gra = mean_absolute_error(y_gra, oof_gra) - train_a
+print(f"out-of-fold MAE {mean_absolute_error(y_gra, oof_gra):.2f} Gy,比训练集多差 {gap_gra:.2f} Gy")
 ```
 
 ```pycheck
-need("gap_a")
-if close(gap_a, 0.04, 0.006):
-    ok("对了: 模型 A 只多差 0.04 Gy,模型 B 多差 0.5 Gy 还多。变量少,模型能'记住'的偶然就少,训练集上的成绩也就没那么乐观。所以变量越多,越不能看训练集上的成绩。")
-elif close(gap_a, 0.54, 0.01):
-    fail("这是模型 B 的结果: oof_predict 的第一个参数要传 X_a。")
-else:
-    fail(f"现在 gap_a = {gap_a:.2f}。oof_predict 的第一个参数是模型 A 的变量表。")
+need("oof_gra", "gap_gra")
+if len(oof_gra) != len(y_gra):
+    fail("oof_gra 应该是每位病人一个预测值,一共 196 个。")
+if close(gap_gra, 0.05, 0.006):
+    ok("对了: 图形优化的 out-of-fold MAE 是 2.47 Gy,只比训练误差多 0.05 Gy(模型 B 在体积优化上多了 0.5 Gy 还多)。模型 A 只有 3 个变量,能记住的偶然很少。这 196 个预测值,第 11、12 课的校准和决策曲线会用到。")
+if close(mean_absolute_error(y_gra, oof_gra), 2.78, 0.01):
+    fail("oof_predict 的第二个参数填成了体积优化的 y: 要预测的是 y_gra。")
+fail(f"现在 gap_gra = {gap_gra:.2f},应该是 0.05。检查 oof_predict 的第二个参数。")
 ```
 
 <details><summary>提示</summary>
 
-模型 A 的变量表是 `X_a`。
+`oof_predict(变量表, 结局)`,结局是 `y_gra`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-oof_a = oof_predict(X_a, y)
-gap_a = mean_absolute_error(y, oof_a) - mean_absolute_error(y, model_a.predict(X_a))
-print(f"模型 A: out-of-fold 比训练集多差 {gap_a:.2f} Gy")
+oof_gra = oof_predict(X_a, y_gra)
+gap_gra = mean_absolute_error(y_gra, oof_gra) - train_a
+print(f"out-of-fold MAE {mean_absolute_error(y_gra, oof_gra):.2f} Gy,比训练集多差 {gap_gra:.2f} Gy")
 ```
 
 </details>
@@ -497,7 +604,7 @@ print(f"模型 A: out-of-fold 比训练集多差 {gap_a:.2f} Gy")
 
 **回到目标**: 每位病人都有了一个诚实的预测值。第 11、12 课的校准和决策曲线就从这里开始。
 
-## 5. 结局是"是/否"时: 分层
+## 6. 结局是"是/否"时: 分层
 
 <div class="frame">
 
@@ -542,7 +649,7 @@ for name, cv in [("普通 5 折", KFold(n_splits=5, shuffle=True, random_state=3
 
 <div class="exercise">
 
-**练习 4 · 图形优化的分层**
+**练习 5 · 轮到你: 图形优化的分层**
 
 换成图形优化计划: 5 mm 计划 ≥ 68 Gy、图形优化计划 < 68 Gy 的算一个事件。补全代码,用分层 5 折(`random_state=0`)数出每一份的事件数,存进 `counts_gra`。
 
@@ -557,12 +664,11 @@ print("事件数:", event_gra.sum(), " 每一份:", counts_gra)
 need("event_gra", "counts_gra")
 if int(event_gra.sum()) != 51:
     fail(f"现在有 {int(event_gra.sum())} 个事件,应该是 51 个。检查定义: 5 mm 计划 ≥ 68 Gy,图形优化计划 < 68 Gy。")
-elif sum(counts_gra) != 51:
+if sum(counts_gra) != 51:
     fail("每一份的事件数加起来应该等于事件总数 51。")
-elif max(counts_gra) - min(counts_gra) > 1:
+if max(counts_gra) - min(counts_gra) > 1:
     fail(f"每一份是 {counts_gra},差得有点多: split 的第二个参数要传 event_gra,分层才会按它来分。")
-else:
-    ok(f"对了: 51 位病人换成图形优化后降到 68 Gy 以下,分层后每一份是 {counts_gra}。图形优化降得比体积优化多(51 比 34)。")
+ok(f"对了: 51 位病人换成图形优化后降到 68 Gy 以下(体积优化是 34 位),分层后每一份是 {counts_gra}。到这里,图形优化的这一套你都亲手算过了。")
 ```
 
 <details><summary>提示</summary>
@@ -586,7 +692,7 @@ print("事件数:", event_gra.sum(), " 每一份:", counts_gra)
 
 **回到目标**: 分层以后,每一轮考的都是事件数相近的一份病人。
 
-## 6. 交叉验证之后: 最终用哪个模型?
+## 7. 交叉验证之后: 最后用哪个模型?
 
 上面一共建了几十个模型,但它们**只用来打分**,用完就丢掉。论文里报告的系数、以后给新病人用的模型,是用**全部病人**重新拟合的那一个:
 
@@ -607,12 +713,35 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 
 ## 小结
 
-- 模型在建模病人身上的误差偏乐观,变量越多越乐观,不能当作成绩报告。
-- **k 折交叉验证**: 轮流把一份病人藏起来当新病人,每位病人恰好被预测一次,预测他的模型没见过他。
+- 训练误差偏乐观,模型越灵活(变量越多)越乐观,不能当作成绩报告。这叫过拟合。
+- **k 折交叉验证**: 轮流把一份病人藏起来当新病人。每位病人恰好被预测一次,预测用的模型没见过这位病人。
 - **重复**交叉验证消除"怎么分"的运气,报告平均值和变化范围。
 - **out-of-fold 预测**给每位病人一个诚实的预测值,校准和决策曲线都用它。
 - 结局是是/否、事件少时用**分层**。
 - 交叉验证只用来打分;报告的模型用全部病人重新拟合。
+
+## 本课术语 Key terms
+
+| 中文 | English | 一句话 |
+|---|---|---|
+| 训练误差 | training error | 模型在建模用的病人身上的误差,偏乐观 |
+| 过拟合 | overfitting | 模型把建模病人的偶然当成规律学了进去 |
+| 平均绝对误差 | mean absolute error (MAE) | 预测值和实际值平均差多少 |
+| 交叉验证 | cross-validation (CV) | 轮流拿出一部分病人当新病人,检验模型 |
+| 折 | fold | 交叉验证里分出来的一份病人 |
+| 重复交叉验证 | repeated cross-validation | 换不同的随机分法做多遍,取平均 |
+| out-of-fold 预测 | out-of-fold prediction | 病人被拿出来的那一轮得到的预测值 |
+| 分层 | stratification | 分组时让每一份的事件数差不多 |
+| 内部验证 | internal validation | 用建模的这批病人检验模型,如交叉验证 |
+| 外部验证 | external validation | 在另一批病人(别的医院、别的时期)身上检验 |
+
+## 这一课没讲什么
+
+- **留一法**(每次只拿出 1 位病人)和 **bootstrap 验证**: 目的和交叉验证相同的另外两种做法,读论文时会遇到。
+- **挑模型、调参数之后**,成绩会偏乐观,要用嵌套交叉验证: 第 5 课。
+- **补缺失值、标准化**这些步骤怎样放进交叉验证: 第 5 课。
+- **成绩的置信区间**: 第 10 课。
+- **外部验证**需要另一批病人。这门课只讲到: 还没有做外部验证时,论文里怎样如实写。
 
 ## 写进论文 Writing it up
 
@@ -632,7 +761,7 @@ print(f"这位病人预测 Δ = {final.predict(new_patient)[0]:.1f} Gy")
 
 **审稿人可能问**: 结果随随机分组变化多大?
 
-**怎么回答**: 报告各次重复之间的标准差或范围(第 3 节),并说明随机种子是固定的。
+**怎么回答**: 报告各次重复之间的标准差或范围(第 4 节),并说明随机种子是固定的。
 
 </div>
 
