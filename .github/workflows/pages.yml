@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # Daily, so the writing-habit grid on /posts/ shows today even on days with no push.
+  schedule:
+    - cron: "17 5 * * *"
 
 permissions:
   contents: read

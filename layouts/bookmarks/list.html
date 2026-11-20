@@ -1,0 +1,7 @@
+{{ define "main" }}
+  <h1 class="page-title">Bookmarks</h1>
+  <p class="page-sub">Posts worth keeping, mostly from X, each with what I took from it. <a href="{{ "/posts/" | relURL }}">Essays →</a></p>
+  {{ $p := .Paginate .RegularPages.ByDate.Reverse 20 }}
+  {{ range $p.Pages }}{{ partial "clip.html" . }}{{ else }}<p class="muted">Nothing saved yet.</p>{{ end }}
+  {{ partial "pagination.html" . }}
+{{ end }}

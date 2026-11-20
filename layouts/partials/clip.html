@@ -1,0 +1,12 @@
+{{- /* A bookmarked post: the passage, where it's from, and my take. Context: the bookmark. */ -}}
+<article class="clip">
+  {{ with .Title }}<h3 class="clip-title">{{ . }}</h3>{{ end }}
+  {{ with .Params.quote }}<blockquote class="clip-quote">{{ . | markdownify }}</blockquote>{{ end }}
+  <p class="clip-src">
+    — {{ with .Params.author }}{{ . }}{{ end }}{{ with .Params.handle }} <span class="muted">@{{ . }}</span>{{ end }}
+    {{ with .Params.source }} · <a href="{{ . }}" rel="noopener" target="_blank">original</a>{{ end }}
+    · <time datetime="{{ .Date.Format "2006-01-02" }}">saved {{ .Date.Format "Jan 2, 2006" }}</time>
+  </p>
+  {{ with .Content }}<div class="clip-take"><span class="clip-h">My take.</span> {{ . }}</div>{{ end }}
+  {{ with .Params.tags }}<p class="card-foot">{{ range $i, $t := . }}{{ if $i }} · {{ end }}<a href="{{ (print "/tags/" $t | urlize | relURL) }}">{{ $t }}</a>{{ end }}</p>{{ end }}
+</article>

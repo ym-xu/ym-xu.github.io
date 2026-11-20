@@ -111,6 +111,6 @@ ignoreLogs = ['warning-goldmark-raw-html']
     url = "https://ym-xu.github.io/living-survey/"
     weight = 25
   [[menu.main]]
-    name = "Writing"
+    name = "Reading & Writing"
     url = "/posts/"
     weight = 30

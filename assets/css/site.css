@@ -643,3 +643,26 @@ sup.mine { color: var(--link); margin-left: .1em; }
 .mywork p { margin: 0; }
 .minedot { color: var(--link); font-size: .6em; margin-left: .45em; vertical-align: .25em; }
 @media (max-width: 720px) { .mywork { max-width: 100%; } }
+
+/* ---------- Reading & Writing ----------
+   The habit grid (one square a day, 26 weeks) and bookmarked posts. */
+.habit { margin: 0 0 1rem; }
+.habit-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 2px; }
+.habit-week { display: grid; grid-template-rows: repeat(7, 11px); gap: 3px; }
+.habit-week i { display: block; width: 11px; height: 11px; border-radius: 2px; background: var(--surface-hover); }
+.habit-week i.l1 { background: color-mix(in oklab, var(--link) 40%, transparent); }
+.habit-week i.l2 { background: color-mix(in oklab, var(--link) 70%, transparent); }
+.habit-week i.l3 { background: var(--link); }
+.habit-week i.future { background: transparent; }
+.habit-sum { margin: .45rem 0 0; color: var(--muted); font-variant: small-caps; letter-spacing: .03em; font-size: .92rem; }
+
+.clip { margin: 0 0 1.8rem; }
+.clip-quote { margin: 0; padding: .1rem 0 .1rem 1rem; border-left: 2px solid var(--border); font-style: italic; }
+.clip-quote p { margin: 0 0 .5rem; }
+.clip-quote p:last-child { margin-bottom: 0; }
+.clip-src { margin: .35rem 0 0 1rem; color: var(--muted); font-size: .92rem; }
+.clip-take { margin: .6rem 0 0; }
+.clip-take > p:first-of-type { display: inline; }
+.clip-h { font-weight: 700; }
+.clip .card-foot { margin: .3rem 0 0; padding: 0; }
+.clip-title { margin: 0 0 .4rem; font-size: 1.08rem; }
