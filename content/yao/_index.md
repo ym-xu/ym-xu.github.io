@@ -2,7 +2,7 @@
 title: "学习与研究"
 description: "目标: 用数据和 AI,为每一位病人制定更合适的个性化治疗方案。"
 noindex: true
-# 不进全站列表、RSS 和 sitemap,只能从链接进入(和 /r-course/ 一样)
+# 不进全站列表、RSS 和 sitemap,只能从链接进入。Projects 里的项目页直接链接三门课,不链接这一页(用户 2026-11-21 定)
 outputs: ["HTML"]
 build:
   list: never
