@@ -2,6 +2,8 @@
 title: "Lesson 15 · 模型全景: 六种模型怎么算 A Map of the Models"
 summary: "同一位病人交给六种模型: 各自怎么算、各自假定什么、先试哪一个;还有这门课没讲的模型。"
 weight: 150
+# 用户 2026-11-21: 这一课先不用(要的是算法本身的动态讲解)。draft 的页面不会被构建,源文件留着。
+draft: true
 toc: true
 duration: "约 40 分钟"
 prereq: "本课程[第 1 课](../01-linear-regression/)、[第 2 课](../02-logistic-regression/)、[第 6 课](../06-regularization/)、[第 7 课](../07-trees/)"
