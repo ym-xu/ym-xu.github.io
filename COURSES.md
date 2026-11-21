@@ -8,8 +8,8 @@ Projects 里有一页讲这套教程(`content/projects/clinical-data-tutorials.m
 
 | 课程 | 地址 | 课文 | 状态 |
 |---|---|---|---|
-| 面向医学生的 Python(7 课) | `/python/` | `content/python/` | 7 课全部上线(2026-11-20) |
-| 面向医学生的统计机器学习(14 课) | `/stat-ml/` | `content/stat-ml/` | 第 1–14 课已上线;进度见文末的任务清单 |
+| 放疗临床研究的数据分析(Python 课,7 课;2026-11-21 以前叫"面向医学生的 Python") | `/python/` | `content/python/` | 7 课全部上线(2026-11-20) |
+| 放疗副作用的预测模型(统计机器学习课,14 课;2026-11-21 以前叫"面向医学生的统计机器学习") | `/stat-ml/` | `content/stat-ml/` | 第 1–14 课已上线;进度见文末的任务清单 |
 | 主题练习: 宫颈癌近距离放疗的剂量审计(6 部分) | `/python/practice/` | `content/python/practice/` | 6 部分全部上线(2026-11-21) |
 
 大纲在各自的 `_index.md` 的 `parts` 里;没写的课在目录里显示"准备中"。第 n 课的 `weight` 是 n × 10。
@@ -231,6 +231,9 @@ python tools/check_course.py /tmp/public python/05-uncertainty stat-ml/04-cross-
 脚本在手机宽度的无头浏览器里点每一道"想一想"、运行每个代码块和每个参考答案、操作每张交互图,
 把读者会看到的东西打印出来,用来和正文里的数字逐个核对(需要 playwright 和 Chromium;页面通过请求拦截提供,不开 HTTP 端口)。
 提交并推送到 `main` 后,GitHub Actions 约半分钟发布;发布后用 `python tools/check_course.py LIVE …` 再跑一遍。
+**课程的名字**(用户 2026-11-21: "给 Python 和 ML 课程都改个更符合她工作的名字",从三组里选了按放疗研究命名的一组): 名字说读者要做的事,不说工具和读者的身份。
+入口页卡片上方的小字(Python、统计机器学习)保留;课文里的简称"Python 课""统计机器学习课"不变,第一次出现全名的地方在括号里带上简称。英文项目页不提中文课名。
+
 一课上线后不用改 `/yao/`: 卡片上的"已上线 N / M 课"是自动数的。
 
 ## 统计机器学习课: 任务清单
