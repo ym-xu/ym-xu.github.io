@@ -385,6 +385,9 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .content table th, .content table td { padding: .4rem .7rem; text-align: left; vertical-align: top; border: 0; }
 .content table thead th { border-bottom: .5px solid var(--rule); font-weight: 700; }
 .content table code { font-size: .92em; }
+/* course pages are read on a phone: a long name in code (an error or a function) may wrap inside a table cell
+   instead of making the table wider than the screen */
+body:is(.section-python, .section-stat-ml) .content table code { overflow-wrap: anywhere; }
 @media (max-width: 720px) { .content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; } }
 .content blockquote { margin: 1.2rem 0; padding: .1rem 0 .1rem 1.2rem; border-left: 2px solid var(--hl); color: var(--muted); font-style: italic; }
 .content blockquote > :first-child { margin-top: 0; }
