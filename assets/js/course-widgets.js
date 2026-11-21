@@ -2900,7 +2900,174 @@
     }
   };
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene), leastsq: staged(lineScene), mle: staged(mleScene) };
+  // --- scene: ridge and LASSO on the plane of two coefficients (stat-ml lesson 6) ---
+  // 40 simulated patients, two standardised predictors: wall thickness (true coefficient 1.5) and a random number
+  // (true coefficient 0). Every point of the plane is a model. Rings: equal error on the 40 patients, around the
+  // least-squares solution. The penalty is a circle (ridge) or a diamond (LASSO) around zero; for each strength the
+  // solution is where a ring of equal error touches that shape. Below: the two coefficients as bars.
+  function budgetCore(seed, mulberry32, normal) {
+    var N = 40, M = 2000, TRUE = [1.5, 0], rng = mulberry32(seed), i;
+    function draw(n) { var X = [], y = []; for (i = 0; i < n; i++) { var r = [normal(rng), normal(rng)]; X.push(r); y.push(TRUE[0] * r[0] + TRUE[1] * r[1] + 2.0 * normal(rng)); } return { X: X, y: y }; }
+    var tr = draw(N), te = draw(M), my = 0, mu = [0, 0], sd = [0, 0];
+    tr.y.forEach(function (v) { my += v / N; });
+    [0, 1].forEach(function (j) { tr.X.forEach(function (r) { mu[j] += r[j] / N; }); tr.X.forEach(function (r) { sd[j] += (r[j] - mu[j]) * (r[j] - mu[j]) / N; }); sd[j] = Math.sqrt(sd[j]); });
+    function z(r) { return [(r[0] - mu[0]) / sd[0], (r[1] - mu[1]) / sd[1]]; }
+    var Z = tr.X.map(z), yc = tr.y.map(function (v) { return v - my; }), ZT = te.X.map(z);
+    var s11 = 0, s12 = 0, s22 = 0, c1 = 0, c2 = 0, vy = 0;
+    Z.forEach(function (r, k) { s11 += r[0] * r[0] / N; s12 += r[0] * r[1] / N; s22 += r[1] * r[1] / N; c1 += r[0] * yc[k] / N; c2 += r[1] * yc[k] / N; vy += yc[k] * yc[k] / N; });
+    function mse(b) { return vy - 2 * (c1 * b[0] + c2 * b[1]) + s11 * b[0] * b[0] + 2 * s12 * b[0] * b[1] + s22 * b[1] * b[1]; }      // on the 40 patients
+    function quad(d) { return s11 * d[0] * d[0] + 2 * s12 * d[0] * d[1] + s22 * d[1] * d[1]; }
+    function ridge(lam) { var a = s11 + lam / N, d = s22 + lam / N, det = a * d - s12 * s12; return [(d * c1 - s12 * c2) / det, (a * c2 - s12 * c1) / det]; }   // (Z'Z + lam I) b = Z'y
+    function soft(v, t) { return v > t ? v - t : v < -t ? v + t : 0; }
+    function lasso(al) {                               // coordinate descent on (1/2n)|y - Zb|^2 + al |b|_1
+      var b = [0, 0], it;
+      for (it = 0; it < 500; it++) { var o0 = b[0], o1 = b[1]; b[0] = soft(c1 - s12 * b[1], al) / s11; b[1] = soft(c2 - s12 * b[0], al) / s22; if (Math.abs(b[0] - o0) + Math.abs(b[1] - o1) < 1e-10) break; }
+      return b;
+    }
+    function fresh(b) { var s = 0; ZT.forEach(function (r, k) { s += Math.abs(te.y[k] - (my + b[0] * r[0] + b[1] * r[1])) / M; }); return s; }             // new patients: mean absolute error
+    var LEVELS = 100, RIDGE = [], LASSO = [], top = Math.max(Math.abs(c1), Math.abs(c2));
+    for (i = 0; i <= LEVELS; i++) { RIDGE.push(Math.pow(i / LEVELS, 2.2) * 400); LASSO.push(Math.pow(i / LEVELS, 1.3) * top); }
+    return { N: N, ols: ridge(0), mse: mse, quad: quad, ridge: ridge, lasso: lasso, fresh: fresh, RIDGE: RIDGE, LASSO: LASSO, LEVELS: LEVELS, s: [s11, s12, s22] };
+  }
+  var budgetScene = {
+    label: '分步图: 岭回归和 LASSO 怎样把两个系数往 0 拉',
+    height: 338,
+    tiles: ['壁厚的系数', '随机数的系数', '新病人身上的误差'],
+    build: function (api) {
+      var svg = api.svg, kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, c = budgetCore(324, mulberry32, normal), i, k;
+      var ols = c.ols, SC = (W - M.l - M.r) / 2.4, X0 = -0.35, Y1 = 1.01, PB = M.t + 1.56 * SC;
+      function BX(v) { return M.l + (v - X0) * SC; }
+      function BY(v) { return M.t + (Y1 - v) * SC; }
+      var ridgePath = c.RIDGE.map(c.ridge), lassoPath = c.LASSO.map(c.lasso), zeroAt = 0, bestR = 0, bestL = 0;
+      var errR = ridgePath.map(c.fresh), errL = lassoPath.map(c.fresh);
+      for (k = 0; k <= c.LEVELS; k++) { if (!zeroAt && lassoPath[k][1] === 0) zeroAt = k; if (errR[k] < errR[bestR]) bestR = k; if (errL[k] < errL[bestL]) bestL = k; }
+      api.facts({ ols: ols, freshOls: errR[0], freshZero: c.fresh([0, 0]), ridgeBest: [bestR, c.RIDGE[bestR], errR[bestR]].concat(ridgePath[bestR]), lassoBest: [bestL, c.LASSO[bestL], errL[bestL]].concat(lassoPath[bestL]),
+        zeroAt: [zeroAt, c.LASSO[zeroAt], lassoPath[zeroAt][0], errL[zeroAt]], ridgeEnd: [c.RIDGE[c.LEVELS]].concat(ridgePath[c.LEVELS]), ridgeHalf: [c.RIDGE[50]].concat(ridgePath[50]), mse: [c.mse(ols), c.mse([0, 0])] });
+
+      // --- the plane ---
+      var id = 'w-clip-' + (++uid), cp = el('clipPath', { id: id }, el('defs', {}, svg));
+      el('rect', { x: M.l, y: M.t, width: W - M.l - M.r, height: PB - M.t }, cp);
+      el('rect', { x: M.l, y: M.t, width: W - M.l - M.r, height: PB - M.t, 'class': 's-panel' }, svg);
+      var plane = el('g', { 'clip-path': 'url(#' + id + ')' }, svg);
+      var shape = el('path', { 'class': 's-shape' }, plane), rings = el('g', {}, plane);
+      function ringPath(delta) {                    // all models whose error on the 40 patients is "delta" above the lowest
+        var d = '', a;
+        for (a = 0; a <= 72; a++) { var t = a / 72 * 2 * Math.PI, dir = [Math.cos(t), Math.sin(t)], r = Math.sqrt(delta / c.quad(dir)); d += (a ? 'L' : 'M') + BX(ols[0] + r * dir[0]).toFixed(1) + ' ' + BY(ols[1] + r * dir[1]).toFixed(1); }
+        return d + 'Z';
+      }
+      var reach = c.quad(ols);
+      [0.02, 0.1, 0.25, 0.5, 1].forEach(function (f) { el('path', { d: ringPath(reach * f), 'class': 's-faint s-ringline' }, rings); });
+      var active = el('path', { 'class': 's-curve2' }, plane);
+      el('line', { x1: M.l, x2: W - M.r, y1: BY(0), y2: BY(0), 'class': 'w-axis' }, plane); el('line', { x1: BX(0), x2: BX(0), y1: M.t, y2: PB, 'class': 'w-axis' }, plane);
+      [0.5, 1, 1.5, 2].forEach(function (v) { el('line', { x1: BX(v), x2: BX(v), y1: BY(0), y2: BY(0) + 4, 'class': 'w-axis' }, plane); T(plane, BX(v), BY(0) + 15, v.toFixed(1), 's-n', 'middle'); });
+      [-0.5, 0.5].forEach(function (v) { el('line', { x1: BX(0) - 4, x2: BX(0), y1: BY(v), y2: BY(v), 'class': 'w-axis' }, plane); T(plane, BX(0) - 7, BY(v) + 3.5, num(v, 1), 's-n', 'end'); });
+      T(svg, W - M.r - 4, BY(0) - 6, '壁厚的系数 →', 's-k', 'end'); T(svg, BX(0) + 6, M.t + 12, '↑ 随机数的系数', 's-k');
+      var trail = el('polyline', { 'class': 's-line', points: '' }, plane), other = el('polyline', { 'class': 's-ghost', points: '' }, plane);
+      var olsMark = el('g', {}, plane);
+      el('circle', { cx: BX(ols[0]), cy: BY(ols[1]), r: 5.5, 'class': 's-ring' }, olsMark); T(olsMark, BX(ols[0]) - 8, BY(ols[1]) - 9, '不加约束(碗底)', 's-v s-small s-halo', 'end');
+      var zeroMark = T(plane, BX(0) + 7, BY(0) + 29, '全是 0: 都猜平均值', 's-k s-halo');
+      var corner = el('g', {}, plane), cornerRing = el('circle', { r: 7, 'class': 's-ring' }, corner), cornerText = T(corner, 0, 0, '菱形的角', 's-v s-small s-halo', 'middle');
+      var token = el('circle', { r: 5, 'class': 's-token' }, plane);
+
+      // --- under the plane: the two coefficients as bars ---
+      var barsL = kit.layer('bars'), rows = [['壁厚', 0], ['随机数', 1]].map(function (it, j) {
+        var y = PB + 46 + j * 24;
+        T(barsL, M.l, y + 9, it[0], 's-t s-small');
+        el('line', { x1: 96, x2: 96, y1: y - 4, y2: y + 15, 'class': 'w-axis' }, barsL);
+        var ghost = el('rect', { x: 96, y: y, width: Math.abs(ols[j]) * 110, height: 11, rx: 2, 'class': 's-bar ghost' }, barsL);
+        var r = el('rect', { x: 96, y: y, height: 11, rx: 2, 'class': 's-bar' + (j ? ' mid' : '') }, barsL), v = T(barsL, 0, y + 9.5, '', 's-v s-n s-small');
+        return function (b) { var w = Math.abs(b) * 110; r.setAttribute('width', w); v.setAttribute('x', 96 + Math.max(w, Math.abs(ols[j]) * 110) + 6); v.textContent = num(b); };
+      });
+      var strength = T(barsL, M.l, PB + 32, '', 's-k');
+
+      // --- under the plane, last step: error in new patients against the strength ---
+      var sizes = kit.layer('sizes'), lo = Math.min(errR[bestR], errL[bestL]) - 0.02, hi = c.fresh([0, 0]) + 0.02;
+      function QX(v) { return M.l + 4 + v / c.LEVELS * (W - M.l - M.r - 90); }
+      function QY(v) { return 322 - (Math.min(hi, v) - lo) / (hi - lo) * 56; }
+      el('line', { x1: M.l, x2: QX(c.LEVELS), y1: 324, y2: 324, 'class': 'w-axis' }, sizes);
+      T(sizes, QX(0), 336, '不加约束', '', 'start'); T(sizes, QX(c.LEVELS), 336, '约束最强', '', 'end');
+      el('polyline', { 'class': 's-ghost', points: errR.map(function (v, j) { return QX(j).toFixed(1) + ',' + QY(v).toFixed(1); }).join(' ') }, sizes);
+      el('polyline', { 'class': 's-line', points: errL.map(function (v, j) { return QX(j).toFixed(1) + ',' + QY(v).toFixed(1); }).join(' ') }, sizes);
+      T(sizes, QX(c.LEVELS) + 6, QY(errR[c.LEVELS]) + 3.5, '岭回归', 's-k'); T(sizes, QX(c.LEVELS) + 6, QY(errL[c.LEVELS]) + 3.5 - (Math.abs(QY(errL[c.LEVELS]) - QY(errR[c.LEVELS])) < 11 ? 12 : 0), 'LASSO', 's-t s-small');
+      el('circle', { cx: QX(bestL), cy: QY(errL[bestL]), r: 5.5, 'class': 's-ring' }, sizes);
+      T(sizes, QX(bestL) + 9, QY(errL[bestL]) + 4, 'LASSO 最低 ' + errL[bestL].toFixed(2), 's-v s-n s-small s-halo');
+      var here = el('circle', { r: 4, 'class': 's-token' }, sizes);
+
+      function at(kind, level, part) {              // one strength of one method (part: between this level and the next)
+        var path = kind === 'ridge' ? ridgePath : lassoPath, a = path[level], b2 = path[Math.min(c.LEVELS, level + 1)], u = part || 0, b = [lerp(a[0], b2[0], u), lerp(a[1], b2[1], u)];
+        token.setAttribute('cx', BX(b[0])); token.setAttribute('cy', BY(b[1])); fade(token, 1);
+        active.setAttribute('d', ringPath(Math.max(1e-6, c.quad([b[0] - ols[0], b[1] - ols[1]]))));
+        if (kind === 'ridge') {
+          var r = Math.sqrt(b[0] * b[0] + b[1] * b[1]) * SC;
+          shape.setAttribute('d', 'M' + (BX(0) - r) + ' ' + BY(0) + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0Z');
+        } else {
+          var t = (Math.abs(b[0]) + Math.abs(b[1])) * SC;
+          shape.setAttribute('d', 'M' + (BX(0) - t) + ' ' + BY(0) + 'L' + BX(0) + ' ' + (BY(0) - t) + 'L' + (BX(0) + t) + ' ' + BY(0) + 'L' + BX(0) + ' ' + (BY(0) + t) + 'Z');
+        }
+        fade(shape, 1); fade(active, 1);
+        trail.setAttribute('points', path.slice(0, level + 1).map(function (q) { return BX(q[0]).toFixed(1) + ',' + BY(q[1]).toFixed(1); }).join(' '));
+        rows[0](b[0]); rows[1](b[1]);
+        api.tile(0, num(b[0])); api.tile(1, num(b[1])); api.tile(2, c.fresh(b).toFixed(2) + ' Gy');
+        strength.textContent = (kind === 'ridge' ? '岭回归,alpha = ' + c.RIDGE[level].toFixed(1) : 'LASSO,alpha = ' + c.LASSO[level].toFixed(2));
+        here.setAttribute('cx', QX(level)); here.setAttribute('cy', QY((kind === 'ridge' ? errR : errL)[level]));
+      }
+      function slider(kind, level) {
+        var name = kind === 'ridge' ? '岭回归' : 'LASSO';
+        api.control({ label: '自己拖: ' + name + ',强度 ' + level + ' / 100', min: 0, max: c.LEVELS, value: level, oninput: function (v, say) { at(kind, v); say('自己拖: ' + name + ',强度 ' + v + ' / 100'); } });
+      }
+      function reset(layers) { kit.show(layers); [shape, active, olsMark, corner, token, rings, zeroMark].forEach(function (g) { fade(g, 0); }); trail.setAttribute('points', ''); other.setAttribute('points', ''); }
+
+      var steps = [
+        function () {                                 // 1 the plane: every point is a model
+          reset([]);
+          fade(zeroMark, 1); token.setAttribute('cx', BX(0)); token.setAttribute('cy', BY(0)); fade(token, 1);
+          api.tile(0, '0.00'); api.tile(1, '0.00'); api.tile(2, c.fresh([0, 0]).toFixed(2) + ' Gy');
+        },
+        function () {                                 // 2 least squares: the bottom of the bowl
+          reset(['bars']);
+          fade(zeroMark, 1); rows[0](0); rows[1](0); strength.textContent = '不加约束';
+          api.tween(200, 500, function (u) { fade(rings, u); });
+          api.tween(600, 1100, function (u) {
+            var b = [ols[0] * E(u), ols[1] * E(u)];
+            token.setAttribute('cx', BX(b[0])); token.setAttribute('cy', BY(b[1])); fade(token, 1); rows[0](b[0]); rows[1](b[1]);
+            api.tile(0, num(b[0])); api.tile(1, num(b[1])); api.tile(2, c.fresh(b).toFixed(2) + ' Gy');
+          });
+          api.at(1700, function () { fade(olsMark, 1); fade(rings, 1); });
+        },
+        function () {                                 // 3 ridge: a circle
+          reset(['bars']);
+          fade(rings, 1); fade(olsMark, 1); at('ridge', 0);
+          api.tween(600, 3200, function (u) { var v = u * c.LEVELS, level = Math.min(c.LEVELS - 1, Math.floor(v)); at('ridge', level, v - level); });
+          api.at(3800, function () { at('ridge', c.LEVELS); slider('ridge', c.LEVELS); });
+        },
+        function () {                                 // 4 LASSO: a diamond
+          reset(['bars']);
+          fade(rings, 1); fade(olsMark, 1); at('lasso', 0);
+          other.setAttribute('points', ridgePath.map(function (q) { return BX(q[0]).toFixed(1) + ',' + BY(q[1]).toFixed(1); }).join(' '));
+          api.tween(600, 3200, function (u) { var v = u * c.LEVELS, level = Math.min(c.LEVELS - 1, Math.floor(v)); at('lasso', level, v - level); });
+          api.at(3800, function () { at('lasso', c.LEVELS); slider('lasso', c.LEVELS); });
+        },
+        function () {                                 // 5 the corner
+          reset(['bars']);
+          fade(rings, 1); fade(olsMark, 1); at('lasso', zeroAt);
+          other.setAttribute('points', ridgePath.map(function (q) { return BX(q[0]).toFixed(1) + ',' + BY(q[1]).toFixed(1); }).join(' '));
+          var b = lassoPath[zeroAt];
+          cornerRing.setAttribute('cx', BX(b[0])); cornerRing.setAttribute('cy', BY(0)); cornerText.setAttribute('x', BX(b[0])); cornerText.setAttribute('y', BY(0) + 28);
+          api.tween(300, 400, function (u) { fade(corner, u); });
+          api.at(700, function () { fade(corner, 1); slider('lasso', zeroAt); });
+        },
+        function () {                                 // 6 how strong
+          reset(['sizes']);
+          fade(rings, 1); fade(olsMark, 1); at('lasso', 0);
+          api.tween(500, 2600, function (u) { at('lasso', Math.round(E(u) * bestL)); });
+          api.at(3100, function () { at('lasso', bestL); slider('lasso', bestL); });
+        }
+      ];
+      return function (k2) { steps[k2](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene), leastsq: staged(lineScene), mle: staged(mleScene), budget: staged(budgetScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

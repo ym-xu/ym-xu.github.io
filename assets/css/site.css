@@ -724,6 +724,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget.stage .s-rug { stroke: var(--s-ink); stroke-width: 1; opacity: .25; }
 .widget.stage .s-hide { display: none; }
 .widget.stage .s-square { fill: var(--s-ink); opacity: .13; stroke: var(--s-ink); stroke-width: .6; }
+.widget.stage .s-shape { fill: var(--s-ink); fill-opacity: .16; stroke: var(--s-ink); stroke-width: 1.4; }
+.widget.stage .s-ringline { opacity: .5; }
 .widget.stage .s-ring { fill: none; stroke: var(--w-bad); stroke-width: 1.5; }
 .widget.stage .s-scan { stroke: var(--s-ink); stroke-width: 1.6; }
 .widget.stage .s-res { opacity: .55; }
