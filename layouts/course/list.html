@@ -6,9 +6,12 @@
   {{ $pages := .RegularPages.ByWeight }}
   {{ $total := 0 }}{{ range $parts }}{{ $total = add $total (len .lessons) }}{{ end }}
   {{- /* Practice track: the section named by "practice" in the course's _index.md. Its part n
-         (weight n*10) goes with lesson n and is listed right under that lesson. */ -}}
+         (weight n*10) goes with lesson n and is listed right under that lesson.
+         A section that is itself such a track says "stepped: true": its rows count as practice. */ -}}
   {{ $practice := false }}{{ $practicePages := slice }}
   {{ with .Params.practice }}{{ with site.GetPage . }}{{ $practice = . }}{{ $practicePages = .RegularPages.ByWeight }}{{ end }}{{ end }}
+  {{ $stepped := .Params.stepped }}
+  {{ $unit := .Params.unit | default "课" }}
   {{- /* Text before the marker <!--syllabus--> stands above the syllabus, the rest below it. */ -}}
   {{ $bits := split .Content "<!--syllabus-->" }}
   {{ $lead := index $bits 0 }}
@@ -23,100 +26,101 @@
     </ul>
   </header>
 
-  <div class="content course-intro fx-after">{{ $lead | safeHTML }}</div>
+  {{- /* Same sheet and the same two columns as a lesson page (text | 240px): the lesson has its
+         table of contents on the right, the course page has "我的进度" there. On a narrow screen the
+         panel comes after the opening text, before the syllabus. Filled in by course-progress.js. */ -}}
+  <div class="course-layout" data-course>
+    <div class="content course-intro fx-after">{{ $lead | safeHTML }}</div>
 
-  {{ with $practice }}
-  <a class="practice-strip" href="{{ .RelPermalink }}" data-practice-strip data-parts="{{ len $practicePages }}">
-    <span class="practice-strip-kicker">课后练习 · 主题练习</span>
-    <span class="practice-strip-title">{{ replaceRE "^主题练习: " "" .Title }}</span>
-    {{ with .Params.teaser }}<span class="practice-strip-text">{{ . }}</span>{{ end }}
-    <span class="practice-strip-bar" aria-hidden="true">{{ range $practicePages }}<i data-progress-path="{{ .RelPermalink }}"></i>{{ end }}</span>
-    <span class="practice-strip-foot"><span data-practice-count>共 {{ len $practicePages }} 部分,在下面每一课的后面</span><span class="practice-strip-go">背景和数据 →</span></span>
-  </a>
-  {{ end }}
-
-  <div class="syllabus">
-    {{ range $pi, $part := $parts }}
-      <section class="phase reveal">
-        <div class="phase-head">
-          <span class="phase-index">{{ index (slice "I" "II" "III" "IV" "V" "VI" "VII" "VIII") $pi }}</span>
-          <div>
-            <h2 class="phase-title">{{ $part.title }}</h2>
-            <p class="phase-sub">{{ $part.sub }}</p>
-          </div>
-        </div>
-        <div class="phase-lessons">
-          {{ range $part.lessons }}
-            {{ $match := where $pages "Weight" (mul .n 10) }}
-            {{ if $match }}
-              {{ $p := index $match 0 }}
-              <a class="lesson-row spot" href="{{ $p.RelPermalink }}" data-progress-path="{{ $p.RelPermalink }}">
-                <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
-                <span class="lesson-row-body">
-                  <span class="lesson-row-title">{{ .title }}</span>
-                  <span class="lesson-row-sum">{{ .sum }}</span>
-                </span>
-                <span class="lesson-row-arrow" aria-hidden="true">→</span>
-              </a>
-              {{- /* the practice part that goes with this lesson */ -}}
-              {{ range where $practicePages "Weight" (mul .n 10) }}
-              <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-practice-row>
-                <span class="lesson-row-num"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.2 2.3l2.5 2.5L5.6 12.9l-3.2.7.7-3.2z"/><path d="M9.6 3.9l2.5 2.5"/></svg></span>
-                <span class="lesson-row-body">
-                  <span class="lesson-row-title"><span class="practice-kicker">课后练习</span>{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</span>
-                  <span class="lesson-row-sum">{{ .Params.duration }} · {{ len (findRE `<div class="step[ "]` .RawContent) }} 步</span>
-                </span>
-                <span class="lesson-row-arrow" aria-hidden="true">→</span>
-              </a>
-              {{ end }}
-            {{ else }}
-              <div class="lesson-row planned">
-                <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
-                <span class="lesson-row-body">
-                  <span class="lesson-row-title">{{ .title }}<span class="lesson-row-tag">准备中</span></span>
-                  <span class="lesson-row-sum">{{ .sum }}</span>
-                </span>
-              </div>
-            {{ end }}
+    <aside class="course-side" data-course-side aria-label="我的进度">
+      <div class="course-side-inner">
+        <p class="course-side-h">我的进度</p>
+        {{ with index $pages 0 }}<a class="course-continue" data-continue href="{{ .RelPermalink }}">从第 1 {{ $unit }}开始 →</a>{{ end }}
+        <p class="course-continue-note" data-continue-note></p>
+        <dl class="course-stats">
+          <div><dt>{{ if $stepped }}做完的部分{{ else }}学完的课{{ end }}</dt><dd data-stat="{{ if $stepped }}practice{{ else }}lessons{{ end }}">0 / {{ len $pages }} {{ $unit }}</dd></div>
+          {{ if $stepped }}
+          <div><dt>通过的代码题</dt><dd data-stat="tasks">0</dd></div>
+          {{ else }}
+          <div><dt>课文里的练习</dt><dd data-stat="ex">0</dd></div>
+          {{ if $practice }}<div><dt>课后练习</dt><dd data-stat="practice">0 / {{ len $practicePages }} 部分</dd></div>{{ end }}
           {{ end }}
+        </dl>
+        <p class="course-side-note">进度记在这台设备的这个浏览器里。<button type="button" class="course-side-link" data-progress-export>换设备或备份</button></p>
+        <div class="course-side-box" data-progress-box hidden>
+          <p>在另一台设备上打开这个链接,进度会合并过去(哪边通过的练习都算)。写过的代码和文字不随链接带走。</p>
+          <textarea readonly rows="3" aria-label="带着进度的链接"></textarea>
+          <button type="button" class="course-side-copy" data-progress-copy>复制链接</button>
+          <p>Safari 在大约一周没有打开这个网站以后,可能清掉这里的记录。打算隔一段时间再学,先把这个链接存下来。</p>
         </div>
-      </section>
-    {{ end }}
+        <p class="course-side-msg" data-progress-msg aria-live="polite"></p>
+      </div>
+    </aside>
+
+    <div class="course-body">
+      {{ with $practice }}
+      <a class="practice-strip" href="{{ .RelPermalink }}" data-practice-strip data-parts="{{ len $practicePages }}">
+        <span class="practice-strip-kicker">课后练习 · 主题练习</span>
+        <span class="practice-strip-title">{{ replaceRE "^主题练习: " "" .Title }}</span>
+        {{ with .Params.teaser }}<span class="practice-strip-text">{{ . }}</span>{{ end }}
+        <span class="practice-strip-bar" aria-hidden="true">{{ range $practicePages }}<i data-progress-path="{{ .RelPermalink }}"></i>{{ end }}</span>
+        <span class="practice-strip-foot"><span data-practice-count>共 {{ len $practicePages }} 部分,在下面每一课的后面</span><span class="practice-strip-go">背景和数据 →</span></span>
+      </a>
+      {{ end }}
+
+      <div class="syllabus">
+        {{ range $pi, $part := $parts }}
+          <section class="phase reveal">
+            <div class="phase-head">
+              <span class="phase-index">{{ index (slice "I" "II" "III" "IV" "V" "VI" "VII" "VIII") $pi }}</span>
+              <div>
+                <h2 class="phase-title">{{ $part.title }}</h2>
+                <p class="phase-sub">{{ $part.sub }}</p>
+              </div>
+            </div>
+            <div class="phase-lessons">
+              {{ range $part.lessons }}
+                {{ $match := where $pages "Weight" (mul .n 10) }}
+                {{ if $match }}
+                  {{ $p := index $match 0 }}
+                  {{- /* data-ex: the exercises with a check, counted when the site is built, so that
+                         "3 / 5" can be shown before the lesson has been opened on this device */ -}}
+                  <a class="lesson-row spot" href="{{ $p.RelPermalink }}" data-progress-path="{{ $p.RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" $p.RawContent) }}" data-title="{{ if $stepped }}{{ $p.Title }}{{ else }}第 {{ .n }} {{ $unit }} · {{ .title }}{{ end }}"{{ if $stepped }} data-practice-row{{ end }}>
+                    <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
+                    <span class="lesson-row-body">
+                      <span class="lesson-row-title">{{ .title }}</span>
+                      <span class="lesson-row-sum">{{ .sum }}</span>
+                    </span>
+                    <span class="lesson-row-arrow" aria-hidden="true">→</span>
+                  </a>
+                  {{- /* the practice part that goes with this lesson */ -}}
+                  {{ $lessonN := .n }}
+                  {{ range where $practicePages "Weight" (mul .n 10) }}
+                  <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" .RawContent) }}" data-title="课后练习 {{ $lessonN }} · {{ replaceRE "^练习 [0-9]+ · " "" .Title }}" data-practice-row>
+                    <span class="lesson-row-num"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.2 2.3l2.5 2.5L5.6 12.9l-3.2.7.7-3.2z"/><path d="M9.6 3.9l2.5 2.5"/></svg></span>
+                    <span class="lesson-row-body">
+                      <span class="lesson-row-title"><span class="practice-kicker">课后练习</span>{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</span>
+                      <span class="lesson-row-sum">{{ .Params.duration }} · {{ len (findRE `<div class="step[ "]` .RawContent) }} 步</span>
+                    </span>
+                    <span class="lesson-row-arrow" aria-hidden="true">→</span>
+                  </a>
+                  {{ end }}
+                {{ else }}
+                  <div class="lesson-row planned">
+                    <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
+                    <span class="lesson-row-body">
+                      <span class="lesson-row-title">{{ .title }}<span class="lesson-row-tag">准备中</span></span>
+                      <span class="lesson-row-sum">{{ .sum }}</span>
+                    </span>
+                  </div>
+                {{ end }}
+              {{ end }}
+            </div>
+          </section>
+        {{ end }}
+      </div>
+
+      {{ with $rest }}<div class="content course-about">{{ . | safeHTML }}</div>{{ end }}
+    </div>
   </div>
-
-  {{ with $rest }}<div class="content course-about">{{ . | safeHTML }}</div>{{ end }}
-
-  {{- /* Exercise progress is kept in this browser only (see pyodide-run.js). */ -}}
-  <script>
-  (function () {
-    try {
-      document.querySelectorAll('.lesson-row[data-progress-path]').forEach(function (row) {
-        var p = JSON.parse(localStorage.getItem('course-progress:v1:' + row.getAttribute('data-progress-path')) || 'null');
-        if (!p || !p.total) return;
-        // in-lesson exercises; older records have no split and count everything
-        var core = p.core != null ? p.core : p.total;
-        var n = p.core != null ? p.coreDone : (p.done || []).filter(Boolean).length;
-        if (!n && !p.hwDone) return;
-        var tag = document.createElement('span');
-        tag.className = 'lesson-row-tag done';
-        tag.textContent = row.hasAttribute('data-practice-row')
-          ? (n >= core ? '做完了 ✓' : '已通过 ' + n + ' / ' + core)
-          : (n >= core ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + core) + (p.hw && p.hwDone >= p.hw ? ' · 课后 ✓' : '');
-        // a practice row is narrow: its tag goes on the second line, after the time and the number of steps
-        row.querySelector(row.hasAttribute('data-practice-row') ? '.lesson-row-sum' : '.lesson-row-title').appendChild(tag);
-      });
-      // the practice track: one segment per part, filled when all its code tasks have passed
-      document.querySelectorAll('[data-practice-strip]').forEach(function (strip) {
-        var done = 0, started = 0;
-        strip.querySelectorAll('i[data-progress-path]').forEach(function (seg) {
-          var p = JSON.parse(localStorage.getItem('course-progress:v1:' + seg.getAttribute('data-progress-path')) || 'null');
-          if (!p || !p.core || !p.coreDone) return;
-          started++;
-          if (p.coreDone >= p.core) { done++; seg.className = 'done'; } else seg.className = 'part';
-        });
-        if (started) strip.querySelector('[data-practice-count]').textContent = '已完成 ' + done + ' / ' + strip.getAttribute('data-parts') + ' 部分';
-      });
-    } catch (e) {}
-  })();
-  </script>
 {{ end }}

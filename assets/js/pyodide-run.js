@@ -10,6 +10,10 @@
 // "pycheck" block (rendered as pre.py-check) is checked after it runs. The check
 // code reads the learner's variables and calls ok(...) or fail(...); need("x")
 // fails with a standard message when x is not defined yet.
+// A course is read over several sittings, and each time the page is opened Python starts empty:
+// - what the learner typed into an exercise is kept in this browser and put back (with a 重置 button);
+// - when a block fails with a NameError and blocks above it have not been run since the page was
+//   opened, those are run first (silently, in order) and the block is run again.
 const PYODIDE_VERSION = '314.0.7';
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 // served at /python/ (static/python/): the simulated cohort of both courses, and the audit data of the themed practice
@@ -227,6 +231,7 @@ function render(out, res) {
     out.appendChild(el);
     return el;
   };
+  if (res.replayed) add('p', 'code-output-note', `已先运行本页前面的 ${res.replayed} 个代码块(每次打开页面,Python 都从空白开始)。`);
   if (res.text && res.text.trim()) add('pre', 'code-output-text', res.text.replace(/\s+$/, ''));
   if (res.html) {
     const div = document.createElement('div');
@@ -308,6 +313,69 @@ function markPassed(card) {
   if (window.courseFireworks) window.courseFireworks(r.left + r.width / 2, r.top + r.height / 2, allDone);
 }
 
+// ---- the learner's code in the exercises, kept in this browser only (localStorage) ----
+// Keyed by the position of the exercise on the page, with a hash of the starter code: if a lesson
+// is edited later and the starter changed, the old text is not put into the wrong exercise.
+const CODE_KEY = 'course-code:v1:' + location.pathname.replace(/index\.html$/, '');
+const originals = new Map();                      // card -> { text, html, hash } of the starter code
+function hashOf(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return String(h);
+}
+function exerciseCards() {
+  return [...document.querySelectorAll('.exercise .py-runnable')].filter((c) => !c.closest('details') && checkCodeFor(c));
+}
+function codeBox(card) {
+  const pre = card.querySelector('pre');
+  return pre.querySelector('code') || pre;
+}
+function readCode() {
+  try { return JSON.parse(localStorage.getItem(CODE_KEY)) || {}; } catch (_) { return {}; }
+}
+function saveCode(card) {
+  const i = exerciseCards().indexOf(card), orig = originals.get(card);
+  if (i < 0 || !orig) return;
+  const all = readCode(), now = codeText(card.querySelector('pre'));
+  if (now === orig.text) delete all[i];
+  else all[i] = { c: now, o: orig.hash };
+  try { localStorage.setItem(CODE_KEY, JSON.stringify(all)); } catch (_) { /* private mode: nothing kept */ }
+  card.classList.toggle('edited', i in all);
+}
+function restoreCode() {
+  const saved = readCode();
+  exerciseCards().forEach((card, i) => {
+    const pre = card.querySelector('pre'), box = codeBox(card);
+    const text = codeText(pre);
+    originals.set(card, { text, html: box.innerHTML, hash: hashOf(text) });
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'code-reset';
+    reset.textContent = '重置';
+    reset.title = '回到题目给出的起始代码';
+    reset.addEventListener('click', () => {
+      box.innerHTML = originals.get(card).html;
+      saveCode(card);
+    });
+    const actions = card.querySelector('.code-actions');
+    if (actions) actions.insertBefore(reset, actions.firstChild);
+    const s = saved[i];
+    if (s && typeof s.c === 'string' && s.o === hashOf(text) && s.c !== text) {
+      box.textContent = s.c;
+      card.classList.add('edited');
+    }
+    let timer = null;
+    pre.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => saveCode(card), 500); });
+  });
+}
+
+// ---- blocks run since the page was opened ----
+const ran = new WeakSet();
+function cardsBefore(card) {
+  const all = [...document.querySelectorAll('.py-runnable')].filter((c) => !c.closest('details'));
+  return all.slice(0, Math.max(0, all.indexOf(card)));
+}
+
 // The hidden answer check of the exercise a code card belongs to, if any.
 function checkCodeFor(card) {
   const ex = card.closest('.exercise');
@@ -323,6 +391,7 @@ async function runCard(card) {
 
   const code = codeText(codeEl);
   const checkCode = checkCodeFor(card);
+  saveCode(card);                                 // an exercise: keep what was typed, also when it fails
   out.hidden = false;
   if (checkCode && code.includes('___')) {
     out.innerHTML = '';
@@ -344,9 +413,36 @@ async function runCard(card) {
     setStatus('运行中…');
     await paint(); // let the status show before the (blocking) run
     const runner = py.pyimport('_runner');
-    const proxy = await runner.run(code);
-    const res = proxy.toJs({ dict_converter: Object.fromEntries });
-    proxy.destroy();
+    const runOnce = async () => {
+      const proxy = await runner.run(code);
+      const r = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return r;
+    };
+    let res = await runOnce();
+    // A name is missing and blocks above this one have not been run since the page was opened
+    // (the usual case when a lesson is continued on another day): run those first, then this one again.
+    const earlier = res.error && /(^|\n)NameError:/.test(res.error) ? cardsBefore(card).filter((c) => !ran.has(c)) : [];
+    if (earlier.length) {
+      let k = 0;
+      for (const c of earlier) {
+        k += 1;
+        ran.add(c);
+        setStatus(`这一块用到了前面定义的东西,先运行本页前面的代码块(${k} / ${earlier.length})…`);
+        await paint();
+        const src = codeText(c.querySelector('pre'));
+        if (src.includes('___')) continue;       // an exercise not filled in yet
+        try {
+          await loadPackages(py, src, () => {});
+          (await runner.run(src)).destroy();      // output and errors of earlier blocks are not shown again
+        } catch (_) { /* go on with the next block */ }
+      }
+      setStatus('运行中…');
+      await paint();
+      res = await runOnce();
+      res.replayed = earlier.length;
+    }
+    ran.add(card);
     if (checkCode && !res.error) {
       const c = await runner.check(checkCode);
       res.check = c.toJs();
@@ -379,6 +475,7 @@ function init() {
   document.querySelectorAll('.exercise .py-run').forEach((btn) => {
     if (checkCodeFor(btn.closest('.code-card'))) btn.textContent = '▶ 运行并检查';
   });
+  restoreCode();
   showProgress();
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.py-run');

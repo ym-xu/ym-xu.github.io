@@ -6,6 +6,8 @@ noindex: true
 # 不输出本 section 的 RSS,避免 index.xml 公开列出各部分
 outputs: ["HTML"]
 unit: "部分"
+# 这个 section 本身就是一步一屏的练习: 目录里的每一行按"做完了几道代码题"算进度
+stepped: true
 unit_count: "个部分"
 back_label: "练习目录"
 questions_label: "这一部分要回答的问题"

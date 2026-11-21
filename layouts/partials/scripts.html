@@ -47,6 +47,13 @@
 <script defer src="{{ $quiz.RelPermalink }}" integrity="{{ $quiz.Data.Integrity }}"></script>
 {{- end }}
 
+{{- /* Learning progress of the two courses, kept in the browser: where the reader stopped, the panel
+       "我的进度" on the course page, the link that carries progress to another device. */ -}}
+{{- if in (slice "python" "stat-ml") .Section }}
+{{- $prog := resources.Get "js/course-progress.js" | minify | fingerprint }}
+<script defer src="{{ $prog.RelPermalink }}" integrity="{{ $prog.Data.Integrity }}"></script>
+{{- end }}
+
 {{- /* Lesson reading UI: progress bar + scroll-spy TOC, lesson pages only. */ -}}
 {{- if and .IsPage (in (slice "r-course" "python" "stat-ml") .Section) }}
 {{- $lesson := resources.Get "js/lesson-ui.js" | minify | fingerprint }}

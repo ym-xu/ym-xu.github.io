@@ -86,6 +86,46 @@ pre { overflow: auto; }
 .site-footer .footer { padding-left: var(--pad); padding-right: var(--pad); }
 #content.container { max-width: none; margin: 0; padding-top: 2.25rem; padding-bottom: 1rem; }
 body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 1140px; }
+/* the course page of the two Python courses is as wide as its lessons and has the same two columns;
+   so is the entry page /yao/ that leads to them */
+body:is(.section-python, .section-stat-ml, .section-yao).kind-section { --sheet: 1140px; }
+
+/* Course pages (the two Python courses, their practice, the entry page): a fresh candy-blue palette.
+   Text that has to be read keeps enough contrast: links are a deeper blue (5.3:1 on white), and the
+   candy blue itself is only used as a fill, with dark ink on it (5.6:1). */
+body:is(.section-python, .section-stat-ml, .section-yao) {
+  --desk: #e9f4fc;
+  --rule: #86c5ec;
+  --border: #d3e8f7;
+  --link: #1470ad; --link-hover: #0d5687;
+  --candy: #6cc4f5; --candy-deep: #38a9ec; --candy-ink: #0b3a5c; --candy-line: #c6e6fa;
+  --btn-bg: var(--candy); --btn-bg-hover: #8bd2f8; --btn-fg: var(--candy-ink); --btn-radius: 999px;
+  --hl: rgba(108, 196, 245, .42);
+  --surface: #f1f8fe; --surface-hover: #e3f2fd;
+  --radius-sm: 8px; --radius-md: 12px;
+}
+body:is(.section-python, .section-stat-ml, .section-yao) .card { --spot: rgba(108, 196, 245, .2); --card-border: var(--candy-line); border-radius: var(--radius-md); }
+:root[data-theme="dark"] body:is(.section-python, .section-stat-ml, .section-yao) {
+  --desk: #0c141a; --rule: #4d86a8; --border: #253947;
+  --link: #8fd3fb; --link-hover: #c6e9fd;
+  --candy: #6cc4f5; --candy-deep: #8fd3fb; --candy-ink: #06273d; --candy-line: #24465c;
+  --btn-bg: var(--candy); --btn-bg-hover: #8bd2f8; --btn-fg: var(--candy-ink);
+  --hl: rgba(108, 196, 245, .34);
+  --surface: rgba(108, 196, 245, .08); --surface-hover: rgba(108, 196, 245, .15);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body:is(.section-python, .section-stat-ml, .section-yao) {
+    --desk: #0c141a; --rule: #4d86a8; --border: #253947;
+    --link: #8fd3fb; --link-hover: #c6e9fd;
+    --candy: #6cc4f5; --candy-deep: #8fd3fb; --candy-ink: #06273d; --candy-line: #24465c;
+    --btn-bg: var(--candy); --btn-bg-hover: #8bd2f8; --btn-fg: var(--candy-ink);
+    --hl: rgba(108, 196, 245, .34);
+    --surface: rgba(108, 196, 245, .08); --surface-hover: rgba(108, 196, 245, .15);
+  }
+}
+/* the entry page: the opening text keeps the reading width of the courses, the cards use the full sheet */
+body.section-yao .content { max-width: 46rem; }
+@media (min-width: 1001px) { body.section-yao .cards.two { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 @media (max-width: 900px) { :root { --pad: 40px; } }
 @media (max-width: 720px) {
@@ -452,9 +492,10 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { scroll
 .lesson-toc #TableOfContents a.active { color: var(--link); border-left-color: var(--link); }
 body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content :is(h2, h3, h4) { scroll-margin-top: 24px; }
 .reading-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; pointer-events: none; }
-.reading-progress > span { display: block; height: 100%; width: 0; background: var(--link); transition: width .1s linear; }
+.reading-progress > span { display: block; height: 100%; width: 0; background: var(--candy-deep, var(--link)); transition: width .1s linear; }
 @media (max-width: 1000px) {
   body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 880px; }
+  body:is(.section-python, .section-stat-ml, .section-yao).kind-section { --sheet: 880px; }
   .lesson-layout, .lesson-layout.no-toc { grid-template-columns: 1fr; gap: 0; }
   .lesson-main, .lesson-toc { grid-column: auto; grid-row: auto; }
   .lesson-toc { margin: 0 0 1.5rem; }
@@ -513,11 +554,13 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .steps-dot.now { box-shadow: 0 0 0 2px var(--link); }
 .content .steps-all-btn { margin-left: auto; padding: .2rem .5rem; font: inherit; font-size: .85rem; color: var(--link); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; }
 .content .steps .step { margin: 0 0 1rem; }
+/* in use: the steps of the themed practice (content/python/practice/, <div class="step exercise"> inside <div class="steps">) */
+.content .steps .step.exercise { margin: 0 0 1rem; }
 .content .steps .step.exercise > .code-card pre { min-height: 6.5rem; }
 .content .steps-nav { display: flex; justify-content: space-between; gap: .6rem; margin: 1rem 0 0; }
 .content .steps-nav button { min-height: 44px; padding: .45rem 1rem; font: inherit; font-size: .95rem; color: var(--link); background: transparent; border: 1px solid var(--link); border-radius: var(--radius-sm); cursor: pointer; }
 .content .steps-nav button:disabled { opacity: .45; cursor: default; }
-.content .steps-nav .steps-next.ready { color: var(--bg); background: var(--link); }
+.content .steps-nav .steps-next.ready { color: var(--btn-fg, var(--bg)); background: var(--btn-bg, var(--link)); }
 @media (min-width: 1000px) {
   /* on a wide screen: the task on the left, the code on the right */
   .content .steps .step.exercise { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 1.6rem; align-items: start; }
@@ -594,13 +637,54 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: .2rem 0 .6rem; font-size: .84rem; text-align: center; font-variant-numeric: lining-nums tabular-nums; }
 .widget .w-chip { padding: .22rem .1rem; border: .5px solid var(--border); border-radius: 3px; color: var(--muted); }
 .widget .w-chip.done { color: var(--fg); border-color: var(--muted); }
-.widget .w-chip.now { color: var(--bg); background: var(--link); border-color: var(--link); }
+.widget .w-chip.now { color: var(--btn-fg, var(--bg)); background: var(--btn-bg, var(--link)); border-color: var(--btn-bg, var(--link)); }
 .widget .w-chip.mean { font-weight: 700; }
 .widget .w-ctls { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0; }
 .widget .w-btn { min-height: 44px; padding: .4rem .95rem; font: inherit; font-size: .95rem; color: var(--link); background: transparent; border: 1px solid var(--link); border-radius: var(--radius-sm); cursor: pointer; }
-.widget .w-btn.primary { color: var(--bg); background: var(--link); }
+.widget .w-btn.primary { color: var(--btn-fg, var(--bg)); background: var(--btn-bg, var(--link)); }
 .widget .w-btn:disabled { opacity: .45; cursor: default; }
 .content .widget .w-status { margin: .45rem 0 0; min-height: 4.6em; font-size: .93rem; line-height: 1.5; }
+/* Course page: text and syllabus on the left, "我的进度" on the right, where a lesson has its table of contents. */
+.course-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 0 2.4rem; align-items: start; }
+.course-layout > .course-intro { grid-column: 1; grid-row: 1; min-width: 0; }
+.course-layout > .course-body { grid-column: 1; grid-row: 2; min-width: 0; }
+.course-layout > .course-side { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; }
+.course-side-inner { position: sticky; top: 24px; font-size: .9rem; line-height: 1.45; }
+.course-side-h { margin: 0 0 .55rem; font-weight: 700; font-size: 1rem; }
+/* the title of a lesson can take two lines: a rounded box, not a pill */
+.course-continue { display: block; padding: .55rem .9rem; border-radius: var(--radius-md); background: var(--btn-bg, var(--link)); color: var(--btn-fg, var(--bg)); font-size: .92rem; line-height: 1.35; text-decoration: none; text-wrap: balance; }
+.course-continue:hover { background: var(--btn-bg-hover, var(--link-hover)); color: var(--btn-fg, var(--bg)); text-decoration: none; }
+.course-continue-note { margin: .4rem 0 0; font-size: .84rem; color: var(--muted); }
+.course-continue-note:empty { display: none; }
+.course-stats { margin: .8rem 0 0; padding: .55rem 0; border-top: .5px solid var(--border); border-bottom: .5px solid var(--border); }
+.course-stats > div { display: flex; justify-content: space-between; gap: .8rem; padding: .12rem 0; }
+.course-stats dt { color: var(--muted); }
+.course-stats dd { margin: 0; font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+.course-side-note { margin: .6rem 0 0; font-size: .82rem; color: var(--muted); }
+.course-side-link { font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: .06em; }
+.course-side-box { margin: .6rem 0 0; padding: .6rem .7rem; border: .5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: .82rem; color: var(--muted); }
+.course-side-box p { margin: 0 0 .45rem; }
+.course-side-box p:last-child { margin: .45rem 0 0; }
+.course-side-box textarea { display: block; width: 100%; box-sizing: border-box; font: .72rem/1.35 var(--font-mono); color: var(--fg); background: var(--bg); border: .5px solid var(--border); border-radius: var(--radius-sm); padding: .35rem .45rem; resize: vertical; word-break: break-all; }
+.course-side-copy { margin-top: .45rem; font: inherit; color: var(--btn-fg, var(--bg)); background: var(--btn-bg, var(--link)); border: 0; border-radius: var(--btn-radius, var(--radius-sm)); padding: .3rem .8rem; cursor: pointer; }
+.course-side-msg { margin: .5rem 0 0; font-size: .84rem; color: var(--link); }
+.course-side-msg:empty { display: none; }
+/* narrow screens: one column; the panel comes after the opening text (these rules must stay below the ones above) */
+@media (max-width: 1000px) {
+  .course-layout { grid-template-columns: minmax(0, 1fr); }
+  .course-layout > .course-intro, .course-layout > .course-side, .course-layout > .course-body { grid-column: auto; grid-row: auto; }
+  .course-layout > .course-side { margin: 0 0 1.6rem; }
+  .course-side-inner { position: static; padding: .8rem .95rem; border: .5px solid var(--rule); border-radius: var(--radius-md); }
+}
+.lesson-row.is-next { background: var(--surface); box-shadow: inset 2px 0 0 var(--link); }
+.lesson-row.practice-row.is-next { box-shadow: none; border-left-color: var(--link); }
+.lesson-row-tag.doing { color: var(--fg); }
+/* Back on a lesson: the section read last, and what was typed into the exercises. */
+.resume-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; margin: 0 0 1.4rem; padding: .5rem .8rem; border-left: 3px solid var(--link); background: var(--surface); font-size: .95rem; }
+.resume-go { margin-left: auto; font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; white-space: nowrap; }
+.content .code-reset { display: none; font-family: var(--font-mono); font-size: .72rem; line-height: 1; min-height: 28px; padding: .35rem .6rem; color: var(--muted); background: transparent; border: 1px solid var(--code-border); border-radius: var(--radius-sm); cursor: pointer; }
+.content .code-card.edited .code-reset { display: inline-block; }
+.content .code-output-note { margin: 0 0 .35rem; font-size: .86rem; line-height: 1.45; color: var(--muted); }
 /* Practice track on a course page: a card above the syllabus, and one row under each lesson. */
 .practice-strip { display: grid; gap: .28rem; margin: 0 0 1.9rem; padding: .85rem 1rem .8rem; border: .5px solid color-mix(in oklab, var(--link) 45%, var(--border)); border-radius: var(--radius-md); background: var(--surface); color: inherit; text-decoration: none; transition: background var(--dur); }
 .practice-strip:hover { background: var(--surface-hover); color: inherit; text-decoration: none; }
@@ -608,9 +692,9 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .practice-strip-title { font-size: 1.1rem; line-height: 1.3; color: var(--fg); }
 .practice-strip-text { font-size: .9rem; line-height: 1.45; color: var(--muted); }
 .practice-strip-bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin-top: .4rem; }
-.practice-strip-bar i { height: 6px; border-radius: 3px; background: var(--border); }
-.practice-strip-bar i.part { background: color-mix(in oklab, var(--link) 40%, var(--border)); }
-.practice-strip-bar i.done { background: var(--link); }
+.practice-strip-bar i { height: 7px; border-radius: 4px; background: var(--candy-line, var(--border)); }
+.practice-strip-bar i.part { background: var(--candy, color-mix(in oklab, var(--link) 40%, var(--border))); }
+.practice-strip-bar i.done { background: var(--candy-deep, var(--link)); }
 .practice-strip-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .1rem 1rem; font-size: .85rem; color: var(--muted); }
 .practice-strip-go { color: var(--link); white-space: nowrap; }
 .lesson-row.practice-row { margin: 0 0 .55rem 3.2rem; padding: .4rem .6rem .45rem .7rem; grid-template-columns: 1rem minmax(0, 1fr) auto; gap: .6rem; border-left: 2px solid color-mix(in oklab, var(--link) 40%, var(--border)); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
@@ -628,8 +712,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .practice-card p.practice-card-meta { display: flex; flex-wrap: wrap; gap: .1rem 1rem; margin-top: .2rem; font-size: .86rem; color: var(--muted); }
 .content .practice-card-state:not(:empty) { color: var(--link); }
 /* a button, not a text link: the underline animation of .content a is switched off */
-.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run) { display: inline-block; margin: .5rem 0 .35rem; padding: .42rem .95rem; border-radius: var(--radius-sm); background: var(--link); background-image: none; color: var(--bg); text-decoration: none; }
-.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run):hover { background: var(--link-hover); background-image: none; color: var(--bg); }
+.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run) { display: inline-block; margin: .5rem 0 .35rem; padding: .45rem 1.05rem; border-radius: var(--btn-radius, var(--radius-sm)); background: var(--btn-bg, var(--link)); background-image: none; color: var(--btn-fg, var(--bg)); text-decoration: none; }
+.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run):hover { background: var(--btn-bg-hover, var(--link-hover)); background-image: none; color: var(--btn-fg, var(--bg)); }
 .content .practice-card p.practice-card-note { font-size: .86rem; color: var(--muted); }
 @media (max-width: 720px) { .lesson-row.practice-row { margin-left: 1.5rem; } }
 .lesson-row.planned { cursor: default; }
