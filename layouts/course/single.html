@@ -1,3 +1,4 @@
+{{/* Goldmark turns a straight double quote into a curly one only where it sits next to a space or ASCII punctuation, so Chinese text ends up with one curly and one straight quote in a pair. The courses use straight quotes throughout: put them back. */}}
 {{ define "main" }}
   {{- /* Lesson n has weight n*10; its part and the course length come from the
          "parts" outline in the section's _index.md. */ -}}
@@ -29,13 +30,13 @@
       {{ with .Params.questions }}
       <div>
         <p class="lo-h">{{ $.Parent.Params.questions_label | default "这一课回答的问题" }}</p>
-        <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
+        <ul>{{ range . }}<li>{{ . | markdownify | replaceRE "&[lr]dquo;" "\"" | safeHTML }}</li>{{ end }}</ul>
       </div>
       {{ end }}
       {{ with .Params.objectives }}
       <div>
         <p class="lo-h">{{ $.Parent.Params.objectives_label | default "学完这一课,你能" }}</p>
-        <ul>{{ range . }}<li>{{ . | markdownify }}</li>{{ end }}</ul>
+        <ul>{{ range . }}<li>{{ . | markdownify | replaceRE "&[lr]dquo;" "\"" | safeHTML }}</li>{{ end }}</ul>
       </div>
       {{ end }}
       <p class="lo-meta">
@@ -54,14 +55,14 @@
           <aside class="lesson-toc">
             <div class="lesson-toc-inner">
               <p class="lesson-toc-label">本课目录</p>
-              {{ . }}
+              {{ . | replaceRE "&[lr]dquo;" "\"" | safeHTML }}
             </div>
           </aside>
         {{ end }}
       {{ end }}
 
       <div class="lesson-main">
-        <div class="content">{{ .Content }}</div>
+        <div class="content">{{ .Content | replaceRE "&[lr]dquo;" "\"" | safeHTML }}</div>
         {{ partial "pager-siblings.html" (dict "page" . "sibs" .Parent.RegularPages.ByWeight) }}
       </div>
     </div>

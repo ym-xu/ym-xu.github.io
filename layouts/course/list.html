@@ -17,7 +17,7 @@
   {{ $stepped := .Params.stepped }}
   {{ $unit := .Params.unit | default "课" }}
   {{- /* Text before the marker <!--syllabus--> stands above the syllabus, the rest below it. */ -}}
-  {{ $bits := split .Content "<!--syllabus-->" }}
+  {{ $bits := split (.Content | replaceRE "&[lr]dquo;" "\"") "<!--syllabus-->" }}
   {{ $lead := index $bits 0 }}
   {{ $rest := "" }}{{ if gt (len $bits) 1 }}{{ $rest = index $bits 1 }}{{ end }}
 
