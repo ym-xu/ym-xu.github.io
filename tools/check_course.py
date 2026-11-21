@@ -20,6 +20,9 @@ import pathlib
 import sys
 import time
 
+# Figures with more than one slider: the values the lesson text tells the reader to try, slider by slider.
+SEVERAL_SLIDERS = {'fitline': ['-2.1', '1.4'], 'sigmoid': ['2.5', '0.7']}
+
 from playwright.sync_api import sync_playwright
 
 SITE = 'https://ym-xu.github.io/'
@@ -72,10 +75,18 @@ def main():
                 w.scroll_into_view_if_needed()
                 name = w.get_attribute('data-widget')
                 rng = w.locator('input[type=range]')
-                if rng.count():
+                bars = lambda: ' | '.join(x.inner_text().replace('\n', ' ') for x in w.locator('.w-bar').all())
+                move = "(el, v) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles: true})); }"
+                if rng.count() == 1:
                     for v in (rng.get_attribute('min'), rng.get_attribute('max')):
-                        rng.evaluate("(el, v) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles: true})); }", v)
-                        print(f'  图 {wi + 1} ({name}) 滑块 {v}:', ' | '.join(x.inner_text().replace('\n', ' ') for x in w.locator('.w-bar').all()))
+                        rng.evaluate(move, v)
+                        print(f'  图 {wi + 1} ({name}) 滑块 {v}:', bars())
+                elif rng.count() > 1:
+                    # several sliders: the starting state, then the setting the lesson text describes
+                    print(f'  图 {wi + 1} ({name}) 开始:', bars(), '|', w.locator('.w-status').inner_text()[:80])
+                    for k, v in enumerate(SEVERAL_SLIDERS.get(name, [])):
+                        rng.nth(k).evaluate(move, v)
+                    print(f'  图 {wi + 1} ({name}) 滑块 {SEVERAL_SLIDERS.get(name)}:', bars(), '|', w.locator('.w-status').inner_text()[:80])
                 first = w.locator('.w-btn').first
                 if first.count():
                     for k in range(7):

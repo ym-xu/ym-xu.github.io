@@ -11,6 +11,8 @@
 //   repeatcv           repeat the 5-fold cross-validation with new random splits
 //   ci                 many studies, each with its 95% interval: how many contain the true value
 //   shuffle            a P value by shuffling the group labels of two groups
+//   fitline            set a straight line by hand (height and slope) and watch the squared error
+//   sigmoid            set an S-shaped probability curve by hand (midpoint and steepness) and watch the penalty
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -451,7 +453,179 @@
     reset();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest };
+  // ---------- figure 6: a straight line set by hand ----------
+  // Two sliders: the height of the line (its prediction at a wall thickness of 4 mm, the middle of the
+  // patients) and its slope. An intercept slider would turn the line around x = 0, far outside the data,
+  // and make it hard to place. The readout is the mean squared error; one button hands over to least squares.
+  function fitline(root) {
+    var sc = getScene(), pts = sc.train, n = pts.length, X0 = 4;
+    var mx = 0, my = 0, sxx = 0, sxy = 0;
+    pts.forEach(function (p) { mx += p.x / n; my += p.y / n; });
+    pts.forEach(function (p) { sxx += (p.x - mx) * (p.x - mx); sxy += (p.x - mx) * (p.y - my); });
+    var bestB = sxy / sxx, bestH = my + bestB * (X0 - mx);
+    function mse(hh, b) {
+      var t = 0;
+      pts.forEach(function (p) { var e = p.y - (hh + b * (p.x - X0)); t += e * e; });
+      return t / n;
+    }
+    var start = { h: Math.round(my * 10) / 10, b: 0 }, cur = { h: start.h, b: start.b }, exact = false;
+    var top = mse(start.h, start.b) * 1.5;
+
+    var plot = frame(root, '散点图: 30 位病人和一条可以调的直线');
+    var segs = el('g', {}, plot), path = el('path', { 'class': 'w-curve' }, plot);
+    pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+    legend(root, [['pt', '30 位病人'], ['line', '你的直线'], ['res', '每位病人的误差']]);
+
+    function slider(text, min, max, value) {
+      var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+      input.type = 'range'; input.min = min; input.max = max; input.step = 0.1; input.value = value;
+      input.setAttribute('aria-label', text);
+      return { cap: cap, input: input };
+    }
+    var sh = slider('直线的高度', -6, 2, cur.h), sb = slider('直线的斜率', -1, 4, cur.b);
+
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '误差平方的平均: 每位病人的误差先平方,再取平均');
+    var row = h('div', 'w-bar', bars);
+    h('span', 'w-bar-label', row, '这条直线');
+    var fill = h('span', 'w-bar-fill train', h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+    var ctls = h('div', 'w-ctls', root), solve = button(ctls, '交给最小二乘', 'primary'), again = button(ctls, '重来');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+
+    function render() {
+      var f = function (x) { return cur.h + cur.b * (x - X0); }, a = cur.h - cur.b * X0, v = mse(cur.h, cur.b);
+      path.setAttribute('d', 'M' + sx(XD[0]).toFixed(1) + ' ' + sy(f(XD[0])).toFixed(1) + 'L' + sx(XD[1]).toFixed(1) + ' ' + sy(f(XD[1])).toFixed(1));
+      while (segs.firstChild) segs.removeChild(segs.firstChild);
+      pts.forEach(function (p) { el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(f(p.x)), 'class': 'w-res' }, segs); });
+      sh.cap.textContent = '高度(壁厚 4 mm 处的预测值): ' + minus(cur.h.toFixed(exact ? 2 : 1)) + ' Gy';
+      sb.cap.textContent = '斜率(壁厚每厚 1 mm,预测值变多少): ' + minus(cur.b.toFixed(exact ? 2 : 1)) + ' Gy';
+      fill.style.width = Math.min(100, v / top * 100).toFixed(1) + '%';
+      val.textContent = v.toFixed(2);
+      var formula = '预测 Δ = ' + minus(a.toFixed(2)) + (cur.b < 0 ? ' − ' : ' + ') + Math.abs(cur.b).toFixed(2) + ' × 壁厚';
+      status.textContent = exact
+        ? '最小二乘的直线: ' + formula + '。误差平方的平均是 ' + v.toFixed(2) + ',别的直线都比它大。'
+        : '你的直线: ' + formula + '。';
+    }
+    function fromSliders() { cur.h = +sh.input.value; cur.b = +sb.input.value; exact = false; render(); }
+    sh.input.addEventListener('input', fromSliders);
+    sb.input.addEventListener('input', fromSliders);
+    solve.addEventListener('click', function () {
+      cur.h = bestH; cur.b = bestB; exact = true;
+      sh.input.value = bestH.toFixed(1); sb.input.value = bestB.toFixed(1);
+      render();
+    });
+    again.addEventListener('click', function () {
+      cur.h = start.h; cur.b = start.b; exact = false;
+      sh.input.value = start.h; sb.input.value = start.b;
+      render();
+    });
+    render();
+  }
+
+  // ---------- figure 7: an S-shaped curve set by hand ----------
+  // 40 simulated patients whose 5 mm plan is above 68 Gy. x: how far above (Gy). y: 1 if the optimised plan
+  // brings the D2cc below 68 Gy, 0 if not. The curve is the probability of 1; it falls with x.
+  // Two sliders: the midpoint (where the probability is 50%) and the steepness. The readout is the mean
+  // penalty, -ln(probability given to what actually happened); one button hands over to maximum likelihood.
+  function sigmoid(root) {
+    var rng = mulberry32(16), pts = [];
+    while (pts.length < 40) {
+      var x = Math.round((0.2 + 11.8 * Math.pow(rng(), 1.3)) * 10) / 10;
+      pts.push({ x: x, y: rng() < 1 / (1 + Math.exp(-(1.2 - 0.65 * x))) ? 1 : 0 });
+    }
+    function prob(m, s, x) { return 1 / (1 + Math.exp(s * (x - m))); }
+    function loss(m, s) {
+      var t = 0;
+      pts.forEach(function (q) {
+        var p = Math.min(1 - 1e-9, Math.max(1e-9, prob(m, s, q.x)));
+        t -= Math.log(q.y ? p : 1 - p);
+      });
+      return t / pts.length;
+    }
+    // maximum likelihood by Newton's method on log-odds = b0 + b1 x
+    var b0 = 0, b1 = 0;
+    for (var it = 0; it < 50; it++) {
+      var g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+      pts.forEach(function (q) {
+        var p = 1 / (1 + Math.exp(-(b0 + b1 * q.x))), w = p * (1 - p);
+        g0 += q.y - p; g1 += (q.y - p) * q.x; h00 += w; h01 += w * q.x; h11 += w * q.x * q.x;
+      });
+      var det = h00 * h11 - h01 * h01;
+      b0 += (h11 * g0 - h01 * g1) / det; b1 += (h00 * g1 - h01 * g0) / det;
+    }
+    var best = { m: -b0 / b1, s: -b1 }, start = { m: 6, s: 0.3 }, cur = { m: start.m, s: start.s }, exact = false;
+
+    var PW = 360, PH = 230, PM = { l: 36, r: 10, t: 12, b: 34 }, XMAX = 12.5;
+    function px(x) { return PM.l + x / XMAX * (PW - PM.l - PM.r); }
+    function py(p) { return PM.t + (1 - p) * (PH - PM.t - PM.b); }
+    var svg = el('svg', { viewBox: '0 0 ' + PW + ' ' + PH, role: 'img', 'aria-label': '40 位病人的结局(是或否)和一条可以调的概率曲线' }, root);
+    [0, 0.5, 1].forEach(function (v) {
+      el('line', { x1: PM.l, x2: PW - PM.r, y1: py(v), y2: py(v), 'class': v === 0.5 ? 'w-zero' : 'w-grid' }, svg);
+      el('text', { x: PM.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, v === 0.5 ? '50%' : v ? '100%' : '0');
+    });
+    [0, 2, 4, 6, 8, 10, 12].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: PH - PM.b, y2: PH - PM.b + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: PH - PM.b + 16, 'text-anchor': 'middle' }, svg, String(v));
+    });
+    el('line', { x1: PM.l, x2: PW - PM.r, y1: PH - PM.b, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+    el('line', { x1: PM.l, x2: PM.l, y1: PM.t, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+    el('text', { x: (PM.l + PW - PM.r) / 2, y: PH - 3, 'text-anchor': 'middle' }, svg, '5 mm 计划超过 68 Gy 多少 (Gy)');
+    var segs = el('g', {}, svg), path = el('path', { 'class': 'w-curve' }, svg);
+    pts.forEach(function (q) { el('circle', { cx: px(q.x), cy: py(q.y), r: 3.4, 'class': 'w-pt' + (q.y ? '' : ' no') }, svg); });
+    legend(root, [['pt', '降到了 68 Gy 以下'], ['no', '没有降到'], ['line', '模型说的概率']]);
+
+    function slider(text, min, max, step, value) {
+      var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+      input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = value;
+      input.setAttribute('aria-label', text);
+      return { cap: cap, input: input };
+    }
+    var sm = slider('曲线的中点', 0, 8, 0.1, cur.m), ss = slider('曲线的陡度', 0.1, 2, 0.05, cur.s);
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '平均罚分: 模型给"实际发生的结果"的概率越低,罚得越重');
+    var row = h('div', 'w-bar', bars);
+    h('span', 'w-bar-label', row, '这条曲线');
+    var fill = h('span', 'w-bar-fill train', h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+    var ctls = h('div', 'w-ctls', root), solve = button(ctls, '交给最大似然', 'primary'), again = button(ctls, '重来');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+
+    function render() {
+      var d = '', i, x;
+      for (i = 0; i <= 250; i++) { x = XMAX * i / 250; d += (i ? 'L' : 'M') + px(x).toFixed(1) + ' ' + py(prob(cur.m, cur.s, x)).toFixed(1); }
+      path.setAttribute('d', d);
+      while (segs.firstChild) segs.removeChild(segs.firstChild);
+      pts.forEach(function (q) { el('line', { x1: px(q.x), x2: px(q.x), y1: py(q.y), y2: py(prob(cur.m, cur.s, q.x)), 'class': 'w-res' }, segs); });
+      var v = loss(cur.m, cur.s), or = Math.exp(-cur.s);
+      sm.cap.textContent = '中点(概率是 50% 的位置): 超过 ' + cur.m.toFixed(exact ? 2 : 1) + ' Gy';
+      ss.cap.textContent = '陡度: ' + cur.s.toFixed(2) + '(每多超 1 Gy,odds 乘以 ' + or.toFixed(2) + ')';
+      fill.style.width = Math.min(100, v / 1.0 * 100).toFixed(1) + '%';
+      val.textContent = v.toFixed(2);
+      var formula = 'log-odds = ' + (cur.s * cur.m).toFixed(2) + ' − ' + cur.s.toFixed(2) + ' × 超出的剂量';
+      status.textContent = exact
+        ? '最大似然的曲线: ' + formula + '。平均罚分 ' + v.toFixed(2) + ',别的曲线都比它大。'
+        : '你的曲线: ' + formula + '。';
+    }
+    function fromSliders() { cur.m = +sm.input.value; cur.s = +ss.input.value; exact = false; render(); }
+    sm.input.addEventListener('input', fromSliders);
+    ss.input.addEventListener('input', fromSliders);
+    solve.addEventListener('click', function () {
+      cur.m = best.m; cur.s = best.s; exact = true;
+      sm.input.value = best.m.toFixed(1); ss.input.value = (Math.round(best.s * 20) / 20).toFixed(2);
+      render();
+    });
+    again.addEventListener('click', function () {
+      cur.m = start.m; cur.s = start.s; exact = false;
+      sm.input.value = start.m; ss.input.value = start.s;
+      render();
+    });
+    render();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
