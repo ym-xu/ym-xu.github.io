@@ -15,6 +15,7 @@
 //   sigmoid            set an S-shaped probability curve by hand (midpoint and steepness) and watch the penalty
 //   signif             more patients: the P value of a weak predictor shrinks, the prediction error does not
 //   leak               variables chosen before cross-validation: pure noise looks predictive
+//   shrink             ridge or lasso: the stronger the constraint, the smaller the coefficients
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -818,7 +819,120 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak };
+  // ---------- figure 10: a constraint on the coefficients ----------
+  // 40 simulated patients and 12 standardised variables: the first two have a real effect (1.5 and -0.8),
+  // the other ten are noise. Ridge (closed form) or lasso (coordinate descent), fitted in the browser.
+  // A slider for the strength of the constraint and two buttons for its kind. One bar per coefficient,
+  // and the mean absolute error on 2000 new patients, without the constraint and with it.
+  function shrinkScene(seed, mulberry32, normal) {
+    var N = 40, P = 12, M = 2000, TRUE = [1.5, -0.8], rng = mulberry32(seed), i, j;
+    function draw(n) {
+      var X = [], y = [];
+      for (i = 0; i < n; i++) {
+        var row = []; for (j = 0; j < P; j++) row.push(normal(rng));
+        X.push(row); y.push(TRUE[0] * row[0] + TRUE[1] * row[1] + 2.0 * normal(rng));
+      }
+      return { X: X, y: y };
+    }
+    var tr = draw(N), te = draw(M), mean = 0;
+    // centre the outcome and standardise the columns with the training patients' means and SDs
+    tr.y.forEach(function (v) { mean += v / N; });
+    var mu = [], sd = [];
+    for (j = 0; j < P; j++) {
+      var m = 0, s = 0;
+      tr.X.forEach(function (r) { m += r[j] / N; });
+      tr.X.forEach(function (r) { s += (r[j] - m) * (r[j] - m) / N; });
+      mu.push(m); sd.push(Math.sqrt(s));
+    }
+    function z(r) { return r.map(function (v, k) { return (v - mu[k]) / sd[k]; }); }
+    var Z = tr.X.map(z), yc = tr.y.map(function (v) { return v - mean; }), ZT = te.X.map(z);
+    function ridge(lam) {                       // (Z'Z + lam I) b = Z'y, by Gaussian elimination
+      var A = [], b = [], r, s, t;
+      for (r = 0; r < P; r++) { A.push(new Float64Array(P)); b.push(0); }
+      Z.forEach(function (row, n) { for (r = 0; r < P; r++) { b[r] += row[r] * yc[n]; for (s = 0; s < P; s++) A[r][s] += row[r] * row[s]; } });
+      for (r = 0; r < P; r++) A[r][r] += lam;
+      for (r = 0; r < P; r++) {
+        var piv = r; for (s = r + 1; s < P; s++) if (Math.abs(A[s][r]) > Math.abs(A[piv][r])) piv = s;
+        t = A[r]; A[r] = A[piv]; A[piv] = t; t = b[r]; b[r] = b[piv]; b[piv] = t;
+        for (s = r + 1; s < P; s++) { var f = A[s][r] / A[r][r]; b[s] -= f * b[r]; for (t = r; t < P; t++) A[s][t] -= f * A[r][t]; }
+      }
+      var w = new Array(P);
+      for (r = P - 1; r >= 0; r--) { var acc = b[r]; for (s = r + 1; s < P; s++) acc -= A[r][s] * w[s]; w[r] = acc / A[r][r]; }
+      return w;
+    }
+    function lasso(lam) {                       // coordinate descent on (1/2n)|y - Zb|^2 + lam |b|_1
+      var w = new Array(P).fill(0), res = yc.slice(), it, k, n;
+      for (it = 0; it < 400; it++) {
+        var change = 0;
+        for (k = 0; k < P; k++) {
+          var rho = 0;
+          for (n = 0; n < N; n++) rho += Z[n][k] * (res[n] + Z[n][k] * w[k]) / N;      // columns have variance 1
+          var nw = rho > lam ? rho - lam : rho < -lam ? rho + lam : 0;
+          if (nw !== w[k]) { for (n = 0; n < N; n++) res[n] += Z[n][k] * (w[k] - nw); change = Math.max(change, Math.abs(nw - w[k])); w[k] = nw; }
+        }
+        if (change < 1e-9) break;
+      }
+      return w;
+    }
+    function error(w) {
+      var e = 0;
+      ZT.forEach(function (row, n) { var p = mean; for (var k = 0; k < P; k++) p += w[k] * row[k]; e += Math.abs(te.y[n] - p) / M; });
+      return e;
+    }
+    return { P: P, ridge: ridge, lasso: lasso, error: error, RIDGE: [0, 3, 10, 30, 60, 120, 250, 500], LASSO: [0, 0.05, 0.1, 0.2, 0.3, 0.45, 0.7, 1.0] };
+  }
+  function shrink(root) {
+    var sc = shrinkScene(45, mulberry32, normal), kind = 'lasso';
+    var LABELS = ['壁厚', '次数'];
+    for (var q = 1; q <= sc.P - 2; q++) LABELS.push('随机 ' + q);
+    var ROW = 17, PW = 360, PH = sc.P * ROW + 26, X0 = 70, XR = 1.9;          // coefficients between -1.9 and 1.9
+    function px(v) { return X0 + (v + XR) / (2 * XR) * (PW - X0 - 10); }
+    var svg = el('svg', { viewBox: '0 0 ' + PW + ' ' + PH, role: 'img', 'aria-label': '每个变量的系数' }, root);
+    [-1, 0, 1].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: 4, y2: sc.P * ROW + 6, 'class': v === 0 ? 'w-axis' : 'w-grid' }, svg);
+      el('text', { x: px(v), y: PH - 6, 'text-anchor': 'middle' }, svg, minus(v));
+    });
+    var bars = LABELS.map(function (name, k) {
+      el('text', { x: X0 - 8, y: 6 + k * ROW + 12, 'text-anchor': 'end' }, svg, name);
+      return el('rect', { y: 6 + k * ROW + 3, height: ROW - 6, 'class': k < 2 ? 'w-coef real' : 'w-coef' }, svg);
+    });
+    var ctls = h('div', 'w-ctls', root), bLasso = button(ctls, 'LASSO', 'primary'), bRidge = button(ctls, '岭回归');
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0; input.max = sc.RIDGE.length - 1; input.step = 1; input.value = 0;
+    input.setAttribute('aria-label', '约束的强度');
+    var box = h('div', 'w-bars', root);
+    box.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', box, '在 2000 位新病人身上,预测值和实际值平均差多少');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', box);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / 2.6 * 100).toFixed(1) + '%'; val.textContent = gy(v); };
+    }
+    var setFree = bar('不加约束', 'new'), setNow = bar('现在的强度', 'train');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    var free = sc.error(sc.ridge(0));
+    function update() {
+      var level = +input.value, w = kind === 'lasso' ? sc.lasso(sc.LASSO[level]) : sc.ridge(sc.RIDGE[level]);
+      bars.forEach(function (r, k) {
+        var a = px(0), b = px(Math.max(-XR, Math.min(XR, w[k])));
+        r.setAttribute('x', Math.min(a, b)); r.setAttribute('width', Math.max(Math.abs(b - a), w[k] === 0 ? 0 : 0.8));
+      });
+      var kept = w.filter(function (v) { return v !== 0; }).length;
+      cap.textContent = '约束的强度: ' + level + (level === 0 ? '(不加约束)' : level === sc.RIDGE.length - 1 ? '(最强)' : '');
+      setFree(free); setNow(sc.error(w));
+      bLasso.className = 'w-btn' + (kind === 'lasso' ? ' primary' : '');
+      bRidge.className = 'w-btn' + (kind === 'ridge' ? ' primary' : '');
+      status.textContent = (kind === 'lasso' ? 'LASSO' : '岭回归') + ': ' + sc.P + ' 个系数里,' + kept + ' 个不是 0。';
+    }
+    bLasso.addEventListener('click', function () { kind = 'lasso'; update(); });
+    bRidge.addEventListener('click', function () { kind = 'ridge'; update(); });
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

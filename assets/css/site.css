@@ -616,6 +616,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-pt.no { fill: var(--bg); stroke: var(--link); stroke-width: 1.4; }
 .widget .w-curve { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linejoin: round; }
 .widget .w-res { stroke: var(--link); stroke-width: 1.5; }
+.widget .w-coef { fill: var(--muted); opacity: .6; }
+.widget .w-coef.real { fill: var(--link); opacity: 1; }
 .widget .w-dot { fill: var(--muted); opacity: .6; }
 .widget .w-dot.now { fill: var(--link); opacity: 1; }
 .widget .w-mean { stroke: var(--link); stroke-width: 1.5; stroke-dasharray: 4 3; }
