@@ -13,6 +13,7 @@
 //   shuffle            a P value by shuffling the group labels of two groups
 //   fitline            set a straight line by hand (height and slope) and watch the squared error
 //   sigmoid            set an S-shaped probability curve by hand (midpoint and steepness) and watch the penalty
+//   signif             more patients: the P value of a weak predictor shrinks, the prediction error does not
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -625,7 +626,115 @@
     render();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid };
+  // ---------- figure 8: significance is not accuracy ----------
+  // A predictor with a small true effect (age: 0.03 Gy per year, against 2.2 Gy of noise). One slider: how many
+  // patients the line is fitted on (the first n of the same 3000). Readouts: the slope with its P value, and the
+  // mean absolute error on 5000 new patients, with and without the predictor.
+  function lgamma(x) {
+    var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    var y = x, t = x + 5.5, sum = 1.000000000190015;
+    t -= (x + 0.5) * Math.log(t);
+    for (var j = 0; j < 6; j++) sum += c[j] / ++y;
+    return -t + Math.log(2.5066282746310005 * sum / x);
+  }
+  function betacf(a, b, x) {            // continued fraction of the incomplete beta function
+    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    d = 1 / d;
+    var hh = d;
+    for (var m = 1; m <= 200; m++) {
+      var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+      c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+      d = 1 / d; hh *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+      c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+      d = 1 / d;
+      var del = d * c;
+      hh *= del;
+      if (Math.abs(del - 1) < 3e-12) break;
+    }
+    return hh;
+  }
+  function ibeta(a, b, x) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    var bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+  }
+  function pTwoSided(t, df) { return ibeta(df / 2, 0.5, df / (df + t * t)); }   // Student's t
+  function signif(root) {
+    function gen(n, seed) {
+      var rng = mulberry32(seed), pts = [];
+      for (var i = 0; i < n; i++) {
+        var age = Math.max(40, Math.min(90, 64 + 9 * normal(rng)));
+        pts.push({ x: Math.round(age), y: Math.round((-2.1 + 0.03 * (age - 64) + 2.2 * normal(rng)) * 10) / 10 });
+      }
+      return pts;
+    }
+    var all = gen(3000, 12), fresh = gen(5000, 1012), SIZES = [30, 100, 300, 1000, 3000];
+    function fit(pts) {
+      var n = pts.length, mx = 0, my = 0, sxx = 0, sxy = 0, sse = 0;
+      pts.forEach(function (p) { mx += p.x / n; my += p.y / n; });
+      pts.forEach(function (p) { sxx += (p.x - mx) * (p.x - mx); sxy += (p.x - mx) * (p.y - my); });
+      var b = sxy / sxx, a = my - b * mx;
+      pts.forEach(function (p) { var e = p.y - a - b * p.x; sse += e * e; });
+      var t = b / Math.sqrt(sse / (n - 2) / sxx), eb = 0, em = 0;
+      fresh.forEach(function (p) { eb += Math.abs(p.y - my) / fresh.length; em += Math.abs(p.y - a - b * p.x) / fresh.length; });
+      return { a: a, b: b, p: pTwoSided(t, n - 2), base: eb, model: em };
+    }
+
+    var PW = 360, PH = 230, PM = { l: 36, r: 10, t: 12, b: 34 }, XR = [40, 90], YR = [-9.5, 5.5];
+    function px(x) { return PM.l + (x - XR[0]) / (XR[1] - XR[0]) * (PW - PM.l - PM.r); }
+    function py(y) { return PM.t + (YR[1] - y) / (YR[1] - YR[0]) * (PH - PM.t - PM.b); }
+    var svg = el('svg', { viewBox: '0 0 ' + PW + ' ' + PH, role: 'img', 'aria-label': '散点图: 年龄和 Δ,以及拟合的直线' }, root);
+    [-8, -4, 0, 4].forEach(function (v) {
+      el('line', { x1: PM.l, x2: PW - PM.r, y1: py(v), y2: py(v), 'class': v === 0 ? 'w-zero' : 'w-grid' }, svg);
+      el('text', { x: PM.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, minus(v));
+    });
+    [40, 50, 60, 70, 80, 90].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: PH - PM.b, y2: PH - PM.b + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: PH - PM.b + 16, 'text-anchor': v === 90 ? 'end' : 'middle' }, svg, String(v));
+    });
+    el('line', { x1: PM.l, x2: PW - PM.r, y1: PH - PM.b, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+    el('line', { x1: PM.l, x2: PM.l, y1: PM.t, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+    el('text', { x: (PM.l + PW - PM.r) / 2, y: PH - 3, 'text-anchor': 'middle' }, svg, '年龄 (岁)');
+    el('text', { x: PM.l + 5, y: PM.t + 10 }, svg, 'Δ (Gy)');
+    var dots = el('g', {}, svg), path = el('path', { 'class': 'w-curve' }, svg);
+    legend(root, [['pt', '建模的病人(最多画 300 位)'], ['line', '拟合的直线']]);
+
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0; input.max = SIZES.length - 1; input.step = 1; input.value = 0;
+    input.setAttribute('aria-label', '建模的病人数');
+    var chips = h('div', 'w-chips', root), chipB = h('span', 'w-chip done', chips), chipP = h('span', 'w-chip done', chips);
+    chips.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '在 5000 位新病人身上,预测值和实际值平均差多少');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / 2.6 * 100).toFixed(1) + '%'; val.textContent = gy(v); };
+    }
+    var setBase = bar('都猜平均值', 'new'), setModel = bar('用上年龄', 'train');
+
+    function update() {
+      var n = SIZES[+input.value], pts = all.slice(0, n), f = fit(pts);
+      while (dots.firstChild) dots.removeChild(dots.firstChild);
+      pts.slice(0, 300).forEach(function (p) { el('circle', { cx: px(p.x), cy: py(p.y), r: 2.4, 'class': 'w-pt', opacity: n > 100 ? 0.45 : 0.9 }, dots); });
+      path.setAttribute('d', 'M' + px(XR[0]).toFixed(1) + ' ' + py(f.a + f.b * XR[0]).toFixed(1) + 'L' + px(XR[1]).toFixed(1) + ' ' + py(f.a + f.b * XR[1]).toFixed(1));
+      cap.textContent = '建模的病人数: ' + n;
+      chipB.textContent = '斜率 ' + minus(f.b.toFixed(3)) + ' Gy/岁';
+      chipP.textContent = f.p < 0.001 ? 'P < 0.001' : 'P = ' + f.p.toFixed(3);
+      setBase(f.base); setModel(f.model);
+    }
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
