@@ -712,6 +712,12 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget.stage .s-dot { fill: var(--link); }
 .widget.stage .s-mark { fill: var(--bg); stroke: var(--muted); stroke-width: 1.3; }
 .widget.stage .s-trail { stroke: var(--s-ink); stroke-width: 5; stroke-linecap: round; opacity: .4; }
+.widget.stage .s-zone { fill: var(--s-ink); opacity: .1; }
+.widget.stage .s-scan { stroke: var(--s-ink); stroke-width: 1.6; }
+.widget.stage .s-res { opacity: .55; }
+.widget.stage .s-curve2 { fill: none; stroke: var(--s-ink); stroke-width: 1.6; stroke-linejoin: round; }
+.widget.stage .s-small { font-size: 10px; }
+.widget.stage .s-halo { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
 .widget.stage .s-truth { stroke: var(--w-bad); stroke-width: 1.3; stroke-dasharray: 4 3; }
 .widget.stage .s-pin-stem { stroke: var(--link); stroke-width: 1.6; }
 .widget.stage .s-pin-dot { fill: var(--link); stroke: var(--bg); stroke-width: 1.5; }

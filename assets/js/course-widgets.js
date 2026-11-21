@@ -142,7 +142,9 @@
   function sy(y) { return M.t + (YD[1] - y) / (YD[1] - YD[0]) * (H - M.t - M.b); }
   // Axes of the wall-thickness / dose-change plot; returns the clipped group to draw into.
   function frame(root, label) {
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': label }, root);
+    return axes(el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': label }, root));
+  }
+  function axes(svg) {
     var id = 'w-clip-' + (++uid), cp = el('clipPath', { id: id }, el('defs', {}, svg));
     el('rect', { x: M.l, y: M.t, width: W - M.l - M.r, height: H - M.t - M.b }, cp);
     [-8, -4, 0, 4].forEach(function (v) {
@@ -1850,7 +1852,230 @@
     }
   };
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene) };
+  // --- scene: how a regression tree is grown, cut by cut (the algorithm of stat-ml lesson 7) ---
+  // The algorithm really runs here, on the 30 simulated patients all figures share: every place a
+  // group can be cut is tried, the cut with the smallest squared error is kept, and the same is
+  // done again inside each group. The tiles show what it computes.
+  var treeScene = {
+    label: '分步图: 一棵回归树怎样一刀一刀长出来',
+    height: 338,
+    tiles: ['分成几组', '建模病人的误差', '这一步'],
+    build: function (api) {
+      var svg = api.svg, sc = getScene(), n = sc.train.length, L = {}, E = easeInOut, i;
+      var P = sc.train.slice().sort(function (a, b) { return a.x - b.x; });
+      function T(parent, x, y, s, cls, anchor) { return el('text', { x: x, y: y, 'class': cls || '', 'text-anchor': anchor || 'start' }, parent, s); }
+      function layer(name) { return (L[name] = el('g', { 'class': 'stage-layer' }, svg)); }
+      function show(names) { for (var k in L) L[k].setAttribute('class', 'stage-layer' + (names.indexOf(k) >= 0 ? ' on' : '')); }
+      function fade(node, v) { node.style.opacity = v; }
+
+      // --- the algorithm ---
+      function stat(lo, hi) {                       // mean and squared error of the patients lo … hi−1
+        var m = 0, s = 0, k;
+        for (k = lo; k < hi; k++) m += P[k].y / (hi - lo);
+        for (k = lo; k < hi; k++) s += (P[k].y - m) * (P[k].y - m);
+        return { mean: m, sse: s };
+      }
+      function cuts(lo, hi) {                       // every place this group can be cut: between two neighbours
+        var out = [], k;
+        for (k = lo + 1; k < hi; k++) {
+          if (P[k].x > P[k - 1].x) out.push({ i: k, thr: (P[k - 1].x + P[k].x) / 2, sse: stat(lo, k).sse + stat(k, hi).sse });
+        }
+        return out;
+      }
+      function bestOf(list) { return list.reduce(function (a, c) { return c.sse < a.sse ? c : a; }); }
+      function groups(idx) {                        // the groups a list of cuts makes, each with its mean
+        var b = [0].concat(idx.slice().sort(function (a, c) { return a - c; }), [n]), g = [], k;
+        for (k = 0; k + 1 < b.length; k++) {
+          var st = stat(b[k], b[k + 1]);
+          g.push({ lo: b[k], hi: b[k + 1], mean: st.mean, sse: st.sse,
+            x0: b[k] ? (P[b[k] - 1].x + P[b[k]].x) / 2 : XD[0], x1: b[k + 1] < n ? (P[b[k + 1] - 1].x + P[b[k + 1]].x) / 2 : XD[1] });
+        }
+        return g;
+      }
+      function mse(g) { return g.reduce(function (s, q) { return s + q.sse; }, 0) / n; }
+      function predict(g, x) { for (var k = 0; k < g.length - 1; k++) if (x <= g[k].x1) return g[k].mean; return g[g.length - 1].mean; }
+      function mseNew(g) { var s = 0; sc.fresh.forEach(function (p) { var d = p.y - predict(g, p.x); s += d * d; }); return s / sc.fresh.length; }
+
+      var all = cuts(0, n), first = bestOf(all);
+      var leftC = cuts(0, first.i), rightC = cuts(first.i, n), second = bestOf(leftC), third = bestOf(rightC);
+      var G1 = groups([]), G2 = groups([first.i]), G4 = groups([first.i, second.i, third.i]), fullIdx = [];
+      for (i = 1; i < n; i++) if (P[i].x > P[i - 1].x) fullIdx.push(i);
+      var GF = groups(fullIdx), NEWX = 3.0;
+
+      // --- the plot ---
+      var plot = axes(svg);
+      var zone = el('rect', { y: M.t, height: H - M.t - M.b, 'class': 's-zone' }, plot);
+      var fresh = el('g', {}, plot);
+      sc.shown.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 2.6, 'class': 'w-pt new' }, fresh); });
+      var sticks = P.map(function (p) { return el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(p.y), 'class': 'w-res s-res' }, plot); });
+      var fixed = el('g', {}, plot), scan = el('line', { y1: M.t, y2: H - M.b, 'class': 's-scan' }, plot);
+      var stair = el('path', { 'class': 'w-curve' }, plot);
+      P.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var probe = el('g', {}, plot), probeLine = el('line', { x1: sx(NEWX), x2: sx(NEWX), y1: sy(YD[0]), 'class': 's-scan' }, probe);
+      var probeDot = el('circle', { cx: sx(NEWX), r: 5, 'class': 's-token' }, probe);
+
+      function model(g, stickAmount) {              // draw a tree's prediction: one level per group
+        stair.setAttribute('d', g.map(function (q) { return 'M' + sx(q.x0).toFixed(1) + ' ' + sy(q.mean).toFixed(1) + 'H' + sx(q.x1).toFixed(1); }).join(''));
+        g.forEach(function (q) {
+          for (var k = q.lo; k < q.hi; k++) sticks[k].setAttribute('y2', lerp(sy(P[k].y), sy(q.mean), stickAmount == null ? 1 : stickAmount));
+        });
+      }
+      function fixedCuts(list) {
+        while (fixed.firstChild) fixed.removeChild(fixed.firstChild);
+        list.forEach(function (c) { el('line', { x1: sx(c.thr), x2: sx(c.thr), y1: M.t, y2: H - M.b, 'class': 'w-mean' }, fixed); });
+      }
+      function scanAt(thr) { scan.setAttribute('x1', sx(thr)); scan.setAttribute('x2', sx(thr)); fade(scan, 1); }
+      function zoneOn(x0, x1) { zone.setAttribute('x', sx(x0)); zone.setAttribute('width', sx(x1) - sx(x0)); fade(zone, ''); }
+
+      // --- under the plot: the error at every place tried (same x axis as the plot) ---
+      var curve = layer('curve');
+      T(curve, M.l + 4, 264, '切在每个位置时的误差(越低越好)', 's-k');
+      el('line', { x1: M.l, x2: W - M.r, y1: 332, y2: 332, 'class': 'w-grid' }, curve);
+      var lines = [el('polyline', { 'class': 's-curve2', points: '' }, curve), el('polyline', { 'class': 's-curve2', points: '' }, curve)];
+      var marks = [0, 1].map(function () {
+        var g = el('g', {}, curve);
+        el('circle', { r: 4, 'class': 's-dot' }, g);
+        return { g: g, label: T(g, 0, -9, '', 's-v s-n s-halo', 'middle') };
+      });
+      var now = el('circle', { r: 3.4, 'class': 's-token' }, curve), range = [0, 1];
+      function CY(v) { return 328 - (v - range[0]) / (range[1] - range[0]) * 50; }
+      function trace(k, list, other, upto) {         // the first "upto" places of one search
+        lines[k].setAttribute('points', list.slice(0, upto).map(function (c) { return sx(c.thr).toFixed(1) + ',' + CY((c.sse + other) / n).toFixed(1); }).join(' '));
+      }
+      function mark(k, c, other) {
+        if (!c) { fade(marks[k].g, 0); return; }
+        marks[k].g.setAttribute('transform', 'translate(' + sx(c.thr).toFixed(1) + ' ' + CY((c.sse + other) / n).toFixed(1) + ')');
+        marks[k].label.textContent = ((c.sse + other) / n).toFixed(2); fade(marks[k].g, 1);
+      }
+
+      // --- under the plot: the finished tree as questions ---
+      var tree = layer('tree'), parts = {};
+      function edge(a, b) { return el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], 'class': 's-edge' }, tree); }
+      function node(cx, cy, w, s, leaf) {
+        var r = el('rect', { x: cx - w / 2, y: cy - 9, width: w, height: 18, rx: leaf ? 9 : 5, 'class': 's-node' }, tree);
+        T(tree, cx, cy + 3.6, s, (leaf ? 's-v s-n' : 's-t') + ' s-small', 'middle');
+        return r;
+      }
+      var LX = [50, 138, 222, 310];
+      parts.e0 = edge([150, 274], [96, 283]); parts.e1 = edge([210, 274], [264, 283]);
+      parts.e00 = edge([78, 301], [LX[0], 311]); parts.e01 = edge([114, 301], [LX[1], 311]);
+      parts.e10 = edge([246, 301], [LX[2], 311]); parts.e11 = edge([282, 301], [LX[3], 311]);
+      parts.root = node(180, 265, 116, '壁厚 ≤ ' + first.thr.toFixed(2) + ' mm?');
+      parts.n0 = node(96, 292, 110, '壁厚 ≤ ' + second.thr.toFixed(2) + ' mm?');
+      parts.n1 = node(264, 292, 110, '壁厚 ≤ ' + third.thr.toFixed(2) + ' mm?');
+      G4.forEach(function (q, k) { parts['l' + k] = node(LX[k], 320, 58, num(q.mean), true); });
+      T(tree, W - M.r, 262, '左: 是,右: 否', 's-k', 'end');
+      function hot(node, on) { node.setAttribute('class', node.getAttribute('class').replace(/ (hot|hit)/g, '') + (on ? ' ' + on : '')); }
+      var goLeft = NEWX <= first.thr, goLeft2 = NEWX <= (goLeft ? second.thr : third.thr), leafK = (goLeft ? 0 : 2) + (goLeft2 ? 0 : 1);
+      var path = [parts.root, goLeft ? parts.e0 : parts.e1, goLeft ? parts.n0 : parts.n1, parts['e' + (goLeft ? 0 : 1) + (goLeft2 ? 0 : 1)], parts['l' + leafK]];
+
+      // --- under the plot: a small tree against a tree grown to the end ---
+      var bars = layer('bars'), newSmall = mseNew(G4), newFull = mseNew(GF), top = Math.max(newSmall, newFull, mse(G4));
+      [[G4.length + ' 组', mse(G4), newSmall, 262], [GF.length + ' 组', mse(GF), newFull, 302]].forEach(function (row) {
+        T(bars, M.l, row[3] + 13, '分成 ' + row[0], 's-t');
+        [[row[1], 's-bar', '建模病人 '], [row[2], 's-bar dim', '新病人 ']].forEach(function (b, k) {
+          var w = Math.max(1, b[0] / top * 150), y = row[3] + k * 12;
+          el('rect', { x: 104, y: y, width: w, height: 8, rx: 2, 'class': b[1] }, bars);
+          T(bars, 104 + w + 5, y + 8, b[2] + b[0].toFixed(2), 's-k s-n');
+        });
+      });
+
+      function reset(layers) {
+        show(layers);
+        fade(zone, 0); fade(scan, 0); fade(fresh, 0); fade(probe, 0); fade(now, 0);
+        sticks.forEach(function (s) { fade(s, 1); });
+        fixedCuts([]);
+        lines.forEach(function (l) { l.setAttribute('points', ''); });
+        mark(0, null); mark(1, null);
+        path.forEach(function (p) { hot(p, ''); });
+      }
+      function search(k, list, other, lo, hi, base, ms, dur) {   // try every place of one group, one after another
+        api.tween(ms, dur, function (u) {
+          var upto = Math.min(list.length, Math.floor(u * list.length) + 1), c = list[upto - 1];
+          scanAt(c.thr); trace(k, list, other, upto);
+          model(groups(base.concat([c.i])));
+          now.setAttribute('cx', sx(c.thr)); now.setAttribute('cy', CY((c.sse + other) / n)); fade(now, 1);
+          api.tile(1, ((c.sse + other) / n).toFixed(2)); api.tile(2, upto + ' / ' + list.length, '试过的位置');
+        });
+      }
+
+      var steps = [
+        function () {                                 // 1 the patients
+          reset([]);
+          stair.setAttribute('d', ''); model(G1, 0); stair.setAttribute('d', '');
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模病人');
+        },
+        function () {                                 // 2 no cut: everyone gets the mean
+          reset([]);
+          model(G1, 0);
+          api.tile(0, '1 组'); api.tile(2, num(G1[0].mean) + ' Gy', '都猜平均值');
+          api.tween(300, 900, function (u) { model(G1, E(u)); });
+          api.at(1200, function () { api.tile(1, mse(G1).toFixed(2)); });
+        },
+        function () {                                 // 3 try every place
+          reset(['curve']);
+          range = [first.sse / n - 0.25, mse(G1) + 0.1];
+          api.tile(0, '2 组');
+          model(G1);
+          search(0, all, 0, 0, n, [], 400, 3600);
+          api.at(4000, function () { mark(0, first, 0); });
+        },
+        function () {                                 // 4 keep the best one
+          reset(['curve']);
+          range = [first.sse / n - 0.25, mse(G1) + 0.1];
+          trace(0, all, 0, all.length); mark(0, first, 0);
+          var last = all[all.length - 1];
+          scanAt(last.thr); model(groups([last.i]));
+          api.tile(0, '2 组'); api.tile(1, ((last.sse) / n).toFixed(2)); api.tile(2, first.thr.toFixed(2) + ' mm', '误差最小的位置');
+          api.tween(300, 700, function (u) { scanAt(lerp(last.thr, first.thr, E(u))); });
+          api.at(1000, function () { fade(scan, 0); fixedCuts([first]); model(G2); api.tile(1, mse(G2).toFixed(2)); });
+        },
+        function () {                                 // 5 the same again inside each group
+          reset(['curve']);
+          var lo = Math.min(second.sse + G2[1].sse, third.sse + G2[0].sse) / n;
+          range = [lo - 0.2, mse(G2) + 0.1];
+          fixedCuts([first]); model(G2);
+          api.tile(0, '4 组'); api.tile(1, mse(G2).toFixed(2));
+          zoneOn(XD[0], first.thr);
+          search(0, leftC, G2[1].sse, 0, first.i, [first.i], 400, 2200);
+          api.at(2650, function () { mark(0, second, G2[1].sse); fixedCuts([first, second]); model(groups([first.i, second.i])); zoneOn(first.thr, XD[1]); });
+          search(1, rightC, stat(0, second.i).sse + stat(second.i, first.i).sse, first.i, n, [first.i, second.i], 2900, 1300);
+          api.at(4250, function () {
+            mark(1, third, stat(0, second.i).sse + stat(second.i, first.i).sse);
+            fade(zone, 0); fade(scan, 0); fade(now, 0); fixedCuts([first, second, third]); model(G4);
+            api.tile(1, mse(G4).toFixed(2)); api.tile(2, (leftC.length + rightC.length) + ' 个', '又试了');
+          });
+        },
+        function () {                                 // 6 a new patient
+          reset(['tree']);
+          fixedCuts([first, second, third]); model(G4);
+          sticks.forEach(function (s) { fade(s, 0.25); });
+          var yhat = predict(G4, NEWX);
+          api.tile(0, '4 组'); api.tile(1, mse(G4).toFixed(2)); api.tile(2, '—', '新病人的预测');
+          probeLine.setAttribute('y2', sy(YD[0])); probeDot.setAttribute('cy', sy(YD[0])); fade(probe, 1);
+          path.forEach(function (p, k) { api.at(300 + k * 260, function () { hot(p, k === path.length - 1 ? 'hit' : 'hot'); }); });
+          api.tween(1500, 700, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
+          api.at(2200, function () { api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
+        },
+        function () {                                 // 7 cut until nothing is left to cut
+          reset(['bars']);
+          fixedCuts([]); model(G4);
+          api.tile(0, GF.length + ' 组'); api.tile(1, mse(G4).toFixed(2)); api.tile(2, newSmall.toFixed(2), '新病人身上的误差');
+          api.tween(300, 2400, function (u) {
+            var k = Math.max(3, Math.round(u * fullIdx.length));
+            // the cuts are added in the order the algorithm would find them: the first three, then left to right
+            var idx = [first.i, second.i, third.i].concat(fullIdx.filter(function (v) { return v !== first.i && v !== second.i && v !== third.i; })).slice(0, k);
+            var g = groups(idx);
+            model(g); api.tile(0, g.length + ' 组'); api.tile(1, mse(g).toFixed(2)); api.tile(2, mseNew(g).toFixed(2), '新病人身上的误差');
+          });
+          api.tween(2700, 500, function (u) { fade(fresh, u); });
+        }
+      ];
+      return function (k) { steps[k](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
