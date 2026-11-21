@@ -8,7 +8,8 @@ year: 2026
 badge: "Oral"
 summary: "MADQA is a benchmark of 2,250 human-written questions over 800 PDF documents that scores how an agent searches, not only what it answers. The best agents match human accuracy, but on largely different questions and with about five times the effort."
 links:
-  pdf: "https://arxiv.org/abs/2603.12180"
+  pdf: "https://arxiv.org/pdf/2603.12180"
+  arxiv: "https://arxiv.org/abs/2603.12180"
   code: "https://github.com/OxRML/MADQA"
   slides: "https://icml.cc/media/icml-2026/Slides/71033.pdf"
   blog: "https://www.snowflake.com/en/blog/engineering/madqa-multimodal-agent-reasoning-benchmark/"
