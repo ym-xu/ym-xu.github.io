@@ -121,9 +121,15 @@
     var btn = e.target.closest && e.target.closest('.code-copy');
     if (!btn) return;
     var card = btn.closest('.code-card');
-    var pre = card && card.querySelector('pre');
-    if (!pre || !navigator.clipboard) return;
-    navigator.clipboard.writeText(codeText(pre)).then(function () {
+    // a Python box that became an editor (pyodide-run.js) has no <pre> any more: ask the runner
+    var text = card && window.pyCodeOf ? window.pyCodeOf(card) : null;
+    if (text == null) {
+      var pre = card && card.querySelector('pre');
+      if (!pre) return;
+      text = codeText(pre);
+    }
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(function () {
       var old = btn.textContent;
       btn.textContent = 'Copied';
       btn.classList.add('copied');

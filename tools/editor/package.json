@@ -1,0 +1,19 @@
+{
+  "name": "py-editor",
+  "private": true,
+  "description": "The code editor of the course code boxes (CodeMirror 6), bundled into assets/js/vendor/py-editor.js by build.sh",
+  "license": "MIT",
+  "dependencies": {
+    "@codemirror/autocomplete": "6.20.4",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-python": "6.2.1",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "@lezer/python": "1.1.19"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

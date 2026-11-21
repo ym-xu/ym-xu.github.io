@@ -14,6 +14,8 @@
 // - what the learner typed into an exercise is kept in this browser and put back (with a 重置 button);
 // - when a block fails with a NameError and blocks above it have not been run since the page was
 //   opened, those are run first (silently, in order) and the block is run again.
+// The code boxes are editors (assets/js/vendor/py-editor.js, CodeMirror: indentation, colours while
+// typing, Shift-Enter runs); when that file did not load, they stay plain editable <pre> blocks.
 const PYODIDE_VERSION = '314.0.7';
 const INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 // served at /python/ (static/python/): the simulated cohort of both courses, and the audit data of the themed practice
@@ -60,6 +62,9 @@ HINTS = {
 
 def _hint(e):
     msg = str(e)
+    if isinstance(e, SyntaxError) and msg.startswith("invalid character"):
+        ch = msg.split("'")[1] if msg.count("'") >= 2 else ""
+        return f"代码里有一个中文标点 {ch}。Python 只认英文标点(引号、括号、逗号、冒号): 删掉它,切换到英文输入法再输一次。"
     if isinstance(e, ValueError):
         if "NaN" in msg:
             return "数据里有缺失值(NaN),这个模型不接受。先处理缺失值,比如用 dropna() 去掉。"
@@ -318,6 +323,14 @@ function markPassed(card) {
 // is edited later and the starter changed, the old text is not put into the wrong exercise.
 const CODE_KEY = 'course-code:v1:' + location.pathname.replace(/index\.html$/, '');
 const originals = new Map();                      // card -> { text, html, hash } of the starter code
+const editors = new Map();                        // card -> editor (py-editor.js), when it loaded
+function codeOf(card) {
+  const ed = editors.get(card);
+  if (ed) return ed.get();
+  const pre = card.querySelector('pre');
+  return pre ? codeText(pre) : null;
+}
+window.pyCodeOf = codeOf;                         // the Copy button (site.js) and the check scripts read code here
 function hashOf(s) {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
@@ -336,7 +349,7 @@ function readCode() {
 function saveCode(card) {
   const i = exerciseCards().indexOf(card), orig = originals.get(card);
   if (i < 0 || !orig) return;
-  const all = readCode(), now = codeText(card.querySelector('pre'));
+  const all = readCode(), now = codeOf(card);
   if (now === orig.text) delete all[i];
   else all[i] = { c: now, o: orig.hash };
   try { localStorage.setItem(CODE_KEY, JSON.stringify(all)); } catch (_) { /* private mode: nothing kept */ }
@@ -348,17 +361,7 @@ function restoreCode() {
     const pre = card.querySelector('pre'), box = codeBox(card);
     const text = codeText(pre);
     originals.set(card, { text, html: box.innerHTML, hash: hashOf(text) });
-    const reset = document.createElement('button');
-    reset.type = 'button';
-    reset.className = 'code-reset';
-    reset.textContent = '重置';
-    reset.title = '回到题目给出的起始代码';
-    reset.addEventListener('click', () => {
-      box.innerHTML = originals.get(card).html;
-      saveCode(card);
-    });
-    const actions = card.querySelector('.code-actions');
-    if (actions) actions.insertBefore(reset, actions.firstChild);
+    addReset(card);
     const s = saved[i];
     if (s && typeof s.c === 'string' && s.o === hashOf(text) && s.c !== text) {
       box.textContent = s.c;
@@ -366,6 +369,59 @@ function restoreCode() {
     }
     let timer = null;
     pre.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => saveCode(card), 500); });
+  });
+}
+
+function addReset(card) {
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'code-reset';
+  reset.textContent = '重置';
+  reset.title = '回到题目给出的起始代码';
+  reset.addEventListener('click', () => {
+    const ed = editors.get(card), orig = originals.get(card);
+    if (ed) ed.set(orig.text);
+    else codeBox(card).innerHTML = orig.html;
+    saveCode(card);
+  });
+  const actions = card.querySelector('.code-actions');
+  if (actions) actions.insertBefore(reset, actions.firstChild);
+}
+
+// The code boxes become editors. What was typed into an exercise comes back as with the plain boxes
+// (same record, same hash of the starter code); an exercise box ends with an empty line, so a tap
+// below the starter comment lands where the code goes.
+function setupEditors() {
+  const saved = readCode();
+  const exercises = exerciseCards();
+  document.querySelectorAll('.py-runnable').forEach((card) => {
+    const pre = card.querySelector('pre');
+    if (!pre) return;
+    const raw = codeText(pre);
+    const i = exercises.indexOf(card);
+    let text = raw.replace(/\n+$/, '');
+    if (i >= 0) {
+      const start = text + '\n';
+      originals.set(card, { text: start, html: codeBox(card).innerHTML, hash: hashOf(raw) });
+      addReset(card);
+      const s = saved[i];
+      if (s && typeof s.c === 'string' && s.o === hashOf(raw) && s.c !== raw && s.c !== start) {
+        text = s.c;
+        card.classList.add('edited');
+      } else text = start;
+    }
+    let timer = null;
+    try {
+      editors.set(card, window.PyEditor.create(pre, text, {
+        exercise: i >= 0,
+        onRun: () => runCard(card),
+        onChange: i >= 0 ? () => { clearTimeout(timer); timer = setTimeout(() => saveCode(card), 500); } : null,
+      }));
+    } catch (_) {
+      plainBox(pre);                              // this one stays a plain editable block
+      if (i >= 0 && text !== raw) codeBox(card).textContent = text;
+      if (i >= 0) pre.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => saveCode(card), 500); });
+    }
   });
 }
 
@@ -384,12 +440,11 @@ function checkCodeFor(card) {
 }
 
 async function runCard(card) {
-  const codeEl = card.querySelector('pre');
   const out = card.querySelector('.code-output');
   const btn = card.querySelector('.py-run');
-  if (!codeEl || !out || !btn) return;
+  const code = codeOf(card);
+  if (code == null || !out || !btn || btn.disabled) return;
 
-  const code = codeText(codeEl);
   const checkCode = checkCodeFor(card);
   saveCode(card);                                 // an exercise: keep what was typed, also when it fails
   out.hidden = false;
@@ -430,7 +485,8 @@ async function runCard(card) {
         ran.add(c);
         setStatus(`这一块用到了前面定义的东西,先运行本页前面的代码块(${k} / ${earlier.length})…`);
         await paint();
-        const src = codeText(c.querySelector('pre'));
+        const src = codeOf(c);
+        if (src == null) continue;
         if (src.includes('___')) continue;       // an exercise not filled in yet
         try {
           await loadPackages(py, src, () => {});
@@ -463,19 +519,24 @@ async function runCard(card) {
   }
 }
 
+function plainBox(pre) {
+  pre.setAttribute('contenteditable', 'plaintext-only');
+  if (pre.contentEditable !== 'plaintext-only') pre.setAttribute('contenteditable', 'true');
+  pre.setAttribute('spellcheck', 'false');
+  pre.setAttribute('autocapitalize', 'off');
+  pre.setAttribute('autocorrect', 'off');
+  pre.setAttribute('title', '可以直接在这里改代码,再点 Run');
+}
+
 function init() {
-  document.querySelectorAll('.py-runnable pre').forEach((pre) => {
-    pre.setAttribute('contenteditable', 'plaintext-only');
-    if (pre.contentEditable !== 'plaintext-only') pre.setAttribute('contenteditable', 'true');
-    pre.setAttribute('spellcheck', 'false');
-    pre.setAttribute('autocapitalize', 'off');
-    pre.setAttribute('autocorrect', 'off');
-    pre.setAttribute('title', '可以直接在这里改代码,再点 Run');
-  });
   document.querySelectorAll('.exercise .py-run').forEach((btn) => {
     if (checkCodeFor(btn.closest('.code-card'))) btn.textContent = '▶ 运行并检查';
   });
-  restoreCode();
+  if (window.PyEditor) setupEditors();
+  else {
+    document.querySelectorAll('.py-runnable pre').forEach(plainBox);
+    restoreCode();
+  }
   showProgress();
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.py-run');

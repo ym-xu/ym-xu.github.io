@@ -19,6 +19,10 @@
 {{- /* Pyodide in-browser Python runner (the Python and stat-ml courses): same idea as WebR above.
        Pyodide itself is fetched lazily, on the first "Run" click. */ -}}
 {{- if strings.Contains .Content "py-runnable" }}
+{{- /* The code editor of the boxes (CodeMirror, built by tools/editor/build.sh). It must come before
+       pyodide-run.js: both are deferred, so they run in this order. */ -}}
+{{- $editor := resources.Get "js/vendor/py-editor.js" | fingerprint }}
+<script defer src="{{ $editor.RelPermalink }}" integrity="{{ $editor.Data.Integrity }}"></script>
 {{- $pyrun := resources.Get "js/pyodide-run.js" | fingerprint }}
 <script type="module" src="{{ $pyrun.RelPermalink }}" integrity="{{ $pyrun.Data.Integrity }}"></script>
 {{- end }}

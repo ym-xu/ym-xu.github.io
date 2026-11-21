@@ -29,9 +29,12 @@ def run(pg, card, timeout=300000):
     pg.wait_for_function('(el) => !el.querySelector(".py-run").disabled', arg=card.element_handle(), timeout=timeout)
     return card.locator('.code-output').inner_text().strip()
 def type_code(pg, card, code):
-    pre = card.locator('pre').first; pre.scroll_into_view_if_needed(); pre.click(); pg.keyboard.press('Control+A'); pg.keyboard.insert_text(code)
+    box = card.locator('.cm-content, pre').first     # the editor (py-editor.js), or the plain box when it did not load
+    box.scroll_into_view_if_needed(); box.click(); pg.keyboard.press('Control+A'); pg.keyboard.insert_text(code)
+def code_of(card):
+    return card.evaluate('c => window.pyCodeOf(c)')
 def answer_of(ex):
-    return ex.locator('details .py-runnable code').last.evaluate('e => e.textContent')
+    return code_of(ex.locator('details .py-runnable').last)
 def panel(pg):
     return dict(btn=pg.locator('[data-continue]').inner_text(), href=pg.locator('[data-continue]').get_attribute('href'), note=pg.locator('[data-continue-note]').inner_text(),
                 stats=[d.inner_text() for d in pg.locator('.course-stats dd').all() if d.is_visible()], tags=pg.evaluate("[...document.querySelectorAll('.lesson-row-tag')].map(e => e.textContent)"))
@@ -83,13 +86,13 @@ with sync_playwright() as p:
     exs = pg.locator('.exercise'); ex1, ex2 = exs.nth(0), exs.nth(1)
     card1, card2 = ex1.locator('.py-runnable').first, ex2.locator('.py-runnable').first
     check('exercise 1 still marked as passed', 'passed' in (ex1.get_attribute('class') or ''))
-    check('the code of exercise 1 is back', card1.locator('code').first.evaluate('e => e.textContent').strip() == answer_of(ex1).strip())
-    check('the half-written code of exercise 2 is back', '写到一半' in card2.locator('code').first.evaluate('e => e.textContent'))
+    check('the code of exercise 1 is back', code_of(card1).strip() == answer_of(ex1).strip())
+    check('the half-written code of exercise 2 is back', '写到一半' in code_of(card2))
     check('the answered question is shown again', pg.locator('.quiz').first.locator('.quiz-opt.right').count() == 1 and pg.locator('.quiz').first.locator('.quiz-why').count() == 1)
     o = run(pg, card1)
     check('a new day: Python is empty, earlier blocks are run first', '✓' in o and '已先运行本页前面的' in o, o.splitlines()[0][:60])
     card2.locator('.code-reset').click(); pg.wait_for_timeout(200)
-    check('重置 puts the starter code back', '写到一半' not in card2.locator('code').first.evaluate('e => e.textContent') and not card2.locator('.code-reset').is_visible())
+    check('重置 puts the starter code back', '写到一半' not in code_of(card2) and not card2.locator('.code-reset').is_visible())
     pg.goto(BASE + '/python/02-pandas/', wait_until='networkidle'); pg.wait_for_timeout(300)
     bar = pg.locator('.resume-bar')
     check('opened without a place: the bar offers the section read last', bar.count() == 1 and h4_text in bar.inner_text(), bar.inner_text() if bar.count() else '')

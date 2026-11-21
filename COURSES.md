@@ -223,6 +223,7 @@ python tools/run_lesson.py content/python/05-uncertainty/index.md               
 hugo --minify -d /tmp/public
 python tools/check_course.py /tmp/public python/01-first-steps --expect-errors 6     # 第 1 课有 6 段故意出错的代码
 python tools/check_course.py /tmp/public python/05-uncertainty stat-ml/04-cross-validation --expect-errors 0
+python tools/check_editor.py /tmp/public                                           # 代码框(编辑器)在手机上的输入、缩进、保存、退回原来的框
 ```
 
 写一课的顺序: 先用一个草稿脚本把代码和练习的答案跑出来,再写课文(数字照着输出写),然后 `lint_lesson`、`run_lesson`,最后 `check_course`。
@@ -231,6 +232,13 @@ python tools/check_course.py /tmp/public python/05-uncertainty stat-ml/04-cross-
 脚本在手机宽度的无头浏览器里点每一道"想一想"、运行每个代码块和每个参考答案、操作每张交互图,
 把读者会看到的东西打印出来,用来和正文里的数字逐个核对(需要 playwright 和 Chromium;页面通过请求拦截提供,不开 HTTP 端口)。
 提交并推送到 `main` 后,GitHub Actions 约半分钟发布;发布后用 `python tools/check_course.py LIVE …` 再跑一遍。
+
+**代码框是编辑器**(2026-11-21,用户: "python 框写代码的体验没有那么好",要先在注释末尾按回车才能写、不会自己缩进、练习里的框很小):
+Python 代码块在页面上是 CodeMirror 6 编辑器(`assets/js/vendor/py-editor.js`,源码和固定的版本在 `tools/editor/`,改了以后运行 `tools/editor/build.sh` 重新打包)。
+回车保持缩进、冒号后缩进 4 格,Tab / Shift+Tab 缩进,括号和引号自动补全,Shift+回车运行;手机键盘和中文输入法打出的弯引号,在注释以外自动变成直引号;
+混进中文标点时,报错下面的提示会指出是哪个符号。配色沿用 Chroma 的类名,和静态代码块一样(syntax.css,浅色深色都有)。
+练习框至少 6 行高,起始代码后面留一个空行,点空白处就能接着写。编辑器文件没加载时,退回原来的可编辑 `<pre>`,练习照样能做。
+读写一个代码块的代码一律通过 `pyodide-run.js` 的 `codeOf(card)`(页面上是 `window.pyCodeOf`),页面上已经没有 `pre` 了。R 课(webr-run.js)没有换。
 
 **对照外面的改写稿时查出来的几类错**(2026-11-21,Python 课;写新课和改课时照着查):
 - 讲代码的句子要和旁边的代码逐句对一遍: 说"两个函数"下面是不是真写了两个,说"超过"代码里是不是 `>`,说"在第几节"是不是那一节。

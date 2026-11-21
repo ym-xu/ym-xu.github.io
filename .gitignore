@@ -14,3 +14,6 @@ scripts/.cache/
 
 # Local design prototype (kept on disk, not in the repo)
 /Yiming Xu Personal Site.html
+
+# The editor build (tools/editor/build.sh): installed packages
+/tools/editor/node_modules/
