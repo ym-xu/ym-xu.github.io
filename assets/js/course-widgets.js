@@ -16,6 +16,7 @@
 //   signif             more patients: the P value of a weak predictor shrinks, the prediction error does not
 //   leak               variables chosen before cross-validation: pure noise looks predictive
 //   shrink             ridge or lasso: the stronger the constraint, the smaller the coefficients
+//   split              one split of a tree, placed by hand: two groups, each predicted by its own mean
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -932,7 +933,61 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink };
+  // ---------- figure 11: one split of a tree ----------
+  // The 30 patients of the other figures. One slider: the wall thickness at which they are split in two.
+  // Each side is predicted by its own mean; the readout is the mean squared error, as in "fitline".
+  function splitTree(root) {
+    var sc = getScene(), pts = sc.train, n = pts.length;
+    function at(c) {
+      var l = pts.filter(function (p) { return p.x <= c; }), r = pts.filter(function (p) { return p.x > c; });
+      var ml = l.length ? mean(l.map(function (p) { return p.y; })) : 0, mr = r.length ? mean(r.map(function (p) { return p.y; })) : 0, e = 0;
+      pts.forEach(function (p) { var d = p.y - (p.x <= c ? ml : mr); e += d * d / n; });
+      return { ml: ml, mr: mr, nl: l.length, nr: r.length, mse: e };
+    }
+    var best = null, c;
+    for (c = 20; c <= 60; c++) { var t = at(c / 10); if (t.nl && t.nr && (!best || t.mse < best.mse)) { best = t; best.c = c / 10; } }
+    var my = mean(pts.map(function (p) { return p.y; })), flat = 0;
+    pts.forEach(function (p) { flat += (p.y - my) * (p.y - my) / n; });
+
+    var plot = frame(root, '散点图: 30 位病人按壁厚分成两组,每组用自己的平均值预测');
+    var segs = el('g', {}, plot), cutLine = el('line', { 'class': 'w-mean' }, plot);
+    var left = el('line', { 'class': 'w-curve' }, plot), right = el('line', { 'class': 'w-curve' }, plot);
+    pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+    legend(root, [['pt', '30 位病人'], ['line', '每一组的预测值'], ['res', '每位病人的误差']]);
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 2; input.max = 6; input.step = 0.1; input.value = 2.5;
+    input.setAttribute('aria-label', '分叉点的壁厚');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '误差平方的平均');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / (flat * 1.1) * 100).toFixed(1) + '%'; val.textContent = v.toFixed(2); };
+    }
+    var setFlat = bar('不分(都猜平均值)', 'new'), setNow = bar('分成两组', 'train');
+    var ctls = h('div', 'w-ctls', root), solve = button(ctls, '找最好的分叉点', 'primary');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var cut = +input.value, t = at(cut);
+      cutLine.setAttribute('x1', sx(cut)); cutLine.setAttribute('x2', sx(cut)); cutLine.setAttribute('y1', sy(YD[0])); cutLine.setAttribute('y2', sy(YD[1]));
+      left.setAttribute('x1', sx(XD[0])); left.setAttribute('x2', sx(cut)); left.setAttribute('y1', sy(t.ml)); left.setAttribute('y2', sy(t.ml));
+      right.setAttribute('x1', sx(cut)); right.setAttribute('x2', sx(XD[1])); right.setAttribute('y1', sy(t.mr)); right.setAttribute('y2', sy(t.mr));
+      while (segs.firstChild) segs.removeChild(segs.firstChild);
+      pts.forEach(function (p) { el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(p.x <= cut ? t.ml : t.mr), 'class': 'w-res' }, segs); });
+      cap.textContent = '分叉点: 壁厚 ' + cut.toFixed(1) + ' mm';
+      setFlat(flat); setNow(t.mse);
+      status.textContent = '壁厚不超过 ' + cut.toFixed(1) + ' mm 的 ' + t.nl + ' 位,都猜 ' + minus(t.ml.toFixed(2)) + ' Gy;超过的 ' + t.nr + ' 位,都猜 ' + minus(t.mr.toFixed(2)) + ' Gy。'
+        + (Math.abs(cut - best.c) < 0.05 ? '这是误差最小的分法。' : '');
+    }
+    input.addEventListener('input', update);
+    solve.addEventListener('click', function () { input.value = best.c; update(); });
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
