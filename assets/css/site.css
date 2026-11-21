@@ -676,8 +676,7 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
   .course-layout > .course-side { margin: 0 0 1.6rem; }
   .course-side-inner { position: static; padding: .8rem .95rem; border: .5px solid var(--rule); border-radius: var(--radius-md); }
 }
-.lesson-row.is-next { background: var(--surface); box-shadow: inset 2px 0 0 var(--link); }
-.lesson-row.practice-row.is-next { box-shadow: none; border-left-color: var(--link); }
+.lesson-row.is-next .lesson-row-title::after { content: "继续"; margin-left: .5em; font-size: .78rem; white-space: nowrap; color: var(--link); border: .5px solid color-mix(in oklab, var(--link) 50%, var(--border)); border-radius: 3px; padding: 0 .35em; vertical-align: .1em; }
 .lesson-row-tag.doing { color: var(--fg); }
 /* Back on a lesson: the section read last, and what was typed into the exercises. */
 .resume-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; margin: 0 0 1.4rem; padding: .5rem .8rem; border-left: 3px solid var(--link); background: var(--surface); font-size: .95rem; }
@@ -685,24 +684,42 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .code-reset { display: none; font-family: var(--font-mono); font-size: .72rem; line-height: 1; min-height: 28px; padding: .35rem .6rem; color: var(--muted); background: transparent; border: 1px solid var(--code-border); border-radius: var(--radius-sm); cursor: pointer; }
 .content .code-card.edited .code-reset { display: inline-block; }
 .content .code-output-note { margin: 0 0 .35rem; font-size: .86rem; line-height: 1.45; color: var(--muted); }
-/* Practice track on a course page: a card above the syllabus, and one row under each lesson. */
-.practice-strip { display: grid; gap: .28rem; margin: 0 0 1.9rem; padding: .85rem 1rem .8rem; border: .5px solid color-mix(in oklab, var(--link) 45%, var(--border)); border-radius: var(--radius-md); background: var(--surface); color: inherit; text-decoration: none; transition: background var(--dur); }
-.practice-strip:hover { background: var(--surface-hover); color: inherit; text-decoration: none; }
-.practice-strip-kicker, .practice-kicker, .practice-card-kicker { font-size: .8rem; color: var(--link); letter-spacing: .03em; }
-.practice-strip-title { font-size: 1.1rem; line-height: 1.3; color: var(--fg); }
-.practice-strip-text { font-size: .9rem; line-height: 1.45; color: var(--muted); }
-.practice-strip-bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin-top: .4rem; }
-.practice-strip-bar i { height: 7px; border-radius: 4px; background: var(--candy-line, var(--border)); }
-.practice-strip-bar i.part { background: var(--candy, color-mix(in oklab, var(--link) 40%, var(--border))); }
-.practice-strip-bar i.done { background: var(--candy-deep, var(--link)); }
-.practice-strip-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .1rem 1rem; font-size: .85rem; color: var(--muted); }
-.practice-strip-go { color: var(--link); white-space: nowrap; }
-.lesson-row.practice-row { margin: 0 0 .55rem 3.2rem; padding: .4rem .6rem .45rem .7rem; grid-template-columns: 1rem minmax(0, 1fr) auto; gap: .6rem; border-left: 2px solid color-mix(in oklab, var(--link) 40%, var(--border)); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
-.practice-row .lesson-row-num { color: var(--link); }
+/* Practice track on a course page. */
+.practice-kicker, .practice-card-kicker { font-size: .8rem; color: var(--link); letter-spacing: .03em; }
+/* The practice part of a lesson is a row like any other row of the syllabus (same grid, same type, same hover
+   as in the other courses): a pencil stands where the number is, and "课后练习" comes before the name.
+   No indent, no side line, no tinted block (the user, 2026-11-21: keep it restrained, like the other courses). */
+.practice-row .lesson-row-num { color: var(--muted); }
 .practice-row .lesson-row-num svg { width: .95rem; height: .95rem; vertical-align: -.12em; }
-.practice-row .lesson-row-title { font-size: .98rem; }
-.practice-kicker { margin-right: .55em; white-space: nowrap; }
+.lesson-row .practice-kicker { margin-right: .4em; font-size: inherit; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
+.lesson-row .practice-kicker::after { content: " ·"; }
+/* A course with a practice track: two columns (the user's choice among the designs, 2026-11-21). The lesson is on
+   the left, its practice part on the right of the same row, and the head of the right column names the practice
+   project. Where two columns do not fit (a phone) the practice part drops under its lesson, indented, and says
+   "课后练习" itself. The switch is a container query on the syllabus, at the width where the flex row wraps
+   (360px + 250px + the 28px gap). */
+.syllabus.paired { container-type: inline-size; }
+.syllabus-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem 1.75rem; padding: 0 .6rem .5rem; border-bottom: .5px solid var(--rule); font-size: .82rem; line-height: 1.5; color: var(--muted); }
+.syllabus-head > span:first-child { flex: 999 1 360px; min-width: 0; letter-spacing: .03em; }
+.syllabus-head > span:last-child { flex: 1 1 250px; min-width: 0; }
+.syllabus-head-label { letter-spacing: .03em; }
+.syllabus.paired .phase-head::after { border-bottom-color: var(--border); }
+.pair { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 1.75rem; }
+.pair > .lesson-row { flex: 999 1 360px; min-width: 0; }
+.pair > .practice-row, .pair > .pair-empty { flex: 1 1 250px; min-width: 0; }
+.pair > .practice-row { grid-template-columns: 1rem minmax(0, 1fr) auto; gap: .6rem; }
+.practice-row .lesson-row-title { font-size: .96rem; }
 .practice-row .lesson-row-sum { font-size: .84rem; }
+.practice-row .lesson-row-num svg { width: .85rem; height: .85rem; }
+@container (min-width: 638px) { .pair .practice-kicker { display: none; } }
+@container (max-width: 637.98px) {
+  .syllabus-head > span:first-child, .pair > .pair-empty { display: none; }
+  .pair > .practice-row { margin: -.35rem 0 .15rem 2.6rem; padding: .3rem .6rem .4rem; }
+}
+/* the candy palette has larger radii and a bluer hover; the rows of the syllabus keep the quiet hover of the other courses */
+body:is(.section-python, .section-stat-ml) .lesson-row { border-radius: 6px; }
+body:is(.section-python, .section-stat-ml) .lesson-row:hover { background: var(--surface); }
+body:is(.section-python, .section-stat-ml) .lesson-row.planned:hover { background: none; }
 .course-about { margin-top: 2.6rem; padding-top: .4rem; border-top: .5px solid var(--rule); }
 /* The same part as a card at the end of its lesson ({{< practice >}}). */
 .content .practice-card { display: grid; gap: .3rem; justify-items: start; margin: 1.7rem 0; padding: .95rem 1.1rem 1rem; border: .5px solid color-mix(in oklab, var(--link) 45%, var(--border)); border-radius: var(--radius-md); background: var(--surface); }
@@ -715,7 +732,6 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .practice-card a.practice-card-go:not(.code-copy):not(.code-run) { display: inline-block; margin: .5rem 0 .35rem; padding: .45rem 1.05rem; border-radius: var(--btn-radius, var(--radius-sm)); background: var(--btn-bg, var(--link)); background-image: none; color: var(--btn-fg, var(--bg)); text-decoration: none; }
 .content .practice-card a.practice-card-go:not(.code-copy):not(.code-run):hover { background: var(--btn-bg-hover, var(--link-hover)); background-image: none; color: var(--btn-fg, var(--bg)); }
 .content .practice-card p.practice-card-note { font-size: .86rem; color: var(--muted); }
-@media (max-width: 720px) { .lesson-row.practice-row { margin-left: 1.5rem; } }
 .lesson-row.planned { cursor: default; }
 .lesson-row.planned:hover { background: none; }
 .lesson-row.planned .lesson-row-title, .lesson-row.planned .lesson-row-num { color: var(--muted); }

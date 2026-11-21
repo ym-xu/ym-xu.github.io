@@ -121,16 +121,10 @@
         row.querySelector(s.practice ? '.lesson-row-sum' : '.lesson-row-title').appendChild(tag);
       });
 
-      // the practice card above the syllabus: one segment per part
-      Array.prototype.forEach.call(page.querySelectorAll('[data-practice-strip]'), function (strip) {
-        var started = 0;
-        Array.prototype.forEach.call(strip.querySelectorAll('i[data-progress-path]'), function (seg) {
-          var s = states[rows.map(function (r) { return r.getAttribute('data-progress-path'); }).indexOf(seg.getAttribute('data-progress-path'))];
-          seg.className = !s || !s.passed ? '' : s.done ? 'done' : 'part';
-          if (s && s.passed) started++;
-        });
-        var count = strip.querySelector('[data-practice-count]');
-        if (count && started) count.textContent = '已完成 ' + partsDone + ' / ' + parts + ' 部分';
+      // the head of the practice column: how many parts of the practice project are done
+      var partsStarted = states.filter(function (s) { return s.practice && s.passed; }).length;
+      Array.prototype.forEach.call(page.querySelectorAll('[data-practice-count]'), function (count) {
+        if (partsStarted) count.textContent = '已完成 ' + partsDone + ' / ' + parts + ' 部分';
       });
 
       if (!side) return;

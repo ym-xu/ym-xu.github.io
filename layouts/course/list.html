@@ -58,17 +58,16 @@
     </aside>
 
     <div class="course-body">
-      {{ with $practice }}
-      <a class="practice-strip" href="{{ .RelPermalink }}" data-practice-strip data-parts="{{ len $practicePages }}">
-        <span class="practice-strip-kicker">课后练习 · 主题练习</span>
-        <span class="practice-strip-title">{{ replaceRE "^主题练习: " "" .Title }}</span>
-        {{ with .Params.teaser }}<span class="practice-strip-text">{{ . }}</span>{{ end }}
-        <span class="practice-strip-bar" aria-hidden="true">{{ range $practicePages }}<i data-progress-path="{{ .RelPermalink }}"></i>{{ end }}</span>
-        <span class="practice-strip-foot"><span data-practice-count>共 {{ len $practicePages }} 部分,在下面每一课的后面</span><span class="practice-strip-go">背景和数据 →</span></span>
-      </a>
-      {{ end }}
-
-      <div class="syllabus">
+      {{- /* A course with a practice track has two columns: the lesson on the left, its practice part on the
+             right of the same row (under it on a phone). The head of the right column names the practice
+             project and shows how much of it is done (course-progress.js). */ -}}
+      <div class="syllabus{{ if $practice }} paired{{ end }}">
+        {{ with $practice }}
+        <div class="syllabus-head">
+          <span>课文</span>
+          <span><span class="syllabus-head-label">课后练习</span> · <a href="{{ .RelPermalink }}">{{ replaceRE "^主题练习: " "" .Title }} →</a><br><span data-practice-count>共 {{ len $practicePages }} 部分</span></span>
+        </div>
+        {{ end }}
         {{ range $pi, $part := $parts }}
           <section class="phase reveal">
             <div class="phase-head">
@@ -85,6 +84,7 @@
                   {{ $p := index $match 0 }}
                   {{- /* data-ex: the exercises with a check, counted when the site is built, so that
                          "3 / 5" can be shown before the lesson has been opened on this device */ -}}
+                  {{ if $practice }}<div class="pair">{{ end }}
                   <a class="lesson-row spot" href="{{ $p.RelPermalink }}" data-progress-path="{{ $p.RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" $p.RawContent) }}" data-title="{{ if $stepped }}{{ $p.Title }}{{ else }}第 {{ .n }} {{ $unit }} · {{ .title }}{{ end }}"{{ if $stepped }} data-practice-row{{ end }}>
                     <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
                     <span class="lesson-row-body">
@@ -93,9 +93,11 @@
                     </span>
                     <span class="lesson-row-arrow" aria-hidden="true">→</span>
                   </a>
-                  {{- /* the practice part that goes with this lesson */ -}}
+                  {{- /* the practice part that goes with this lesson; a lesson without one keeps its column width */ -}}
                   {{ $lessonN := .n }}
-                  {{ range where $practicePages "Weight" (mul .n 10) }}
+                  {{ $mine := where $practicePages "Weight" (mul .n 10) }}
+                  {{ if and $practice (not $mine) }}<span class="pair-empty" aria-hidden="true"></span>{{ end }}
+                  {{ range $mine }}
                   <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" .RawContent) }}" data-title="课后练习 {{ $lessonN }} · {{ replaceRE "^练习 [0-9]+ · " "" .Title }}" data-practice-row>
                     <span class="lesson-row-num"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.2 2.3l2.5 2.5L5.6 12.9l-3.2.7.7-3.2z"/><path d="M9.6 3.9l2.5 2.5"/></svg></span>
                     <span class="lesson-row-body">
@@ -105,6 +107,7 @@
                     <span class="lesson-row-arrow" aria-hidden="true">→</span>
                   </a>
                   {{ end }}
+                  {{ if $practice }}</div>{{ end }}
                 {{ else }}
                   <div class="lesson-row planned">
                     <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
