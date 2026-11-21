@@ -16,7 +16,10 @@
         {{ partial "footer.html" . }}
       </footer>
     </div>
-    {{- /* reading progress for the home page and articles; lessons run their own */}}
+    {{- /* Reading progress for the home page and articles (site.js). R lessons run only
+           their own bar (lesson-ui.js). Python / stat-ml lessons get this one stacked on
+           theirs, and need it: on the short one-step-per-screen practice pages the
+           lesson's own bar never moves. */}}
     {{ if and (or .IsHome .IsPage) (ne .Section "r-course") }}<div class="reading-progress" data-progress aria-hidden="true"><span></span></div>{{ end }}
     {{ partial "scripts.html" . }}
   </body>

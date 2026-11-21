@@ -24,7 +24,6 @@
     });
   }
 
-  // (Scroll reveals and the reading-progress bar live in site.js, site-wide.)
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var hero = document.querySelector('[data-beat]');
@@ -32,7 +31,6 @@
   var hls = Array.prototype.slice.call(hero.querySelectorAll('.hl'));
   if (!hls.length) return;
 
-  var reduce = reduceMotion;
   var bpm = Math.min(200, Math.max(60, parseFloat(hero.getAttribute('data-beat')) || 128));
   var quarter = 60000 / bpm / 4;          // one tick = a sixteenth note
 
@@ -71,7 +69,7 @@
     el.addEventListener('mouseleave', function () { hover = -1; });
   });
 
-  if (reduce) { show(0); return; }
+  if (reduceMotion) { show(0); return; }
 
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entries) {

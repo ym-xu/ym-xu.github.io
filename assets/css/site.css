@@ -3,7 +3,6 @@
    A personal homepage with the manners of a LaTeX document:
    a white sheet on a grey desk, Palatino (TeX Gyre Pagella),
    numbered sections, thin rules, footnotes, one blue accent.
-   Self-contained: the theme's styles.css is no longer loaded.
    ============================================================ */
 
 /* TeX Gyre Pagella — GUST's open Palatino clone (GFL licence), self-hosted
@@ -76,7 +75,6 @@ hr { border: 0; border-top: .5px solid var(--rule); margin: 2rem 0; }
 code, pre, kbd, samp { font-family: var(--font-mono); font-variant-numeric: normal; }
 pre { overflow: auto; }
 .sc { font-variant: small-caps; letter-spacing: .04em; }
-.tt { font-family: var(--font-mono); font-size: .92em; }
 .muted { color: var(--muted); }
 .skip { position: absolute; left: -9999px; top: 0; }
 .skip:focus { left: 12px; top: 12px; z-index: 50; background: var(--bg); padding: .4rem .7rem; }
@@ -119,7 +117,6 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --shee
 .site-footer p { margin: 0 0 .2rem; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--link); }
-.pageno { text-align: center; margin-top: 1.5rem; color: var(--fg); font-size: .95rem; }
 
 /* ---------- the highlighter (home hero) ---------- */
 .hl { border-radius: 1px; padding: .04em .1em; margin: 0 -.1em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
@@ -351,31 +348,12 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .content blockquote > :first-child { margin-top: 0; }
 .content blockquote > :last-child { margin-bottom: 0; }
 .content :not(pre) > code { background: var(--surface-hover); padding: .06em .32em; border-radius: var(--radius-sm); font-size: .9em; }
-.video { aspect-ratio: 16 / 9; width: 100%; }
-.video iframe { width: 100%; height: 100%; border: 0; }
 
-.meta { color: var(--muted); font-size: .95rem; }
 .pager { display: flex; justify-content: space-between; gap: 1rem; margin: 2.5rem 0 0; padding-top: 1rem; border-top: .5px solid var(--border); font-style: italic; }
 .pager .next { margin-left: auto; text-align: right; }
 
-/* generic lists (tags, taxonomy pages) */
-.list { list-style: none; padding: 0; margin: 0; }
-.list li { margin: 0 0 .9rem; }
-.summary { color: var(--muted); margin: .2rem 0 0; }
-
 /* ---------- publication "case" pages (freeform rich layout) ---------- */
-.pub-single.case .content { --max: 100%; }
-.pub-single.case .content .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-.pub-single.case .content .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.pub-single.case .content .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
-.pub-single.case .content .col { min-width: 0; }
-.pub-single.case .content .callout { border: .5px solid var(--rule); padding: 1rem; }
 .pub-single.case .content figure > img { width: 100%; height: auto; display: block; }
-@media (max-width: 860px) {
-  .pub-single.case .content .grid-2,
-  .pub-single.case .content .grid-3,
-  .pub-single.case .content .cols-2 { grid-template-columns: 1fr; }
-}
 .pub-cover { margin: 0 0 1.5rem; }
 .pub-cover img { width: 100%; height: auto; display: block; }
 
@@ -496,7 +474,6 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .demo { border: .5px dashed var(--muted); }
 .content .demo p { margin: .25rem 0; }
 .content .paper { border: .5px solid var(--rule); }
-.content .paper-label, .content .demo-label { margin: 0 0 .4rem; font-weight: 700; }
 .content .paper blockquote { font-style: normal; color: var(--fg); }
 .content details { margin: 1rem 0; padding: .5rem .9rem; border: .5px solid var(--border); border-radius: var(--radius-sm); }
 .content details > summary { cursor: pointer; color: var(--link); }
@@ -536,7 +513,6 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .content .steps-dot.now { box-shadow: 0 0 0 2px var(--link); }
 .content .steps-all-btn { margin-left: auto; padding: .2rem .5rem; font: inherit; font-size: .85rem; color: var(--link); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; }
 .content .steps .step { margin: 0 0 1rem; }
-.content .steps .step.exercise { margin: 0 0 1rem; }
 .content .steps .step.exercise > .code-card pre { min-height: 6.5rem; }
 .content .steps-nav { display: flex; justify-content: space-between; gap: .6rem; margin: 1rem 0 0; }
 .content .steps-nav button { min-height: 44px; padding: .45rem 1rem; font: inherit; font-size: .95rem; color: var(--link); background: transparent; border: 1px solid var(--link); border-radius: var(--radius-sm); cursor: pointer; }
@@ -664,16 +640,6 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 /* ---------- 404 ---------- */
 .err { padding: 2rem 0 3rem; }
 .err pre { font-size: .9rem; line-height: 1.5; color: var(--muted); white-space: pre-wrap; }
-
-/* survey v5 details */
-sup.mine { color: var(--link); margin-left: .1em; }
-.subentry .ov a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: .15em; }
-.subentry .ov a:hover { color: var(--link); text-decoration-color: currentColor; }
-.mywork { margin: 0 auto 2.2rem; max-width: 88%; padding: .8rem 1.1rem; border-left: 2px solid var(--link); background: var(--surface); font-size: .97rem; line-height: 1.6; }
-.mywork-h { margin: 0 0 .3rem; font-weight: 700; }
-.mywork p { margin: 0; }
-.minedot { color: var(--link); font-size: .6em; margin-left: .45em; vertical-align: .25em; }
-@media (max-width: 720px) { .mywork { max-width: 100%; } }
 
 /* ---------- Reading & Writing ----------
    The habit grid (one square a day, 26 weeks) and bookmarked posts. */

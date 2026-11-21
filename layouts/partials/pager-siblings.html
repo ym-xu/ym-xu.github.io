@@ -1,0 +1,19 @@
+{{- /* Previous / next among a page's siblings, in the order they are given.
+       Used where the order is by weight: PrevInSection walks by date, which runs
+       backwards for weighted pages.
+       Usage: partial "pager-siblings.html" (dict "page" . "sibs" $sibs "label" "More projects")
+       label (optional) becomes the nav's aria-label. */ -}}
+{{- $page := .page -}}
+{{- $sibs := .sibs -}}
+{{- $prev := false -}}
+{{- $next := false -}}
+{{- range $i, $s := $sibs -}}
+  {{- if eq $s.RelPermalink $page.RelPermalink -}}
+    {{- if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end -}}
+    {{- if lt (add $i 1) (len $sibs) }}{{ $next = index $sibs (add $i 1) }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+<nav class="pager"{{ with .label }} aria-label="{{ . }}"{{ end }}>
+  {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+  {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+</nav>

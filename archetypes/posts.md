@@ -8,7 +8,6 @@ tags: []
 series: ""
 draft: true
 toc: true
-math: false
 comments: true
 ---
 

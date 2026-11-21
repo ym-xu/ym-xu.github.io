@@ -11,18 +11,6 @@
       <div class="abstract fx-after"><p class="abstract-h">Summary</p><p>{{ . }}</p></div>
     {{ end }}
     <div class="content">{{ .Content }}</div>
-    {{/* .ByWeight order, not PrevInSection's date order (which ran backwards here). */}}
-    {{ $sibs := .CurrentSection.Pages.ByWeight }}
-    {{ $prev := false }}{{ $next := false }}
-    {{ range $i, $s := $sibs }}
-      {{ if eq $s.RelPermalink $.RelPermalink }}
-        {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
-        {{ if lt (add $i 1) (len $sibs) }}{{ $next = index $sibs (add $i 1) }}{{ end }}
-      {{ end }}
-    {{ end }}
-    <nav class="pager" aria-label="More projects">
-      {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
-      {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
-    </nav>
+    {{ partial "pager-siblings.html" (dict "page" . "sibs" .CurrentSection.Pages.ByWeight "label" "More projects") }}
   </article>
 {{ end }}

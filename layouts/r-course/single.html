@@ -31,19 +31,7 @@
 
       <div class="lesson-main">
         <div class="content">{{ .Content }}</div>
-
-        {{/* 按 weight 顺序计算上一课 / 下一课,避免 PrevInSection 的方向歧义 */}}
-        {{ $prev := false }}{{ $next := false }}
-        {{ range $i, $p := $sibs }}
-          {{ if eq $p.RelPermalink $.RelPermalink }}
-            {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
-            {{ if lt (add $i 1) $total }}{{ $next = index $sibs (add $i 1) }}{{ end }}
-          {{ end }}
-        {{ end }}
-        <nav class="pager">
-          {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
-          {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
-        </nav>
+        {{ partial "pager-siblings.html" (dict "page" . "sibs" $sibs) }}
       </div>
     </div>
   </article>

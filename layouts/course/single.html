@@ -8,7 +8,6 @@
     {{ $pt := .title }}
     {{ range .lessons }}{{ if eq .n $n }}{{ $partTitle = $pt }}{{ end }}{{ end }}
   {{ end }}
-  {{ $sibs := .Parent.RegularPages.ByWeight }}
   {{ $unit := .Parent.Params.unit | default "课" }}
   {{ $showToc := cond (isset .Params "toc") .Params.toc site.Params.showToc }}
 
@@ -63,18 +62,7 @@
 
       <div class="lesson-main">
         <div class="content">{{ .Content }}</div>
-
-        {{ $prev := false }}{{ $next := false }}
-        {{ range $i, $p := $sibs }}
-          {{ if eq $p.RelPermalink $.RelPermalink }}
-            {{ if gt $i 0 }}{{ $prev = index $sibs (sub $i 1) }}{{ end }}
-            {{ if lt (add $i 1) (len $sibs) }}{{ $next = index $sibs (add $i 1) }}{{ end }}
-          {{ end }}
-        {{ end }}
-        <nav class="pager">
-          {{ with $prev }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
-          {{ with $next }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
-        </nav>
+        {{ partial "pager-siblings.html" (dict "page" . "sibs" .Parent.RegularPages.ByWeight) }}
       </div>
     </div>
   </article>

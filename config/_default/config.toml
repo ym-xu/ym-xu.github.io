@@ -3,10 +3,10 @@ title = "Yiming Xu"
 languageCode = "en"
 # Dates and "today" (the writing-habit grid) in my time zone, not the CI runner's UTC.
 timeZone = "Europe/Madrid"
-theme = "mu-min"
+enableRobotsTXT = true
+
 [pagination]
   pagerSize = 10
-enableRobotsTXT = true
 
 [permalinks]
   posts = "/posts/:year/:month/:slug/"
@@ -31,9 +31,6 @@ enableRobotsTXT = true
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-
-# Optional: suppress the warning if desired
-ignoreLogs = ['warning-goldmark-raw-html']
 
 [params]
   description = "Yiming Xu — PhD Fellow working on multimodal document understanding at the Computer Vision Center, Universitat Autònoma de Barcelona."
@@ -90,10 +87,6 @@ ignoreLogs = ['warning-goldmark-raw-html']
   input_position = "bottom"
   theme = "light"
   lang = "en"
-
-[privacy]
-  [privacy.youtube]
-    privacyEnhanced = true
 
 [menu]
   [[menu.main]]
