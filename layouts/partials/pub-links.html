@@ -1,12 +1,12 @@
 {{- /* [pdf] [code] … links for a publication page. Context: the page.
-       poster, slides and video take a URL, or the name of a file in the page's folder. */ -}}
+       poster, slides, video and blog take a URL, or the name of a file in the page's folder. */ -}}
 {{- with .Params.links -}}
-{{- if or .pdf .code .doi .poster .slides .video .leaderboard .data .page -}}
+{{- if or .pdf .code .doi .poster .slides .video .blog .leaderboard .data .page -}}
 <span class="blinks">
   {{- with .pdf }}<a href="{{ . }}" rel="noopener">pdf</a>{{ end -}}
   {{- with .code }}<a href="{{ . }}" rel="noopener">code</a>{{ end -}}
   {{- with .doi }}<a href="https://doi.org/{{ . }}" rel="noopener">doi</a>{{ end -}}
-  {{- range $key := slice "poster" "slides" "video" -}}
+  {{- range $key := slice "poster" "slides" "video" "blog" -}}
     {{- with index $.Params.links $key -}}
       {{- $href := . -}}
       {{- with $.Resources.Get . }}{{ $href = .RelPermalink }}{{ end -}}
