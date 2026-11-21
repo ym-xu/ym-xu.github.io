@@ -7,7 +7,7 @@ toc: false
 duration: "约 30 分钟"
 prereq: "[统计机器学习课第 13–14 课](/stat-ml/);[练习 4](../04-good-enough/)"
 questions:
-  - "185 位病人、15 个事件,撑得起多大的模型?"
+  - "185 位患者、15 个事件,撑得起多大的模型?"
   - "最终的模型怎么写,别人才能照着用?"
   - "这份小研究的结论和局限,怎样如实写出来?"
 objectives:
@@ -29,12 +29,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import roc_auc_score
 
-full = load_cervix()                                            # 200 位病人
+full = load_cervix()                                            # 200 位患者
 tox = full.merge(make_cervix_followup(), on="id")               # 有随访的 185 位
 event = tox["rect_tox"]
 
 def riley_binary(parameters, prevalence, r2_cs, shrinkage=0.9):
-    """Riley 等的三条准则各要求多少位病人(是/否的结局)。"""
+    """Riley 等的三条准则各要求多少位患者(是/否的结局)。"""
     max_r2 = 1 - np.exp(2 * (prevalence * np.log(prevalence) + (1 - prevalence) * np.log(1 - prevalence)))
     n1 = parameters / ((shrinkage - 1) * np.log(1 - r2_cs / shrinkage))          # 准则 1: 过拟合要小
     s2 = r2_cs / (r2_cs + 0.05 * max_r2)
@@ -55,7 +55,7 @@ lp = np.log(p / (1 - p))
 r = {"AUC": roc_auc_score(event, p), "low": np.percentile(aucs, 2.5), "high": np.percentile(aucs, 97.5),
      "O/E": event.sum() / p.sum(), "slope": sm.Logit(y_np, sm.add_constant(lp)).fit(disp=0).params[1]}
 
-print(len(full), "位病人,", len(tox), "位有随访,", int(event.sum()), "位出现副作用")
+print(len(full), "位患者,", len(tox), "位有随访,", int(event.sum()), "位出现副作用")
 print({k: round(float(v), 2) for k, v in r.items()})
 ```
 
@@ -65,7 +65,7 @@ print({k: round(float(v), 2) for k, v in r.items()})
 
 **第 1 步 · 这个模型有多强: R²cs**
 
-Riley 的准则要一个"预期的 R²cs"。手头没有以前的研究,先用自己这批病人算一个: 用 statsmodels 拟合副作用对直肠总剂量的逻辑回归(存进 `fit`),再按第 13 课的式子算 Cox–Snell R²,存进 `r2_cs`。
+Riley 的准则要一个"预期的 R²cs"。手头没有以前的研究,先用自己这批患者算一个: 用 statsmodels 拟合副作用对直肠总剂量的逻辑回归(存进 `fit`),再按第 13 课的式子算 Cox–Snell R²,存进 `r2_cs`。
 
 ```python
 # 在这里写你的代码。模型存进 fit,结果存进 r2_cs。
@@ -74,15 +74,15 @@ Riley 的准则要一个"预期的 R²cs"。手头没有以前的研究,先用�
 ```pycheck
 need("fit", "r2_cs")
 if close(r2_cs, 0.0723, 0.003):
-    fail("这是 McFadden 的 pseudo R²(prsquared),不是 Cox–Snell R²。按第 13 课: 1 − exp(−llr / 病人数)。")
+    fail("这是 McFadden 的 pseudo R²(prsquared),不是 Cox–Snell R²。按第 13 课: 1 − exp(−llr / 患者数)。")
 if close(r2_cs, 0.040, 0.002):
-    ok("对了: R²cs 是 0.040。事件比例 8% 时它的上限是 0.43,这个模型只到上限的一成: 直肠剂量和副作用有关系,但关系很弱。而且 0.040 是在建模病人身上算的,偏乐观;真实的只会更小。")
+    ok("对了: R²cs 是 0.040。事件比例 8% 时它的上限是 0.43,这个模型只到上限的一成: 直肠剂量和副作用有关系,但关系很弱。而且 0.040 是在建模患者身上算的,偏乐观;真实的只会更小。")
 fail(f"现在是 {r2_cs:.4f},应该是 0.040。式子是 1 - np.exp(-fit.llr / len(tox))。")
 ```
 
 <details><summary>提示 1: 思路</summary>
 
-`sm.Logit(结局, sm.add_constant(变量的表)).fit(disp=0)`。拟合结果的 `llr` 是模型比"只有截距"好了多少;R²cs = 1 − exp(−llr ÷ 病人数)。
+`sm.Logit(结局, sm.add_constant(变量的表)).fit(disp=0)`。拟合结果的 `llr` 是模型比"只有截距"好了多少;R²cs = 1 − exp(−llr ÷ 患者数)。
 
 </details>
 
@@ -106,9 +106,9 @@ print(round(r2_cs, 3))
 
 <div class="step exercise">
 
-**第 2 步 · 一个参数,需要多少病人**
+**第 2 步 · 一个参数,需要多少患者**
 
-模型只有 1 个参数(直肠总剂量)。用 `riley_binary` 算三条准则各要多少位病人: 参数个数 1,事件比例用 `event.mean()`,R²cs 用上一步的 `r2_cs`。三个数存进 `sizes`,其中最大的存进 `n_needed`。
+模型只有 1 个参数(直肠总剂量)。用 `riley_binary` 算三条准则各要多少位患者: 参数个数 1,事件比例用 `event.mean()`,R²cs 用上一步的 `r2_cs`。三个数存进 `sizes`,其中最大的存进 `n_needed`。
 
 ```python
 # 在这里写你的代码。结果存进 sizes 和 n_needed。
@@ -119,7 +119,7 @@ need("sizes", "n_needed")
 if int(n_needed) == 443:
     fail("这是 2 个参数的结果。这个模型只有 1 个参数。")
 if list(sizes) == [222, 46, 115] and int(n_needed) == 222:
-    ok("对了: 三条准则各要 222、46、115 位,取最大的: 222 位。现在有 185 位。也就是说,连只有一个变量的模型,这批病人都还差一点;每多一个参数,要再加 221 位。练习 4 里 AUC 的区间那么宽、校准斜率只有 0.74,原因就在这里。")
+    ok("对了: 三条准则各要 222、46、115 位,取最大的: 222 位。现在有 185 位。也就是说,连只有一个变量的模型,这批患者都还差一点;每多一个参数,要再加 221 位。练习 4 里 AUC 的区间那么宽、校准斜率只有 0.74,原因就在这里。")
 fail(f"现在是 {list(sizes)} 和 {n_needed},应该是 [222, 46, 115] 和 222。")
 ```
 
@@ -149,9 +149,9 @@ print(sizes, n_needed)
 
 <div class="step exercise">
 
-**第 3 步 · 反过来: 185 位病人撑得起几个参数**
+**第 3 步 · 反过来: 185 位患者撑得起几个参数**
 
-把准则 1 反过来用(第 13 课): 最多的参数个数 = 病人数 × (0.9 − 1) × ln(1 − R²cs ÷ 0.9)。对这 185 位病人算出来,存进 `p_max`。
+把准则 1 反过来用(第 13 课): 最多的参数个数 = 患者数 × (0.9 − 1) × ln(1 − R²cs ÷ 0.9)。对这 185 位患者算出来,存进 `p_max`。
 
 ```python
 # 在这里写你的代码。结果存进 p_max。
@@ -162,13 +162,13 @@ need("p_max")
 if close(p_max, -0.836, 0.01):
     fail("符号反了: (0.9 − 1) 是负的,ln(...) 也是负的,乘起来是正的。检查括号。")
 if close(p_max, 0.836, 0.01):
-    ok("对了: 0.84 个参数,不到 1 个。在这批病人上,往副作用的模型里再加年龄、肿瘤体积、膀胱剂量,多半只会让它在新病人身上更差(第 13 课): 多出来的系数都是拿 15 个事件硬估的。")
+    ok("对了: 0.84 个参数,不到 1 个。在这批患者上,往副作用的模型里再加年龄、肿瘤体积、膀胱剂量,多半只会让它在新患者身上更差(第 13 课): 多出来的系数都是拿 15 个事件硬估的。")
 fail(f"现在是 {p_max:.3f},应该是 0.836。")
 ```
 
 <details><summary>提示 1: 思路</summary>
 
-照式子写: 病人数是 `len(tox)`,`ln` 是 `np.log`。
+照式子写: 患者数是 `len(tox)`,`ln` 是 `np.log`。
 
 </details>
 
@@ -192,8 +192,8 @@ print(round(p_max, 2))
 <div class="step">
 
 <div class="quiz">
-<p><b>第 4 步 · 想一想</b>: 病人就这么多,短期内不会再有。下面哪种做法是对的?</p>
-<button class="quiz-opt" data-why="换一个更灵活的模型,要学的东西更多,需要的病人也更多。样本不够时,它只会更糟。">换成随机森林或梯度提升,它们能从少量数据里学到更多</button>
+<p><b>第 4 步 · 想一想</b>: 患者就这么多,短期内不会再有。下面哪种做法是对的?</p>
+<button class="quiz-opt" data-why="换一个更灵活的模型,要学的东西更多,需要的患者也更多。样本不够时,它只会更糟。">换成随机森林或梯度提升,它们能从少量数据里学到更多</button>
 <button class="quiz-opt" data-correct data-why="这是第 13 课的结论: 样本不够不等于不能做,而是要少做、如实写。事先只定一个最有依据的变量;报告区间、校准斜率和三条准则算出来的数;把研究称为探索性的;说明模型在用于决策之前需要更大的队列或外部验证。">只保留事先定好的一个变量,把区间、校准和样本量的计算如实报告,并说明这是探索性的</button>
 <button class="quiz-opt" data-why="多试几个变量、挑成绩最好的,正是练习 2 里的泄漏: 挑到的是运气最好的那一个。样本越小,运气的成分越大。">把候选变量都试一遍,报告 AUC 最高的那个模型</button>
 </div>
@@ -215,7 +215,7 @@ need("or5", "or5_low", "or5_high")
 if close(or5, 1.147, 0.005):
     fail("这是每高 1 Gy 的 OR。每高 5 Gy: 系数(和它的区间两端)先乘以 5,再取 exp。")
 if close(or5, 1.98, 0.02) and close(or5_low, 1.21, 0.02) and close(or5_high, 3.26, 0.03):
-    ok("对了: 每高 5 Gy,OR 1.98(95% 区间 1.21 到 3.26)。完整的模型是 log-odds = −11.51 + 0.137 × 直肠总剂量(Gy)。有了截距和系数,别的中心才能拿自己的病人来验证它。")
+    ok("对了: 每高 5 Gy,OR 1.98(95% 区间 1.21 到 3.26)。完整的模型是 log-odds = −11.51 + 0.137 × 直肠总剂量(Gy)。有了截距和系数,别的中心才能拿自己的患者来验证它。")
 fail(f"现在是 {or5:.2f}({or5_low:.2f} 到 {or5_high:.2f}),应该是 1.98(1.21 到 3.26)。")
 ```
 
@@ -306,7 +306,7 @@ print(text)
 <div class="quiz">
 <p><b>第 7 步 · 想一想</b>: 对照 TRIPOD+AI 写"局限"这一段。这份小研究里,哪一条是读者最需要知道、而前面还没有交代的?</p>
 <button class="quiz-opt" data-why="样本量小已经在第 2、3 步算过,结果段落里的宽区间也体现了。它要写,但不是'还没有交代的'。">事件只有 15 个,估计不精确</button>
-<button class="quiz-opt" data-correct data-why="185 位病人的随访从 9 个月到 90 个月不等,47 位不到 2 年。把结局当成'有没有发生',等于默认每位病人都被观察了同样长的时间: 随访短的病人,副作用可能只是还没出现。这会低估风险,也会让模型把'随访长'和'风险高'混在一起。这门课没有讲处理它的方法(生存分析),所以更要写明。">随访时间长短不一,却把结局当成了"有没有发生": 随访短的病人可能只是还没出现副作用</button>
+<button class="quiz-opt" data-correct data-why="185 位患者的随访从 9 个月到 90 个月不等,47 位不到 2 年。把结局当成'有没有发生',等于默认每位患者都被观察了同样长的时间: 随访短的患者,副作用可能只是还没出现。这会低估风险,也会让模型把'随访长'和'风险高'混在一起。这门课没有讲处理它的方法(生存分析),所以更要写明。">随访时间长短不一,却把结局当成了"有没有发生": 随访短的患者可能只是还没出现副作用</button>
 <button class="quiz-opt" data-why="只用一个变量是事先的决定,而且是样本量允许的上限,不算局限;要写的是为什么这样定。">模型里只有一个变量</button>
 </div>
 
@@ -316,8 +316,8 @@ print(text)
 
 **五部分都做完了。** 回头看,你对同一份审计数据做了一次完整的预测模型研究:
 
-- **靶区剂量**: 带交互项的直线(体积、施源器、年龄、体积 × 施源器),交叉验证平均差 3.7 Gy,R² 0.24。它说明了一件临床上有用的事: 肿瘤大的时候加针才要紧;但它还不足以把剂量不够的病人一个个挑出来。
-- **晚期直肠副作用**: 直肠总剂量每高 5 Gy,OR 1.98(1.21 到 3.26);AUC 0.68(0.52 到 0.82),校准斜率 0.74。185 位病人、15 个事件,连一个参数都还差一点。
+- **靶区剂量**: 带交互项的直线(体积、施源器、年龄、体积 × 施源器),交叉验证平均差 3.7 Gy,R² 0.24。它说明了一件临床上有用的事: 肿瘤大的时候加针才要紧;但它还不足以把剂量不够的患者一个个挑出来。
+- **晚期直肠副作用**: 直肠总剂量每高 5 Gy,OR 1.98(1.21 到 3.26);AUC 0.68(0.52 到 0.82),校准斜率 0.74。185 位患者、15 个事件,连一个参数都还差一点。
 - **怎么写**: 事先定变量,所有步骤放进交叉验证,报告区分度、校准和净获益,算样本量,把局限写明,数字从代码里来。
 
 换成你自己的数据,要做的事是同一串。

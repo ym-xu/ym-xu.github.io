@@ -188,11 +188,11 @@
   function overfit(root) {
     var sc = getScene(), withCV = root.hasAttribute('data-cv');
     var folds = split(N, K, splitStream());
-    var plot = frame(root, '散点图: 30 位建模病人、新病人和模型的曲线');
+    var plot = frame(root, '散点图: 30 位建模患者、新患者和模型的曲线');
     sc.shown.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 2.6, 'class': 'w-pt new' }, plot); });
     var path = el('path', { 'class': 'w-curve' }, plot);
     sc.train.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
-    legend(root, [['pt', '建模的 30 位病人'], ['new', '新病人'], ['line', '模型']]);
+    legend(root, [['pt', '建模的 30 位患者'], ['new', '新患者'], ['line', '模型']]);
 
     var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
     input.type = 'range'; input.min = 1; input.max = 10; input.step = 1; input.value = 1;
@@ -207,9 +207,9 @@
       var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
       return function (v) { fill.style.width = Math.min(100, v / 2.6 * 100).toFixed(1) + '%'; val.textContent = gy(v); };
     }
-    var setTrain = bar('建模的 30 位病人', 'train');
+    var setTrain = bar('建模的 30 位患者', 'train');
     var setCV = withCV ? bar('5 折交叉验证', 'cv') : null;
-    var setNew = bar('2000 位新病人', 'new');
+    var setNew = bar('2000 位新患者', 'new');
 
     function update() {
       var level = +input.value, f = fitFlex(sc.train, level);
@@ -232,7 +232,7 @@
     var plot = frame(root, '散点图: 5 折交叉验证的每一轮');
     var segs = el('g', {}, plot), path = el('path', { 'class': 'w-curve' }, plot);
     var dots = sc.train.map(function (p) { return el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4 }, plot); });
-    legend(root, [['pt', '拿出来预测的病人'], ['rest', '用来建模的病人'], ['line', '拟合的直线']]);
+    legend(root, [['pt', '拿出来预测的患者'], ['rest', '用来建模的患者'], ['line', '拟合的直线']]);
 
     var chips = h('div', 'w-chips', root), chip = [];
     for (var i = 0; i < K; i++) chip.push(h('span', 'w-chip', chips));
@@ -267,10 +267,10 @@
       total.textContent = '平均' + (step > K ? ' ' + cvMean.toFixed(2) : '');
       next.textContent = step === 0 ? '开始第 1 轮' : step < K ? '下一轮(第 ' + (step + 1) + ' 轮)' : step === K ? '看 5 轮的合计' : '从头再看一遍';
       status.textContent = step === 0
-        ? '30 位模拟病人已经随机分成 5 份,每份 6 人。点"开始第 1 轮"。'
+        ? '30 位模拟患者已经随机分成 5 份,每份 6 人。点"开始第 1 轮"。'
         : step <= K
-          ? '第 ' + step + ' 轮: 用另外 24 位病人(灰点)拟合直线,去预测拿出来的 6 位(蓝点)。蓝色竖线是这 6 位的误差,平均 ' + gy(r.mae) + '。'
-          : '5 轮做完,每位病人都恰好被预测了一次: 竖线连着每位病人的实际值和预测值(短横线),预测用的都是没见过这位病人的那条直线。5 份的平均是 ' + gy(cvMean) + '。对照: 用全部 30 位病人拟合的直线,在 2000 位新病人身上平均差 ' + gy(truth) + '。';
+          ? '第 ' + step + ' 轮: 用另外 24 位患者(灰点)拟合直线,去预测拿出来的 6 位(蓝点)。蓝色竖线是这 6 位的误差,平均 ' + gy(r.mae) + '。'
+          : '5 轮做完,每位患者都恰好被预测了一次: 竖线连着每位患者的实际值和预测值(短横线),预测用的都是没见过这位患者的那条直线。5 份的平均是 ' + gy(cvMean) + '。对照: 用全部 30 位患者拟合的直线,在 2000 位新患者身上平均差 ' + gy(truth) + '。';
     }
     next.addEventListener('click', function () { step = step > K ? 0 : step + 1; render(); });
     render();
@@ -366,8 +366,8 @@
       var hits = studies.filter(function (st) { return st.hit; }).length, N = studies.length;
       one.disabled = many.disabled = N >= MAX;
       status.textContent = N === 0
-        ? '所有这类病人里,换方案后 Δ 的真实平均值是 −2.0 Gy(竖线)。点"做 1 个研究": 随机抽 30 位病人,算出平均值(圆点)和它的 95% 区间(横线)。'
-        : '已经做了 ' + N + ' 个研究,每个研究 30 位病人。' + hits + ' 个研究的 95% 区间包含了真实值' + (N >= 10 ? '(占 ' + Math.round(hits / N * 100) + '%)' : '') + ';没包含的 ' + (N - hits) + ' 个画成红色粗线。' + (N >= MAX ? '图里最多画 ' + MAX + ' 个。' : '');
+        ? '所有这类患者里,换方案后 Δ 的真实平均值是 −2.0 Gy(竖线)。点"做 1 个研究": 随机抽 30 位患者,算出平均值(圆点)和它的 95% 区间(横线)。'
+        : '已经做了 ' + N + ' 个研究,每个研究 30 位患者。' + hits + ' 个研究的 95% 区间包含了真实值' + (N >= 10 ? '(占 ' + Math.round(hits / N * 100) + '%)' : '') + ';没包含的 ' + (N - hits) + ' 个画成红色粗线。' + (N >= MAX ? '图里最多画 ' + MAX + ' 个。' : '');
     }
     function reset() { rng = mulberry32(68); studies = []; render(); }
     one.addEventListener('click', function () { add(1); });
@@ -395,7 +395,7 @@
     function px(v) { return 16 + (v - lo) / (hi - lo) * (w - 28); }
 
     // top: the 40 patients, one row per group
-    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 104', role: 'img', 'aria-label': '两组病人的 Δ' }, root);
+    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 104', role: 'img', 'aria-label': '两组患者的 Δ' }, root);
     var capA = el('text', { x: 16, y: 11 }, svg1), capB = el('text', { x: 16, y: 53 }, svg1);
     el('line', { x1: 12, x2: w - 8, y1: 82, y2: 82, 'class': 'w-axis' }, svg1);
     [-10, -8, -6, -4, -2, 0, 2, 4].forEach(function (v) {
@@ -456,7 +456,7 @@
       });
       one.disabled = many.disabled = N >= MAX;
       status.textContent = N === 0
-        ? '实际的分组: 单纯近距离组平均 ' + minus(obs.a.toFixed(2)) + ' Gy,外照射加近距离组平均 ' + minus(obs.b.toFixed(2)) + ' Gy,相差 ' + Math.abs(obs.d).toFixed(2) + ' Gy。点"打乱 1 次": 把 40 位病人的组别随机重新分配,再算一次两组的差。'
+        ? '实际的分组: 单纯近距离组平均 ' + minus(obs.a.toFixed(2)) + ' Gy,外照射加近距离组平均 ' + minus(obs.b.toFixed(2)) + ' Gy,相差 ' + Math.abs(obs.d).toFixed(2) + ' Gy。点"打乱 1 次": 把 40 位患者的组别随机重新分配,再算一次两组的差。'
         : '打乱了 ' + N + ' 次。这一次两组相差 ' + Math.abs(cur.d).toFixed(2) + ' Gy。到现在,有 ' + extreme + ' 次的差不小于实际的 ' + Math.abs(obs.d).toFixed(2) + ' Gy(红色),占 ' + extreme + ' / ' + N + ' = ' + (extreme / N).toFixed(3) + '。' + (N >= MAX ? '图里最多打乱 ' + MAX + ' 次。' : '');
     }
     function reset() { rng = mulberry32(115 * 13 + 5); lab = real.slice(); diffs = []; render(); }
@@ -484,10 +484,10 @@
     var start = { h: Math.round(my * 10) / 10, b: 0 }, cur = { h: start.h, b: start.b }, exact = false;
     var top = mse(start.h, start.b) * 1.5;
 
-    var plot = frame(root, '散点图: 30 位病人和一条可以调的直线');
+    var plot = frame(root, '散点图: 30 位患者和一条可以调的直线');
     var segs = el('g', {}, plot), path = el('path', { 'class': 'w-curve' }, plot);
     pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
-    legend(root, [['pt', '30 位病人'], ['line', '你的直线'], ['res', '每位病人的误差']]);
+    legend(root, [['pt', '30 位患者'], ['line', '你的直线'], ['res', '每位患者的误差']]);
 
     function slider(text, min, max, value) {
       var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
@@ -499,7 +499,7 @@
 
     var bars = h('div', 'w-bars', root);
     bars.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', bars, '误差平方的平均: 每位病人的误差先平方,再取平均');
+    h('p', 'w-bars-title', bars, '误差平方的平均: 每位患者的误差先平方,再取平均');
     var row = h('div', 'w-bar', bars);
     h('span', 'w-bar-label', row, '这条直线');
     var fill = h('span', 'w-bar-fill train', h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
@@ -573,7 +573,7 @@
     var PW = 360, PH = 230, PM = { l: 36, r: 10, t: 12, b: 34 }, XMAX = 12.5;
     function px(x) { return PM.l + x / XMAX * (PW - PM.l - PM.r); }
     function py(p) { return PM.t + (1 - p) * (PH - PM.t - PM.b); }
-    var svg = el('svg', { viewBox: '0 0 ' + PW + ' ' + PH, role: 'img', 'aria-label': '40 位病人的结局(是或否)和一条可以调的概率曲线' }, root);
+    var svg = el('svg', { viewBox: '0 0 ' + PW + ' ' + PH, role: 'img', 'aria-label': '40 位患者的结局(是或否)和一条可以调的概率曲线' }, root);
     [0, 0.5, 1].forEach(function (v) {
       el('line', { x1: PM.l, x2: PW - PM.r, y1: py(v), y2: py(v), 'class': v === 0.5 ? 'w-zero' : 'w-grid' }, svg);
       el('text', { x: PM.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, v === 0.5 ? '50%' : v ? '100%' : '0');
@@ -714,16 +714,16 @@
     el('text', { x: (PM.l + PW - PM.r) / 2, y: PH - 3, 'text-anchor': 'middle' }, svg, '年龄 (岁)');
     el('text', { x: PM.l + 5, y: PM.t + 10 }, svg, 'Δ (Gy)');
     var dots = el('g', {}, svg), path = el('path', { 'class': 'w-curve' }, svg);
-    legend(root, [['pt', '建模的病人(最多画 300 位)'], ['line', '拟合的直线']]);
+    legend(root, [['pt', '建模的患者(最多画 300 位)'], ['line', '拟合的直线']]);
 
     var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
     input.type = 'range'; input.min = 0; input.max = SIZES.length - 1; input.step = 1; input.value = 0;
-    input.setAttribute('aria-label', '建模的病人数');
+    input.setAttribute('aria-label', '建模的患者数');
     var chips = h('div', 'w-chips', root), chipB = h('span', 'w-chip done', chips), chipP = h('span', 'w-chip done', chips);
     chips.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
     var bars = h('div', 'w-bars', root);
     bars.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', bars, '在 5000 位新病人身上,预测值和实际值平均差多少');
+    h('p', 'w-bars-title', bars, '在 5000 位新患者身上,预测值和实际值平均差多少');
     function bar(label, cls) {
       var row = h('div', 'w-bar', bars);
       h('span', 'w-bar-label', row, label);
@@ -737,7 +737,7 @@
       while (dots.firstChild) dots.removeChild(dots.firstChild);
       pts.slice(0, 300).forEach(function (p) { el('circle', { cx: px(p.x), cy: py(p.y), r: 2.4, 'class': 'w-pt', opacity: n > 100 ? 0.45 : 0.9 }, dots); });
       path.setAttribute('d', 'M' + px(XR[0]).toFixed(1) + ' ' + py(f.a + f.b * XR[0]).toFixed(1) + 'L' + px(XR[1]).toFixed(1) + ' ' + py(f.a + f.b * XR[1]).toFixed(1));
-      cap.textContent = '建模的病人数: ' + n;
+      cap.textContent = '建模的患者数: ' + n;
       chipB.textContent = '斜率 ' + minus(f.b.toFixed(3)) + ' Gy/岁';
       chipP.textContent = f.p < 0.001 ? 'P < 0.001' : 'P = ' + f.p.toFixed(3);
       setBase(f.base); setModel(f.model);
@@ -807,7 +807,7 @@
     input.setAttribute('aria-label', '候选变量的个数');
     var bars = h('div', 'w-bars', root);
     bars.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', bars, '5 折交叉验证的平均误差(60 位病人;结局和所有候选变量都是随机数)');
+    h('p', 'w-bars-title', bars, '5 折交叉验证的平均误差(60 位患者;结局和所有候选变量都是随机数)');
     function bar(label, cls) {
       var row = h('div', 'w-bar', bars);
       h('span', 'w-bar-label', row, label);
@@ -912,7 +912,7 @@
     input.setAttribute('aria-label', '约束的强度');
     var box = h('div', 'w-bars', root);
     box.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', box, '在 2000 位新病人身上,预测值和实际值平均差多少');
+    h('p', 'w-bars-title', box, '在 2000 位新患者身上,预测值和实际值平均差多少');
     function bar(label, cls) {
       var row = h('div', 'w-bar', box);
       h('span', 'w-bar-label', row, label);
@@ -958,11 +958,11 @@
     var my = mean(pts.map(function (p) { return p.y; })), flat = 0;
     pts.forEach(function (p) { flat += (p.y - my) * (p.y - my) / n; });
 
-    var plot = frame(root, '散点图: 30 位病人按壁厚分成两组,每组用自己的平均值预测');
+    var plot = frame(root, '散点图: 30 位患者按壁厚分成两组,每组用自己的平均值预测');
     var segs = el('g', {}, plot), cutLine = el('line', { 'class': 'w-mean' }, plot);
     var left = el('line', { 'class': 'w-curve' }, plot), right = el('line', { 'class': 'w-curve' }, plot);
     pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
-    legend(root, [['pt', '30 位病人'], ['line', '每一组的预测值'], ['res', '每位病人的误差']]);
+    legend(root, [['pt', '30 位患者'], ['line', '每一组的预测值'], ['res', '每位患者的误差']]);
     var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
     input.type = 'range'; input.min = 2; input.max = 6; input.step = 0.1; input.value = 2.5;
     input.setAttribute('aria-label', '分叉点的壁厚');
@@ -1035,7 +1035,7 @@
     var w = 360, hgt = 260, m = { l: 36, r: 8, t: 10, b: 34 }, lo = -9.5, hi = 5.5;
     function px(v) { return m.l + (v - lo) / (hi - lo) * (w - m.l - m.r); }
     function py(v) { return m.t + (hi - v) / (hi - lo) * (hgt - m.t - m.b); }
-    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hgt, role: 'img', 'aria-label': '散点图: 40 位病人,模型的预测值和实际的 Δ' }, root);
+    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hgt, role: 'img', 'aria-label': '散点图: 40 位患者,模型的预测值和实际的 Δ' }, root);
     [-8, -4, 0, 4].forEach(function (v) {
       el('line', { x1: m.l, x2: w - m.r, y1: py(v), y2: py(v), 'class': 'w-grid' }, svg);
       el('text', { x: m.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, minus(v));
@@ -1049,7 +1049,7 @@
     el('line', { x1: px(lo), x2: px(hi), y1: py(lo), y2: py(hi), 'class': 'w-mean' }, svg);
     var moves = el('g', {}, svg);
     var dots = test.map(function (p, i) { return el('circle', { cx: px(base[i]), cy: py(p.y), r: 3.4, 'class': 'w-pt' }, svg); });
-    legend(root, [['pt', '40 位没参与建模的病人'], ['dash', '预测值 = 实际值'], ['hres', '打乱以后预测值挪了多远']]);
+    legend(root, [['pt', '40 位没参与建模的患者'], ['dash', '预测值 = 实际值'], ['hres', '打乱以后预测值挪了多远']]);
     var ctls = h('div', 'w-ctls', root);
     var btns = names.map(function (nm, v) { return button(ctls, '打乱' + nm, v === 0 ? 'primary' : ''); }), back = button(ctls, '恢复');
     var bars = h('div', 'w-bars', root);
@@ -1083,7 +1083,7 @@
       });
     });
     back.addEventListener('click', function () { clicks = [0, 0, 0]; sums = [0, 0, 0]; show(base, START); });
-    var START = '每个点是一位病人: 越靠近斜线,预测越准。点一个按钮,把这 40 位病人的那一个变量随机互换,别的不动。';
+    var START = '每个点是一位患者: 越靠近斜线,预测越准。点一个按钮,把这 40 位患者的那一个变量随机互换,别的不动。';
     show(base, START);
   }
 
@@ -1096,12 +1096,12 @@
     var mx = mean(pts.map(function (p) { return p.x; })), my = mean(pts.map(function (p) { return p.y; }));
     function mseOf(b) { var e = 0; pts.forEach(function (p) { var d = p.y - my - b * (p.x - mx); e += d * d / n; }); return e; }
     var flat = mseOf(0), top = mseOf(4);
-    var plot = frame(root, '散点图: 30 位病人,一条经过平均点、可以转动的线');
+    var plot = frame(root, '散点图: 30 位患者,一条经过平均点、可以转动的线');
     var segs = el('g', {}, plot);
     el('line', { x1: sx(XD[0]), x2: sx(XD[1]), y1: sy(my), y2: sy(my), 'class': 'w-mean' }, plot);
     var line = el('line', { 'class': 'w-curve' }, plot);
     pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
-    legend(root, [['pt', '30 位病人'], ['dash', '都猜平均值'], ['line', '模型的线'], ['res', '每位病人的误差']]);
+    legend(root, [['pt', '30 位患者'], ['dash', '都猜平均值'], ['line', '模型的线'], ['res', '每位患者的误差']]);
     var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
     input.type = 'range'; input.min = 0; input.max = 4; input.step = 0.1; input.value = 0;
     input.setAttribute('aria-label', '线的斜率');
@@ -1155,7 +1155,7 @@
 
     var w = 360;
     function px(v) { return 18 + v * (w - 36); }
-    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 136', role: 'img', 'aria-label': '40 位病人按模型给的概率排开,竖线是阈值' }, root);
+    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 136', role: 'img', 'aria-label': '40 位患者按模型给的概率排开,竖线是阈值' }, root);
     el('text', { x: 18, y: 12 }, svg1, '降下来的 12 位');
     el('text', { x: 18, y: 60 }, svg1, '没降下来的 28 位');
     el('line', { x1: 14, x2: w - 14, y1: 100, y2: 100, 'class': 'w-axis' }, svg1);
@@ -1185,7 +1185,7 @@
     el('text', { x: rx(1) - 6, y: ry(0) - 8, 'text-anchor': 'end' }, svg2, 'AUC ' + auc.toFixed(2));
     var here = el('circle', { r: 5.5, 'class': 'w-pt' }, svg2);
 
-    legend(root, [['pt', '降下来的病人'], ['new', '没降下来的病人'], ['dash', '阈值'], ['line', 'ROC 曲线']]);
+    legend(root, [['pt', '降下来的患者'], ['new', '没降下来的患者'], ['dash', '阈值'], ['line', 'ROC 曲线']]);
     var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
     input.type = 'range'; input.min = 0.05; input.max = 0.95; input.step = 0.05; input.value = 0.5;
     input.setAttribute('aria-label', '阈值');
@@ -1260,7 +1260,7 @@
     el('text', { x: px(0) + 5, y: m.t + 10 }, svg, '实际出事的比例');
     el('line', { x1: px(0), y1: py(0), x2: px(1), y2: py(1), 'class': 'w-mean' }, svg);
     var path = el('path', { 'class': 'w-curve' }, svg), marks = el('g', {}, svg);
-    legend(root, [['pt', '一组病人(按模型说的概率从低到高分成 8 组)'], ['dash', '模型说的 = 实际的']]);
+    legend(root, [['pt', '一组患者(按模型说的概率从低到高分成 8 组)'], ['dash', '模型说的 = 实际的']]);
     var ctls = h('div', 'w-ctls', root), status = h('p', 'w-status', root);
     status.setAttribute('aria-live', 'polite');
     var btns = KINDS.map(function (k, idx) { return button(ctls, k.name, idx === 0 ? 'primary' : ''); });
@@ -1325,7 +1325,7 @@
     input.setAttribute('aria-label', '阈值概率');
     var bars = h('div', 'w-bars', root);
     bars.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', bars, '净获益(每位病人)');
+    h('p', 'w-bars-title', bars, '净获益(每位患者)');
     function bar(label, cls) {
       var row = h('div', 'w-bar', bars);
       h('span', 'w-bar-label', row, label);
@@ -1369,7 +1369,7 @@
     var sr = slider('预期的 R²(Cox–Snell)', 0.01, 0.3, 0.01, 0.05, function (v) { return v.toFixed(2); });
     var bars = h('div', 'w-bars', root);
     bars.setAttribute('aria-live', 'polite');
-    h('p', 'w-bars-title', bars, '每条准则要求的病人数');
+    h('p', 'w-bars-title', bars, '每条准则要求的患者数');
     function bar(label) {
       var row = h('div', 'w-bar', bars);
       h('span', 'w-bar-label', row, label);
@@ -1383,7 +1383,7 @@
       var p = +sp.input.value, phi = +sf.input.value, r2 = +sr.input.value, n = need(p, phi, r2), top = Math.max.apply(null, n), lead = n.indexOf(top);
       sp.show(); sf.show(); sr.show();
       n.forEach(function (v, k) { set[k](v, top, k === lead); });
-      status.textContent = '至少需要 ' + top + ' 位病人,其中约 ' + Math.round(top * phi) + ' 个事件(每个参数 ' + (top * phi / p).toFixed(1) + ' 个事件)。要求最高的是准则 ' + (lead + 1) + '。';
+      status.textContent = '至少需要 ' + top + ' 位患者,其中约 ' + Math.round(top * phi) + ' 个事件(每个参数 ' + (top * phi / p).toFixed(1) + ' 个事件)。要求最高的是准则 ' + (lead + 1) + '。';
     }
     [sp, sf, sr].forEach(function (sl) { sl.input.addEventListener('input', update); });
     update();
@@ -1514,9 +1514,9 @@
   var FOREST = [-5.89,-5.45,-4.88,-3.95,-3.71,-5.19,-3.91,-5.09,-5.36,-6.96,-4.25,-4.91,-5.21,-5.08,-4.93,-4.56,-5.18,-4.6,-4.75,-6.2,-4.3,-3.71,-4.56,-4.42,-3.71,-4.96,-5.95,-5.18,-4.65,-4.62,-5.55,-5.65,-4.69,-5.37,-5.69,-5.51,-4.66,-5.26,-4.25,-4.84,-4.67,-4.38,-4.49,-6.02,-5.13,-5.29,-3.67,-4.72,-5.56,-4.04,-5.73,-4.66,-3.95,-4.63,-4.97,-4.81,-4.63,-3.64,-5.31,-4.68,-4.8,-4.27,-4.97,-4.9,-5.65,-5.64,-5.78,-4.02,-4.9,-2.85,-5.37,-5.5,-4.42,-4.15,-5.34,-5.07,-4.08,-4.63,-5.65,-4.65,-4.71,-5.23,-4.11,-4.69,-5.15,-4.82,-4.68,-5.2,-4.69,-4.16,-4.14,-6.12,-4.21,-4.54,-5.55,-4.48,-5.52,-4.61,-2.75,-5.23,-4.32,-4.96,-5.34,-6.98,-3.35,-7.23,-4.83,-4.39,-4.54,-4.65,-5.03,-4.45,-4.9,-5.9,-4.68,-3.71,-5.41,-6.54,-4.8,-3.51,-5.64,-4.73,-5.41,-5.37,-5.63,-4.53,-3.15,-5.02,-5.92,-4.89,-4.02,-5.93,-4.08,-4.45,-6.33,-5.35,-5.31,-6.33,-3.23,-4.15,-5.48,-4.32,-5.66,-5.56,-4.2,-4.24,-4.5,-5.14,-4.59,-5.26,-4.55,-5.72,-5.42,-6.19,-5.5,-5.12,-3.78,-4.22,-3.99,-4.69,-4.08,-2.95,-4.87,-4.9,-4.64,-5.19,-4.33,-5.58,-4.91,-6.37,-5.98,-4.0,-4.64,-4.01,-5.11,-6.33,-5.63,-5.71,-4.81,-4.2,-4.46,-5.08,-5.48,-5.76,-5.39,-3.76,-2.78,-4.96,-4.78,-4.74,-4.65,-6.25,-4.44,-4.53,-4.96,-6.08,-5.71,-5.53,-4.97,-5.12,-3.94,-3.9,-4.72,-5.62,-4.09,-5.17,-5.69,-4.45,-4.65,-3.06,-4.36,-4.0,-3.08,-4.69,-4.22,-4.71,-4.55,-4.62,-5.28,-3.96,-4.27,-4.34,-4.81,-3.93,-4.21,-4.35,-4.15,-6.12,-5.87,-4.05,-4.77,-5.34,-4.42,-4.91,-5.18,-4.38,-3.06,-4.61,-5.27,-4.75,-3.73,-3.62,-6.16,-6.15,-5.02,-5.05,-5.16,-5.76,-5.44,-4.68,-4.55,-3.67,-4.31,-5.65,-4.91,-4.0,-6.08,-3.7,-5.8,-4.79,-4.37,-4.97,-5.17,-3.99,-3.86,-3.95,-6.26,-4.85,-5.06,-5.44,-4.56,-5.66,-5.36,-5.52,-5.16,-5.83,-4.65,-4.19,-4.03,-3.27,-4.9,-4.44,-4.82,-4.27,-5.46,-5.66,-5.37,-5.2,-3.74,-5.42,-5.06,-6.48,-5.08,-7.08,-6.14,-4.2,-5.24,-3.86,-4.81,-5.28];
   var BOOST = [-2.239,-2.384,-2.521,-2.67,-2.795,-2.93,-3.043,-3.166,-3.283,-3.38,-3.486,-3.587,-3.671,-3.762,-3.849,-3.921,-4.008,-4.067,-4.111,-4.189,-4.221,-4.279,-4.309,-4.378,-4.406,-4.465,-4.491,-4.54,-4.598,-4.621,-4.662,-4.715,-4.736,-4.786,-4.804,-4.823,-4.84,-4.821,-4.839,-4.872,-4.854,-4.876,-4.86,-4.857,-4.871,-4.868,-4.882,-4.879,-4.865,-4.892,-4.905,-4.893,-4.895,-4.907,-4.904,-4.905,-4.894,-4.916,-4.91,-4.921,-4.922,-4.922,-4.923,-4.913,-4.926,-4.92,-4.926,-4.918,-4.918,-4.938,-4.93,-4.93,-4.941,-4.946,-4.947,-4.939,-4.94,-4.945,-4.946,-4.948,-4.948,-4.941,-4.946,-4.947,-4.94,-4.937,-4.949,-4.943,-4.943,-4.947,-4.963,-4.963,-4.962,-4.972,-4.973,-4.975,-4.975,-4.976,-4.975,-4.976];
   var modelsScene = {
-    label: '分步图: 同一位新病人依次经过六种模型,每种模型怎样算出预测值',
+    label: '分步图: 同一位新患者依次经过六种模型,每种模型怎样算出预测值',
     height: 300,
-    tiles: ['模型', '这位病人的预测', '新病人身上的误差'],
+    tiles: ['模型', '这位患者的预测', '新患者身上的误差'],
     build: function (api) {
       var svg = api.svg, L = {}, E = easeInOut, MEAN = -2.0867;
       function X(v) { return 30 + (v + 8) * 37.5; }                // the Δ axis: −8 … 0 Gy
@@ -1538,9 +1538,9 @@
       T(ask, 180, 246, '?', 's-q', 'middle');
 
       var base = layer('base');
-      T(base, 180, 96, '不看这位病人的任何信息', 's-t', 'middle');
+      T(base, 180, 96, '不看这位患者的任何信息', 's-t', 'middle');
       var baseNum = T(base, 180, 140, '', 's-big', 'middle');
-      T(base, 180, 170, '196 位建模病人的平均值', '', 'middle');
+      T(base, 180, 170, '196 位建模患者的平均值', '', 'middle');
 
       // rows of "variable, how it differs, contribution": used by the straight line and by LASSO
       function rows(parent, items) {
@@ -1557,7 +1557,7 @@
         });
       }
       var lin = layer('lin');
-      T(lin, 338, 72, '和平均的病人比,加或减多少 (Gy)', 's-k', 'end');
+      T(lin, 338, 72, '和平均的患者比,加或减多少 (Gy)', 's-k', 'end');
       var LIN = [['壁厚', '比平均薄 0.69 mm,每 mm 1.57 Gy', -1.0891], ['直径', '比平均小 0.05 mm,每 mm 0.17 Gy', -0.0085], ['近距离次数', '比平均多 0.55 次,每次 −1.21 Gy', -0.6581]];
       var linRows = rows(lin, LIN), linSum = el('g', {}, lin);
       T(linSum, 24, 196, '从平均值 −2.09 出发,加上这三项', 's-t');
@@ -1658,10 +1658,10 @@
         T(g, 338, y, it[1].toFixed(2), 's-v s-n', 'end');
         return { g: g, set: function (u) { r.setAttribute('width', Math.max(0.5, it[1] * 86 * u)); } };
       });
-      T(bars, 180, 276, '4900 位新病人身上的平均误差 (Gy),越短越好', '', 'middle');
+      T(bars, 180, 276, '4900 位新患者身上的平均误差 (Gy),越短越好', '', 'middle');
 
       // --- the patient's numbers, on top ---
-      T(svg, 10, 12, '一位新病人', 's-k');
+      T(svg, 10, 12, '一位新患者', 's-k');
       var chips = [0, 1, 2].map(function () {
         var g = el('g', { 'class': 's-chip-g' }, svg), stub = el('line', { y1: 40, y2: 52, 'class': 's-stub' }, g);
         var r = el('rect', { y: 18, height: 22, rx: 11, 'class': 's-chip' }, g), tx = el('text', { y: 33, 'text-anchor': 'middle' }, g);
@@ -1700,7 +1700,7 @@
           clear: function () { fade(pin, 0); fade(trail, 0); }
         };
       }
-      var axis = makeAxis('axis', [[-8, '−8'], [-6, '−6'], [-4, '−4'], [-2, '−2'], [0, '0']], X, '这位病人的预测 Δ (Gy)');
+      var axis = makeAxis('axis', [[-8, '−8'], [-6, '−6'], [-4, '−4'], [-2, '−2'], [0, '0']], X, '这位患者的预测 Δ (Gy)');
       var paxis = makeAxis('paxis', [[0, '0%'], [0.25, '25%'], [0.5, '50%'], [0.75, '75%'], [1, '100%']], XP, '降到 68 Gy 以下的概率');
       var histBars = [], histG = el('g', {}, axis.extra);
       for (var b = 0; b < 18; b++) histBars.push(el('rect', { x: X(-7.25 + b * 0.25) + 0.5, width: 8.4, y: 264, height: 0, 'class': 's-hist' }, histG));
@@ -1809,7 +1809,7 @@
             for (i = 0; i < k; i++) { sum += FOREST[i]; counts[Math.min(17, Math.max(0, Math.floor((FOREST[i] + 7.25) / 0.25)))]++; }
             minis.forEach(function (m, j) { m.setAttribute('class', 's-mini' + (j < k ? ' on' : '')); });
             histBars.forEach(function (r, j) { r.setAttribute('height', counts[j] * 0.56); r.setAttribute('y', 264 - counts[j] * 0.56); });
-            forestNote.textContent = k ? '已经问了 ' + k + ' 棵,平均 ' + num(sum / k) + ' Gy' : '300 棵树,每棵用重新抽的一批病人长成';
+            forestNote.textContent = k ? '已经问了 ' + k + ' 棵,平均 ' + num(sum / k) + ' Gy' : '300 棵树,每棵用重新抽的一批患者长成';
             if (k) { axis.pin(sum / k, num(sum / k)); api.tile(1, num(sum / k) + ' Gy'); }
             shown = k;
           }
@@ -1835,7 +1835,7 @@
         function () {                                   // 8 a yes/no outcome: the sum goes through an S-shaped curve
           reset(6, '逻辑回归', ['logit', 'paxis']);
           chips[1].set(126, 224, '5 mm 计划超出 68 Gy', '2.0 Gy'); chips[2].hide();
-          api.tile(0, '逻辑回归'); api.tile(1, '—', '这位病人的概率'); api.tile(2, '—', '新病人的 AUC');
+          api.tile(0, '逻辑回归'); api.tile(1, '—', '这位患者的概率'); api.tile(2, '—', '新患者的 AUC');
           LOG.forEach(function (g, k) { fade(g, 0); api.tween(200 + k * 350, 250, function (u) { fade(g, u); }); });
           fade(logSum, 0); fade(logGuide, 0); fade(logDot, 0);
           api.tween(1250, 250, function (u) { fade(logSum, u); });
@@ -1844,10 +1844,10 @@
             logDot.setAttribute('cx', SX(v)); logDot.setAttribute('cy', SY(sig(v))); fade(logDot, 1);
           });
           api.tween(2600, 300, function (u) { fade(logGuide, u); });
-          api.at(2900, function () { paxis.pin(0.691, '69%'); api.tile(1, '69%', '这位病人的概率'); api.tile(2, '0.91', '新病人的 AUC'); });
+          api.at(2900, function () { paxis.pin(0.691, '69%'); api.tile(1, '69%', '这位患者的概率'); api.tile(2, '0.91', '新患者的 AUC'); });
         },
         function () {                                   // 9 six answers for one patient
-          reset(6, '同一位病人', ['six', 'axis']);
+          reset(6, '同一位患者', ['six', 'axis']);
           api.tile(0, '六个模型'); api.tile(1, '—', '最多相差'); api.tile(2, '—', '生成数据的公式');
           sixRows.forEach(function (g, k) { fade(g, 0); api.tween(150 + k * 170, 250, function (u) { fade(g, u); }); });
           truth.setAttribute('y2', 70); fade(truthNote, 0);
@@ -1855,9 +1855,9 @@
           api.at(1400, function () { api.tile(1, '3.0 Gy', '最多相差'); api.tile(2, '−3.84 Gy', '生成数据的公式'); });
         },
         function () {                                   // 10 4900 new patients
-          reset(6, '新病人', ['bars']);
+          reset(6, '新患者', ['bars']);
           chips.forEach(function (c) { c.off(); });
-          api.tile(0, '线性回归', '误差最小的'); api.tile(1, '4900 位', '新病人'); api.tile(2, '—');
+          api.tile(0, '线性回归', '误差最小的'); api.tile(1, '4900 位', '新患者'); api.tile(2, '—');
           barRows.forEach(function (r, k) { r.set(0); api.tween(350 + k * 130, 500, function (u) { r.set(E(u)); }); });
           api.tween(0, 350, function (u) { panel.setAttribute('height', lerp(154, 238, E(u))); });
           api.at(1500, function () { api.tile(2, '1.73 Gy'); });
@@ -1875,7 +1875,7 @@
   var treeScene = {
     label: '分步图: 一棵回归树怎样一刀一刀长出来',
     height: 338,
-    tiles: ['分成几组', '建模病人的误差', '这一步'],
+    tiles: ['分成几组', '建模患者的误差', '这一步'],
     build: function (api) {
       var svg = api.svg, sc = getScene(), n = sc.train.length, L = {}, E = easeInOut, i;
       var P = sc.train.slice().sort(function (a, b) { return a.x - b.x; });
@@ -2046,7 +2046,7 @@
       el('line', { x1: M.l, x2: QX(SIZES.length), y1: 322, y2: 322, 'class': 'w-axis' }, sizes);
       T(sizes, QX(1), 334, '1 组', '', 'middle'); T(sizes, QX(SIZES.length), 334, SIZES.length + ' 组', '', 'middle');
       el('circle', { cx: QX(lowest.g.length), cy: QY(lowest.fresh), r: 5.5, 'class': 's-ring' }, sizes);
-      T(sizes, QX(lowest.g.length) + 10, QY(lowest.fresh) + 15, '新病人身上最低: ' + lowest.g.length + ' 组,' + lowest.fresh.toFixed(2), 's-v s-n s-small s-halo');
+      T(sizes, QX(lowest.g.length) + 10, QY(lowest.fresh) + 15, '新患者身上最低: ' + lowest.g.length + ' 组,' + lowest.fresh.toFixed(2), 's-v s-n s-small s-halo');
       var lineTrain = el('polyline', { 'class': 's-curve2', points: '' }, sizes), lineFresh = el('polyline', { 'class': 's-line', points: '' }, sizes);
       var endTrain = T(sizes, 0, 0, '', 's-k s-n'), endFresh = T(sizes, 0, 0, '', 's-t s-n s-small');
       var dotTrain = el('circle', { r: 3.4, 'class': 's-token' }, sizes), dotFresh = el('circle', { r: 3.4, 'class': 's-dot' }, sizes);
@@ -2056,8 +2056,8 @@
         lineFresh.setAttribute('points', part.map(function (s, j) { return QX(j + 1).toFixed(1) + ',' + QY(s.fresh).toFixed(1); }).join(' '));
         dotTrain.setAttribute('cx', QX(k)); dotTrain.setAttribute('cy', QY(last.train));
         dotFresh.setAttribute('cx', QX(k)); dotFresh.setAttribute('cy', QY(last.fresh));
-        endTrain.setAttribute('x', QX(k) + 7); endTrain.setAttribute('y', Math.min(319, QY(last.train) + 3.5)); endTrain.textContent = '建模病人 ' + last.train.toFixed(2);
-        endFresh.setAttribute('x', QX(k) + 7); endFresh.setAttribute('y', QY(last.fresh) + 3.5); endFresh.textContent = '新病人 ' + last.fresh.toFixed(2);
+        endTrain.setAttribute('x', QX(k) + 7); endTrain.setAttribute('y', Math.min(319, QY(last.train) + 3.5)); endTrain.textContent = '建模患者 ' + last.train.toFixed(2);
+        endFresh.setAttribute('x', QX(k) + 7); endFresh.setAttribute('y', QY(last.fresh) + 3.5); endFresh.textContent = '新患者 ' + last.fresh.toFixed(2);
       }
 
       api.facts({ start: START, mean: G1[0].mean, places: all.length, cuts: [first.thr, second.thr, third.thr], two: G2.map(function (q) { return [q.hi - q.lo, q.mean]; }),
@@ -2092,7 +2092,7 @@
         function () {                                 // 1 the patients
           reset([]);
           model(G1, 0); blank();
-          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模病人');
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模患者');
         },
         function () {                                 // 2 no cut: everyone gets the mean
           reset(['tree']);
@@ -2153,7 +2153,7 @@
           fixedCuts([first, second, third]); model(G4); treeAt(2, null, 1);
           sticks.forEach(function (s) { fade(s, 0.2); });
           var yhat = predict(G4, NEWX);
-          api.tile(0, '4 组'); err(mse(G4)); api.tile(2, '—', '新病人的预测');
+          api.tile(0, '4 组'); err(mse(G4)); api.tile(2, '—', '新患者的预测');
           probeLine.setAttribute('y2', sy(YD[0])); probeDot.setAttribute('cy', sy(YD[0])); fade(probe, 1);
           api.tween(300, 700, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
           walker.setAttribute('cx', walk[0][0]); walker.setAttribute('cy', walk[0][1] - 14);
@@ -2164,16 +2164,16 @@
             });
           });
           api.at(1700, function () { hot((goLeft ? pills.left : pills.right).box, 'hot'); });
-          api.at(2400, function () { fade(walker, 0); hot(tags[leafK].box, 'hit'); api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
+          api.at(2400, function () { fade(walker, 0); hot(tags[leafK].box, 'hit'); api.tile(2, num(yhat) + ' Gy', '新患者的预测'); });
         },
         function () {                                 // 7 cut until nothing is left to cut
           reset(['sizes']);
           model(G4); sizesUpto(4);
-          api.tile(0, '4 组'); err(SIZES[3].train); api.tile(2, SIZES[3].fresh.toFixed(2), '新病人身上的误差');
+          api.tile(0, '4 组'); err(SIZES[3].train); api.tile(2, SIZES[3].fresh.toFixed(2), '新患者身上的误差');
           api.tween(600, 3000, function (u) {
             var k = Math.max(4, Math.round(4 + u * (SIZES.length - 4))), s = SIZES[k - 1];
             model(s.g); sizesUpto(k);
-            api.tile(0, k + ' 组'); err(s.train); api.tile(2, s.fresh.toFixed(2), '新病人身上的误差');
+            api.tile(0, k + ' 组'); err(s.train); api.tile(2, s.fresh.toFixed(2), '新患者身上的误差');
           });
           api.tween(300, 500, function (u) { fade(fresh, u); });
         }
@@ -2272,7 +2272,7 @@
   var boostScene = {
     label: '分步图: 梯度提升怎样让一棵棵小树去补前面剩下的误差',
     height: 338,
-    tiles: ['用了几棵小树', '建模病人的误差', '这一步'],
+    tiles: ['用了几棵小树', '建模患者的误差', '这一步'],
     build: function (api) {
       var svg = api.svg, sc = getScene(), kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, i, m, j;
       var P = sc.train.slice().sort(function (a, b) { return a.x - b.x; }), n = P.length, RATE = 0.05, MOST = 400, USUAL = 100;
@@ -2346,9 +2346,9 @@
       // --- under the plot, last step: the error against the number of trees ---
       var sizes = kit.layer('sizes');
       var chart = sizeChart(kit, sizes, { first: 0, last: MOST, unit: ' 棵', top: Math.max(errTrain[0], errFresh[0]) * 1.02, lines: [
-        { values: errFresh, cls: 's-line', dot: 's-dot', name: '新病人', text: 's-t s-n s-small' },
-        { values: errTrain, cls: 's-curve2', dot: 's-token', name: '建模病人', text: 's-k s-n' }] });
-      chart.note(bestM, '新病人身上最低: ' + bestM + ' 棵,' + errFresh[bestM].toFixed(2), bestM > MOST * 0.55 ? -150 : 10, 17);
+        { values: errFresh, cls: 's-line', dot: 's-dot', name: '新患者', text: 's-t s-n s-small' },
+        { values: errTrain, cls: 's-curve2', dot: 's-token', name: '建模患者', text: 's-k s-n' }] });
+      chart.note(bestM, '新患者身上最低: ' + bestM + ' 棵,' + errFresh[bestM].toFixed(2), bestM > MOST * 0.55 ? -150 : 10, 17);
 
       api.facts({ start: start, firstTree: trees[0].map(function (g) { return [g.size, g.value]; }), errTrain: { 0: errTrain[0], 1: errTrain[1], 2: errTrain[2], 100: errTrain[USUAL], 400: errTrain[MOST] },
         errFresh: { 0: errFresh[0], 100: errFresh[USUAL], 400: errFresh[MOST] }, best: [bestM, errFresh[bestM], errTrain[bestM]] });
@@ -2360,7 +2360,7 @@
         function () {                                 // 1 the patients
           reset([]);
           curve.setAttribute('d', ''); sticks.forEach(function (s, k) { s.setAttribute('y2', sy(P[k].y)); });
-          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模病人');
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模患者');
         },
         function () {                                 // 2 start from the mean; the residuals drop into the lower panel
           reset(['rest']);
@@ -2411,7 +2411,7 @@
         },
         function () {                                 // 7 how many trees
           reset(['sizes']);
-          function show(mm) { model(mm); tiles(mm); chart.upto(mm); api.tile(2, errFresh[mm].toFixed(2), '新病人身上的误差'); }
+          function show(mm) { model(mm); tiles(mm); chart.upto(mm); api.tile(2, errFresh[mm].toFixed(2), '新患者身上的误差'); }
           show(0);
           api.tween(200, 500, function (u) { fade(fresh, u); });
           api.tween(500, 3000, function (u) { show(Math.round(u * MOST)); });
@@ -2429,9 +2429,9 @@
   // Runs on the 30 shared patients with the lesson's settings: 300 trees, at least 5 patients per leaf.
   // (With one predictor there is nothing to choose among at a split, so the only randomness is the resampling.)
   var forestScene = {
-    label: '分步图: 随机森林怎样重抽病人、每批种一棵树、再取平均',
+    label: '分步图: 随机森林怎样重抽患者、每批种一棵树、再取平均',
     height: 338,
-    tiles: ['用了几棵树', '新病人身上的误差', '这一步'],
+    tiles: ['用了几棵树', '新患者身上的误差', '这一步'],
     build: function (api) {
       var svg = api.svg, sc = getScene(), kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, i, b, j;
       var P = sc.train.slice().sort(function (a, c) { return a.x - c.x; }), n = P.length, B = 300, LEAF = 5, NEWX = 3.0;
@@ -2503,7 +2503,7 @@
         sample(upto ? c : null);
         if (upto === n) {
           var seen = c.filter(function (v) { return v > 0; }).length;
-          drawNote.textContent = '抽到 ' + seen + ' 位不同的病人,' + (n - seen) + ' 位没抽到,最多的被抽到 ' + Math.max.apply(null, c) + ' 次';
+          drawNote.textContent = '抽到 ' + seen + ' 位不同的患者,' + (n - seen) + ' 位没抽到,最多的被抽到 ' + Math.max.apply(null, c) + ' 次';
         } else drawNote.textContent = '';
       }
       function drawing(bb, ms, gap, dur) {          // the draws of sample bb, one after another; returns when it ends
@@ -2531,7 +2531,7 @@
       function HX(v) { return M.l + (v - LOW) / (0 - LOW) * (W - M.l - M.r); }
       el('line', { x1: M.l, x2: W - M.r, y1: 322, y2: 322, 'class': 'w-axis' }, hist);
       [-8, -6, -4, -2, 0].forEach(function (v) { T(hist, HX(v), 334, minus(v), '', 'middle'); });
-      T(hist, M.l, 266, '300 棵树各自给这位新病人猜的 Δ (Gy)', 's-k');
+      T(hist, M.l, 266, '300 棵树各自给这位新患者猜的 Δ (Gy)', 's-k');
       for (i = 0; i < (0 - LOW) / WIDTH; i++) bins.push(el('rect', { x: HX(LOW + i * WIDTH) + 0.5, width: HX(LOW + WIDTH) - HX(LOW) - 1, y: 322, height: 0, 'class': 's-hist' }, hist));
       var histMean = el('line', { y1: 272, y2: 322, 'class': 's-pin-stem' }, hist), histName = T(hist, 0, 284, '', 's-v s-n s-small s-halo');
       function answersUpto(k) {
@@ -2547,7 +2547,7 @@
 
       // --- under the plot: one tree against the forest ---
       var bars = kit.layer('bars'), most = Math.max(errTypical, errAlone, errForest[B]);
-      [['重抽的树,单独用(平均)', errTypical, 's-bar dim'], ['一棵树,用全部病人', errAlone, 's-bar mid'], ['300 棵取平均', errForest[B], 's-bar']].forEach(function (row, k) {
+      [['重抽的树,单独用(平均)', errTypical, 's-bar dim'], ['一棵树,用全部患者', errAlone, 's-bar mid'], ['300 棵取平均', errForest[B], 's-bar']].forEach(function (row, k) {
         var y = 268 + k * 24;
         T(bars, M.l, y + 9, row[0], 's-t s-small');
         el('rect', { x: 170, y: y, width: row[1] / most * 120, height: 11, rx: 2, 'class': row[2] }, bars);
@@ -2580,14 +2580,14 @@
         function () {                                 // 2 resample the patients
           reset(['draw']);
           fade(ghost, 1); drawn(0, 0);
-          api.tile(0, '0 棵'); api.tile(2, '—', '抽到不同的病人');
+          api.tile(0, '0 棵'); api.tile(2, '—', '抽到不同的患者');
           var end = drawing(0, 300, 85, 450);
-          api.at(end + 50, function () { drawn(0, n); api.tile(2, countsOf(draws[0], n).filter(function (v) { return v > 0; }).length + ' 位', '抽到不同的病人'); });
+          api.at(end + 50, function () { drawn(0, n); api.tile(2, countsOf(draws[0], n).filter(function (v) { return v > 0; }).length + ' 位', '抽到不同的患者'); });
         },
         function () {                                 // 3 a tree on this sample
           reset(['draw']);
           fade(ghost, 1); drawn(0, n); tree(0); fade(one, 0);
-          note.textContent = '虚线: 用全部病人种的那棵';
+          note.textContent = '虚线: 用全部患者种的那棵';
           api.tile(0, '1 棵'); api.tile(2, trees[0].length + ' 组', '这棵树分成');
           api.tween(200, 700, function (u) { fade(one, u); fade(note, u); });
           api.at(900, function () { err(errEach[0]); });
@@ -2608,7 +2608,7 @@
         },
         function () {                                 // 5 average them, up to 300
           reset(['sizes']);
-          faint(0, 3); average(3); api.tile(0, '3 棵'); err(errForest[3]); chart.upto(3); api.tile(2, errAlone.toFixed(2), '一棵树(全部病人)');
+          faint(0, 3); average(3); api.tile(0, '3 棵'); err(errForest[3]); chart.upto(3); api.tile(2, errAlone.toFixed(2), '一棵树(全部患者)');
           api.tween(900, 3200, function (u) { forestOf(Math.round(3 + u * (B - 3))); });
           api.at(4100, function () {
             forestOf(B);
@@ -2617,15 +2617,15 @@
         },
         function () {                                 // 6 a new patient
           reset(['hist']);
-          faint(B - 40, B); average(B); api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, '—', '3.0 mm 的新病人');
+          faint(B - 40, B); average(B); api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, '—', '3.0 mm 的新患者');
           fade(probe, 1); fade(rug, 1); answersUpto(0);
-          api.tween(400, 2600, function (u) { var k = Math.max(1, Math.round(u * B)); answersUpto(k); api.tile(2, num(meanAnswer[k]) + ' Gy', '3.0 mm 的新病人'); });
+          api.tween(400, 2600, function (u) { var k = Math.max(1, Math.round(u * B)); answersUpto(k); api.tile(2, num(meanAnswer[k]) + ' Gy', '3.0 mm 的新患者'); });
         },
         function () {                                 // 7 why the average is better
           reset(['bars']);
           faint(B - 40, B); average(B); fade(ghost, 1);
           note.textContent = '虚线: 一棵树;粗线: 300 棵的平均'; fade(note, 1);
-          api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, errAlone.toFixed(2), '一棵树(全部病人)');
+          api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, errAlone.toFixed(2), '一棵树(全部患者)');
         }
       ];
       return function (k) { steps[k](); };
@@ -2746,10 +2746,10 @@
           squares.forEach(function (r) { fade(r, 0.05); });
           formula.textContent = '预测 Δ = ' + num(icpt) + ' + ' + best.toFixed(2) + ' × 壁厚'; fade(formula, 1);
           var yhat = at(best, 0, NEWX);
-          api.tile(2, '—', '新病人的预测');
+          api.tile(2, '—', '新患者的预测');
           probeLine.setAttribute('y2', sy(YD[0])); probeDot.setAttribute('cy', sy(YD[0])); fade(probe, 1);
           api.tween(400, 800, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
-          api.at(1200, function () { api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
+          api.at(1200, function () { api.tile(2, num(yhat) + ' Gy', '新患者的预测'); });
         }
       ];
       return function (k) { steps[k](); };
@@ -2844,7 +2844,7 @@
         function () {                                 // 1 the patients
           reset([]);
           curve.setAttribute('d', ''); fade(mid, 0); sticks.forEach(function (s, j) { s.setAttribute('y2', py(pts[j].y)); });
-          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, Math.round(rate * n) + ' / ' + n, '降下来的病人');
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, Math.round(rate * n) + ' / ' + n, '降下来的患者');
         },
         function () {                                 // 2 the same probability for everyone
           reset(['lower']);
@@ -2887,13 +2887,13 @@
         },
         function () {                                 // 7 a new patient
           reset(['lower']);
-          model(last); tiles(K, last); api.tile(2, '—', '新病人的概率');
+          model(last); tiles(K, last); api.tile(2, '—', '新患者的概率');
           var p = prob(last, NEWX), z = last[0] + last[1] * NEWX;
           probe2.setAttribute('cy', ly(z)); probeText.textContent = (p * 100).toFixed(0) + '%';
           probeLine.setAttribute('y2', py(0)); probeDot.setAttribute('cy', py(0)); probeText.setAttribute('y', py(0)); fade(probe, 1);
           api.tween(300, 300, function (u) { fade(probe2, u); });
           api.tween(700, 800, function (u) { var y = lerp(py(0), py(p), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); probeText.setAttribute('y', y - 8); });
-          api.at(1500, function () { fade(probe2, 1); api.tile(2, (p * 100).toFixed(0) + '%', '新病人的概率'); });
+          api.at(1500, function () { fade(probe2, 1); api.tile(2, (p * 100).toFixed(0) + '%', '新患者的概率'); });
         }
       ];
       return function (k) { steps[k](); };
@@ -2932,7 +2932,7 @@
   var budgetScene = {
     label: '分步图: 岭回归和 LASSO 怎样把两个系数往 0 拉',
     height: 338,
-    tiles: ['壁厚的系数', '随机数的系数', '新病人身上的误差'],
+    tiles: ['壁厚的系数', '随机数的系数', '新患者身上的误差'],
     build: function (api) {
       var svg = api.svg, kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, c = budgetCore(324, mulberry32, normal), i, k;
       var ols = c.ols, SC = (W - M.l - M.r) / 2.4, X0 = -0.35, Y1 = 1.01, PB = M.t + 1.56 * SC;

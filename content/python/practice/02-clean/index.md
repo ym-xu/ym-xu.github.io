@@ -1,13 +1,13 @@
 ---
 title: "练习 2 · 读入和清理审计数据"
-summary: "读入 200 位病人的表,找出重复、写法不统一和丢了小数点的地方,算出每位病人的总剂量。"
+summary: "读入 200 位患者的表,找出重复、写法不统一和丢了小数点的地方,算出每位患者的总剂量。"
 weight: 20
 toc: false
 duration: "约 40 分钟"
 prereq: "[Python 课第 2 课](/python/02-pandas/);[练习 1](../01-one-patient/)"
 questions:
   - "科里导出的这张表,能直接用吗?有哪些问题?"
-  - "200 位病人里,达到三条审计标准的各有多少?"
+  - "200 位患者里,达到三条审计标准的各有多少?"
 objectives:
   - "读表、看表、筛行、算新的一列"
   - "找出并改正数据里的错误"
@@ -35,7 +35,7 @@ raw.head(3)
 
 **第 1 步 · 有没有人被录了两次**
 
-表里应该是 200 位病人。数一数有几行的病人编号(`id`)是重复出现的,存进 `n_dup`;然后去掉重复的行,把干净的表存进 `df`。后面几步都在 `df` 上做。
+表里应该是 200 位患者。数一数有几行的患者编号(`id`)是重复出现的,存进 `n_dup`;然后去掉重复的行,把干净的表存进 `df`。后面几步都在 `df` 上做。
 
 ```python
 # 在这里写你的代码。结果存进 n_dup 和 df。
@@ -44,14 +44,14 @@ raw.head(3)
 ```pycheck
 need("n_dup", "df")
 if n_dup != 1:
-    fail(f"n_dup 现在是 {n_dup},应该是 1: 有一位病人多录了一行。df[列].duplicated() 标出重复出现的值。")
+    fail(f"n_dup 现在是 {n_dup},应该是 1: 有一位患者多录了一行。df[列].duplicated() 标出重复出现的值。")
 if len(df) == 201:
     fail("df 还是 201 行: 重复的那一行还没有去掉。")
 if len(df) != 200:
     fail(f"df 应该有 200 行,现在是 {len(df)} 行。")
 if not df["id"].is_unique:
-    fail("df 里的病人编号还有重复。")
-ok("对了: 表有 201 行,编号 C057 的病人被录了两次;去掉以后是 200 位。重复录入会让这位病人在所有统计里算两遍,而且不查就永远发现不了。")
+    fail("df 里的患者编号还有重复。")
+ok("对了: 表有 201 行,编号 C057 的患者被录了两次;去掉以后是 200 位。重复录入会让这位患者在所有统计里算两遍,而且不查就永远发现不了。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -74,7 +74,7 @@ print("重复的行:", n_dup)
 print(raw[raw["id"].duplicated(keep=False)][["id", "age", "stage", "technique"]])
 
 df = raw.drop_duplicates()
-print(len(df), "位病人")
+print(len(df), "位患者")
 ```
 
 </details>
@@ -98,7 +98,7 @@ if set(counts) != {"IC", "IC/IS"}:
     fail(f"现在 technique 里有这些写法: {counts}。应该只剩 IC 和 IC/IS。")
 if counts != {"IC": 130, "IC/IS": 70}:
     fail(f"两种的人数应该是 130 和 70,现在是 {counts}。检查有没有把哪一种改错了。")
-ok('对了: 原来有四种写法(IC、ic、IC/IS、IC+IS),统一以后是单纯腔内 130 位,腔内加插植 70 位。不统一的话,按施源器分组时 "ic" 的 6 位病人会自成一组。分类变量拿到手,先 value_counts() 看一遍。')
+ok('对了: 原来有四种写法(IC、ic、IC/IS、IC+IS),统一以后是单纯腔内 130 位,腔内加插植 70 位。不统一的话,按施源器分组时 "ic" 的 6 位患者会自成一组。分类变量拿到手,先 value_counts() 看一遍。')
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -141,11 +141,11 @@ cols = ["d90_1", "d90_2", "d90_3", "d90_4"]
 if df[cols].max().max() > 10:
     fail(f"四列里最大的值还是 {df[cols].max().max()}: 那个不可能的剂量还在。用 describe() 或 max() 找到它在哪一列。")
 if len(df) != 200:
-    fail(f"df 应该还是 200 位病人,现在是 {len(df)} 位。有问题的值是改正,不是把病人删掉。")
+    fail(f"df 应该还是 200 位患者,现在是 {len(df)} 位。有问题的值是改正,不是把患者删掉。")
 v = float(df.loc[df["id"] == "C037", "d90_3"].iloc[0])
 if not close(v, 7.6, 0.001):
     fail(f"C037 的 d90_3 应该改成 7.6,现在是 {v}。")
-ok("对了: C037 第 3 次的 D90 录成了 76 Gy,改回 7.6 Gy。如果不改,这位病人的总 EQD2 会算成 623 Gy,把均值和图都带偏。数值的范围合不合理,是每份数据都要查的一项。")
+ok("对了: C037 第 3 次的 D90 录成了 76 Gy,改回 7.6 Gy。如果不改,这位患者的总 EQD2 会算成 623 Gy,把均值和图都带偏。数值的范围合不合理,是每份数据都要查的一项。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -178,9 +178,9 @@ print(df[cols].max())
 <div class="step">
 
 <div class="quiz">
-<p><b>第 4 步 · 想一想</b>: 用 <code>df.isna().sum()</code> 会看到,有 5 位病人的 HR-CTV 体积(<code>hrctv_vol</code>)是空的: 那几次近距离没有做 MRI。这 5 个空格子怎么办?</p>
-<button class="quiz-opt" data-why="填 0 会把 5 位病人变成'肿瘤体积为 0'。体积的中位数会被拉低,体积和剂量的关系也会被带偏。">填 0</button>
-<button class="quiz-opt" data-why="体积是缺失的,但这 5 位病人的剂量、施源器、随访都在。删掉他们,达标比例这些不需要体积的结果就白白少了 5 位病人。">把这 5 位病人整行删掉</button>
+<p><b>第 4 步 · 想一想</b>: 用 <code>df.isna().sum()</code> 会看到,有 5 位患者的 HR-CTV 体积(<code>hrctv_vol</code>)是空的: 那几次近距离没有做 MRI。这 5 个空格子怎么办?</p>
+<button class="quiz-opt" data-why="填 0 会把 5 位患者变成'肿瘤体积为 0'。体积的中位数会被拉低,体积和剂量的关系也会被带偏。">填 0</button>
+<button class="quiz-opt" data-why="体积是缺失的,但这 5 位患者的剂量、施源器、随访都在。删掉他们,达标比例这些不需要体积的结果就白白少了 5 位患者。">把这 5 位患者整行删掉</button>
 <button class="quiz-opt" data-correct data-why="空着就是如实地说不知道。算达标比例时 200 位都能用;分析体积时只用有体积的 195 位,并在报告里写明这个人数。">保持缺失;用到体积的分析只用有体积的 195 位,并写明人数</button>
 </div>
 
@@ -188,9 +188,9 @@ print(df[cols].max())
 
 <div class="step exercise">
 
-**第 5 步 · 每位病人的总剂量**
+**第 5 步 · 每位患者的总剂量**
 
-给 `df` 加三列: `d90_total`(HR-CTV D90,α/β = 10)、`rectum_total` 和 `bladder_total`(直肠和膀胱的 D2cc,α/β = 3)。每一列都是外照射的 EQD2 加上 4 次近距离各自的 EQD2。注意外照射的剂量和次数不是每位病人都一样(看 `ebrt_gy` 和 `ebrt_fx` 两列)。
+给 `df` 加三列: `d90_total`(HR-CTV D90,α/β = 10)、`rectum_total` 和 `bladder_total`(直肠和膀胱的 D2cc,α/β = 3)。每一列都是外照射的 EQD2 加上 4 次近距离各自的 EQD2。注意外照射的剂量和次数不是每位患者都一样(看 `ebrt_gy` 和 `ebrt_fx` 两列)。
 
 ```python
 # 在这里写你的代码。给 df 加上 d90_total、rectum_total、bladder_total 三列。
@@ -209,12 +209,12 @@ if gap.max() > 0.01:
     if close(got["d90_total"].median(), want["d90_total"].median() - 44.25, 0.6):
         fail("d90_total 少了外照射的部分: 外照射的 EQD2 也要加进去。")
     if (gap > 0.01).sum() == 22:
-        fail("有 22 位病人的 d90_total 不对: 他们的外照射是 50.4 Gy 分 28 次。外照射的部分要用每位病人自己的 ebrt_gy 和 ebrt_fx 来算,不能写死成 45 和 25。")
+        fail("有 22 位患者的 d90_total 不对: 他们的外照射是 50.4 Gy 分 28 次。外照射的部分要用每位患者自己的 ebrt_gy 和 ebrt_fx 来算,不能写死成 45 和 25。")
     fail(f"d90_total 不对(中位数应该是 92.3 Gy,现在是 {got['d90_total'].median():.1f})。每一次近距离用 eqd2(那一列, 1, 10),再加上外照射的 eqd2(ebrt_gy / ebrt_fx, ebrt_fx, 10)。")
 for col, name in [("rectum_total", "直肠"), ("bladder_total", "膀胱")]:
     if (got[col] - want[col]).abs().max() > 0.01:
         fail(f"{col} 不对。{name}用 α/β = 3: 外照射和 4 次近距离都按 3 来算。")
-ok("对了: 三列总剂量的中位数是 HR-CTV D90 92.3 Gy、直肠 64.7 Gy、膀胱 73.8 Gy。eqd2 对一整列也能算,所以 200 位病人不用写循环;有 22 位病人的外照射是 50.4 Gy 分 28 次,也都按自己的方案算对了。")
+ok("对了: 三列总剂量的中位数是 HR-CTV D90 92.3 Gy、直肠 64.7 Gy、膀胱 73.8 Gy。eqd2 对一整列也能算,所以 200 位患者不用写循环;有 22 位患者的外照射是 50.4 Gy 分 28 次,也都按自己的方案算对了。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -250,7 +250,7 @@ print(df[["d90_total", "rectum_total", "bladder_total"]].median().round(1))
 
 **第 6 步 · 多少人达标**
 
-审计的第一个问题。三条标准各有多少位病人达到?三条都达到的有几位?把三条都达到的人数存进 `n_all_ok`,把靶区达标(D90 ≥ 85 Gy)的比例存进 `share_d90`。
+审计的第一个问题。三条标准各有多少位患者达到?三条都达到的有几位?把三条都达到的人数存进 `n_all_ok`,把靶区达标(D90 ≥ 85 Gy)的比例存进 `share_d90`。
 
 ```python
 # 在这里写你的代码。结果存进 n_all_ok 和 share_d90。
@@ -268,7 +268,7 @@ if n_all_ok == 181 or n_all_ok == 108 or n_all_ok == 158:
     fail("这是只满足其中一条标准的人数。三条都满足,要把三个条件用 & 连起来。")
 if n_all_ok != 80:
     fail(f"n_all_ok 现在是 {n_all_ok},应该是 80。三个条件: d90_total >= 85,rectum_total < 65,bladder_total < 80。")
-ok("对了: 靶区达标 181 位(90.5%),直肠 108 位(54%),膀胱 158 位(79%);三条都达到的只有 80 位(40%)。靶区的硬性要求九成病人做到了,直肠的计划目标只有一半多做到。这是审计第一个问题的答案;它有多准、和什么有关,后面几部分接着看。")
+ok("对了: 靶区达标 181 位(90.5%),直肠 108 位(54%),膀胱 158 位(79%);三条都达到的只有 80 位(40%)。靶区的硬性要求九成患者做到了,直肠的计划目标只有一半多做到。这是审计第一个问题的答案;它有多准、和什么有关,后面几部分接着看。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -303,4 +303,4 @@ print(f"三条都达到: {n_all_ok} 位({n_all_ok / len(df):.1%})")
 
 </div>
 
-**这一部分做完了**: 一张有重复、有错写、有错值的表,变成了 200 位病人、带三列总剂量的干净的表。每一处改动都是一行代码,谁都能看到你改了什么。下一部分: 学完 [Python 课第 3 课](/python/03-table-one/)以后做。
+**这一部分做完了**: 一张有重复、有错写、有错值的表,变成了 200 位患者、带三列总剂量的干净的表。每一处改动都是一行代码,谁都能看到你改了什么。下一部分: 学完 [Python 课第 3 课](/python/03-table-one/)以后做。

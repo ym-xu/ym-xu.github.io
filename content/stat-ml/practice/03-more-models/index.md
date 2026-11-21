@@ -47,7 +47,7 @@ def forest():
     return RandomForestRegressor(n_estimators=300, min_samples_leaf=5, random_state=0)
 
 def importance_cv(columns):
-    """每一折: 用建模的病人拟合森林,在留出的病人身上把每个变量打乱 10 次;5 折取平均。"""
+    """每一折: 用建模的患者拟合森林,在留出的患者身上把每个变量打乱 10 次;5 折取平均。"""
     total = np.zeros(len(columns))
     for train_idx, test_idx in cv.split(df):
         train, test = df.iloc[train_idx], df.iloc[test_idx]
@@ -62,7 +62,7 @@ names = [f"z{i}" for i in range(10)]                             # 10 列随机�
 D = pd.concat([df, pd.DataFrame(rng.normal(size=(len(df), 10)), columns=names, index=df.index)], axis=1)
 many = cols + names                                              # 13 个候选变量
 
-print(len(df), "位病人;猜平均值的交叉验证误差是 4.48 Gy")
+print(len(df), "位患者;猜平均值的交叉验证误差是 4.48 Gy")
 ```
 
 <div class="steps" data-steps>
@@ -115,7 +115,7 @@ print(round(mae_lin, 2), round(mae_tree, 2), round(mae_rf, 2))
 
 **第 2 步 · 读一棵树**
 
-用全部 195 位病人种一棵两层的树(`max_depth=2, random_state=0`),用 `export_text` 打印出来。读出两件事: 第一刀切在肿瘤体积多少(`first_cut`,一个数);肿瘤大的那一边,接着是按哪个变量分的(`right_var`,写列名)。
+用全部 195 位患者种一棵两层的树(`max_depth=2, random_state=0`),用 `export_text` 打印出来。读出两件事: 第一刀切在肿瘤体积多少(`first_cut`,一个数);肿瘤大的那一边,接着是按哪个变量分的(`right_var`,写列名)。
 
 ```python
 # 在这里写你的代码。读出来的两样存进 first_cut 和 right_var。
@@ -159,9 +159,9 @@ right_var = "needles"
 
 <div class="step exercise">
 
-**第 3 步 · 两组病人,两个斜率**
+**第 3 步 · 两组患者,两个斜率**
 
-树说加针的和不加针的病人规律不同。直接验证: 把病人按 `needles` 分成两组,每组单独做"靶区剂量对肿瘤体积"的直线,斜率分别存进 `slope_ic`(没加针)和 `slope_is`(加了针)。
+树说加针的和不加针的患者规律不同。直接验证: 把患者按 `needles` 分成两组,每组单独做"靶区剂量对肿瘤体积"的直线,斜率分别存进 `slope_ic`(没加针)和 `slope_is`(加了针)。
 
 ```python
 # 在这里写你的代码。结果存进 slope_ic 和 slope_is。
@@ -172,13 +172,13 @@ need("slope_ic", "slope_is")
 if close(slope_ic, -0.044, 0.004) and close(slope_is, -0.349, 0.004):
     fail("两组放反了: needles 是 0 的是没加针的(IC)。")
 if close(slope_ic, -0.349, 0.004) and close(slope_is, -0.044, 0.004):
-    ok("对了: 没加针的病人,肿瘤每大 10 cm³,靶区剂量低 3.5 Gy;加了针的只低 0.4 Gy。针把肿瘤体积的害处几乎抹平了。一条直线只能给体积一个斜率(−0.138),它是这两个数的折中,对哪一组都不对。")
+    ok("对了: 没加针的患者,肿瘤每大 10 cm³,靶区剂量低 3.5 Gy;加了针的只低 0.4 Gy。针把肿瘤体积的害处几乎抹平了。一条直线只能给体积一个斜率(−0.138),它是这两个数的折中,对哪一组都不对。")
 fail(f"现在是 {slope_ic:.3f} 和 {slope_is:.3f},应该是 −0.349 和 −0.044。")
 ```
 
 <details><summary>提示 1: 思路</summary>
 
-先用条件选出一组病人,再对这一组做一个变量的线性回归,取 `coef_[0]`。做两次。
+先用条件选出一组患者,再对这一组做一个变量的线性回归,取 `coef_[0]`。做两次。
 
 </details>
 
@@ -220,7 +220,7 @@ if "vol_x_needles" not in df.columns:
 if close(mae_inter, 4.17, 0.01):
     fail("这是没有交互项的模型。X 里要有四列: cols 加上 vol_x_needles。")
 if close(mae_inter, 3.71, 0.01):
-    ok("对了: 3.71 Gy。加一个交互项,直线模型从 4.17 降到 3.71,比随机森林的 3.98 还好。按这个模型,体积 60 cm³ 的病人不加针预测 82 Gy,加针 92 Gy: 差 9 Gy,而且不加针的那位低于 85 Gy 的标准。练习 1 的模型说只差 1.9 Gy。")
+    ok("对了: 3.71 Gy。加一个交互项,直线模型从 4.17 降到 3.71,比随机森林的 3.98 还好。按这个模型,体积 60 cm³ 的患者不加针预测 82 Gy,加针 92 Gy: 差 9 Gy,而且不加针的那位低于 85 Gy 的标准。练习 1 的模型说只差 1.9 Gy。")
 fail(f"现在是 {mae_inter:.2f},应该是 3.71。")
 ```
 
@@ -252,8 +252,8 @@ print(round(mae_inter, 2))
 
 <div class="quiz">
 <p><b>第 5 步 · 想一想</b>: 随机森林不用人告诉它,自己就发现了"大肿瘤里加针才要紧"。可是把这一条写成交互项以后,直线模型(3.71 Gy)反而比森林(3.98 Gy)准。为什么?</p>
-<button class="quiz-opt" data-why="森林的设置和课文相同,没有调坏。换别的设置,它也很难在 195 位病人上赢过形式正确的四个系数。">森林的参数没调好</button>
-<button class="quiz-opt" data-correct data-why="森林不知道关系是什么样子,要从 195 位病人里把形状一点一点学出来,学到的台阶里混着偶然。带交互项的直线只要估计 5 个数,其余都由公式的形式定好了。形式对的时候,少学的那部分就是省下来的误差。所以先用灵活的模型去发现,再把发现写回简单的模型,常常是最好的做法。">森林要从数据里学出整个形状;公式的形式对了,只要估计几个数</button>
+<button class="quiz-opt" data-why="森林的设置和课文相同,没有调坏。换别的设置,它也很难在 195 位患者上赢过形式正确的四个系数。">森林的参数没调好</button>
+<button class="quiz-opt" data-correct data-why="森林不知道关系是什么样子,要从 195 位患者里把形状一点一点学出来,学到的台阶里混着偶然。带交互项的直线只要估计 5 个数,其余都由公式的形式定好了。形式对的时候,少学的那部分就是省下来的误差。所以先用灵活的模型去发现,再把发现写回简单的模型,常常是最好的做法。">森林要从数据里学出整个形状;公式的形式对了,只要估计几个数</button>
 <button class="quiz-opt" data-why="交叉验证对两个模型用的是同一种分法,比较是公平的。">交叉验证对直线模型更有利</button>
 </div>
 
@@ -352,8 +352,8 @@ imp_vol, imp_needles = imp["hrctv_vol"], imp["needles"]
 
 <div class="quiz">
 <p><b>第 8 步 · 想一想</b>: 施源器的置换重要性只有 0.29 Gy,不到肿瘤体积的三分之一。能不能说"加不加针对靶区剂量影响不大"?</p>
-<button class="quiz-opt" data-why="0.29 是在全部病人身上平均出来的。肿瘤小的病人加不加针几乎一样,把他们的施源器打乱,误差不变;肿瘤大的病人差 9 Gy。平均以后数字不大,不等于对谁都不重要。">能: 重要性低,就是影响小</button>
-<button class="quiz-opt" data-correct data-why="两个理由。第一,重要性是对全部病人的平均: 小肿瘤的病人加不加针几乎一样,把这个平均拉低了;对大肿瘤的病人,第 4 步算出来差 9 Gy。第二,重要性说的是'模型的预测有多依赖这个变量',不是'改变这个变量,病人的剂量会变多少'。加针的病人本来就是另一批病人(肿瘤更大、分期更晚),这份数据回答不了因果的问题。">不能: 它是全部病人的平均,而且说的是模型依赖什么,不是因果</button>
+<button class="quiz-opt" data-why="0.29 是在全部患者身上平均出来的。肿瘤小的患者加不加针几乎一样,把他们的施源器打乱,误差不变;肿瘤大的患者差 9 Gy。平均以后数字不大,不等于对谁都不重要。">能: 重要性低,就是影响小</button>
+<button class="quiz-opt" data-correct data-why="两个理由。第一,重要性是对全部患者的平均: 小肿瘤的患者加不加针几乎一样,把这个平均拉低了;对大肿瘤的患者,第 4 步算出来差 9 Gy。第二,重要性说的是'模型的预测有多依赖这个变量',不是'改变这个变量,患者的剂量会变多少'。加针的患者本来就是另一批患者(肿瘤更大、分期更晚),这份数据回答不了因果的问题。">不能: 它是全部患者的平均,而且说的是模型依赖什么,不是因果</button>
 <button class="quiz-opt" data-why="重要性的大小和变量的取值个数没有这样的关系。问题在于它是平均值,而且不是因果。">不能: 施源器只有两个取值,所以重要性天然偏低</button>
 </div>
 

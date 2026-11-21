@@ -47,6 +47,8 @@ for name in sys.argv[1:]:
         if fence is None or fence not in ('python', 'pycheck'):
             for ch in re.findall(r'[，；：（）？！]', line):
                 print(f'{name}:{i + 1}: full-width {ch}'); bad += 1
+        if '病人' in line:                                   # the course pages say 患者 (owner's decision, 2026-11-21)
+            print(f'{name}:{i + 1}: 病人 (the courses say 患者)'); bad += 1
     if changed:
         path.write_text('\n'.join(lines))
 print(f'{bad} problem(s)')

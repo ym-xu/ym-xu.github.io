@@ -1,6 +1,6 @@
 ---
 title: "练习 1 · 第一个预测模型"
-summary: "用肿瘤体积和施源器预测靶区剂量,给新病人预测;直肠剂量和晚期副作用的 OR。"
+summary: "用肿瘤体积和施源器预测靶区剂量,给新患者预测;直肠剂量和晚期副作用的 OR。"
 weight: 10
 after: 3
 toc: false
@@ -10,14 +10,14 @@ questions:
   - "做计划之前,能从肿瘤体积和施源器猜到靶区剂量吗?"
   - "直肠剂量每高 5 Gy,出现晚期副作用的 odds 变成几倍?"
 objectives:
-  - "线性回归: 拟合、读系数、给新病人预测"
-  - "逻辑回归: 系数换成 OR,算一位病人的概率"
+  - "线性回归: 拟合、读系数、给新患者预测"
+  - "逻辑回归: 系数换成 OR,算一位患者的概率"
   - "分清'系数是多少'和'预测得准不准'"
 ---
 
-审计已经做完了。科里接着问: 靶区剂量不够的那些病人,能不能在做计划之前就看出来?
+审计已经做完了。科里接着问: 靶区剂量不够的那些患者,能不能在做计划之前就看出来?
 
-先运行这一块。`full` 是全部 200 位病人;`df` 是肿瘤体积齐全的 195 位,这一部分的靶区剂量模型都用它(缺体积的 5 位留到练习 2);`tox` 是有随访的 185 位,多一列 `rect_tox`。
+先运行这一块。`full` 是全部 200 位患者;`df` 是肿瘤体积齐全的 195 位,这一部分的靶区剂量模型都用它(缺体积的 5 位留到练习 2);`tox` 是有随访的 185 位,多一列 `rect_tox`。
 
 ```python
 import numpy as np
@@ -25,7 +25,7 @@ import pandas as pd
 from cervix import load_cervix, make_cervix_followup
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-full = load_cervix()                                            # 200 位病人
+full = load_cervix()                                            # 200 位患者
 full["needles"] = (full["technique"] == "IC/IS").astype(int)    # 加了插植针记 1,单纯腔内记 0
 df = full.dropna().copy()                                       # 肿瘤体积齐全的 195 位
 tox = full.merge(make_cervix_followup(), on="id")               # 有随访的 185 位,多一列 rect_tox
@@ -39,7 +39,7 @@ print(len(full), len(df), len(tox))
 
 **第 1 步 · 要预测的量长什么样**
 
-在 `df` 里,靶区总剂量 `d90_total` 的平均值是多少?有几位病人低于 85 Gy?分别存进 `mean_d90` 和 `n_low`。
+在 `df` 里,靶区总剂量 `d90_total` 的平均值是多少?有几位患者低于 85 Gy?分别存进 `mean_d90` 和 `n_low`。
 
 ```python
 # 在这里写你的代码。结果存进 mean_d90 和 n_low。
@@ -48,7 +48,7 @@ print(len(full), len(df), len(tox))
 ```pycheck
 need("mean_d90", "n_low")
 if close(mean_d90, 92.49, 0.01) or n_low == 19:
-    fail("这是全部 200 位病人(full)的结果。这一部分用 df: 肿瘤体积齐全的 195 位。")
+    fail("这是全部 200 位患者(full)的结果。这一部分用 df: 肿瘤体积齐全的 195 位。")
 if close(mean_d90, 92.28, 0.01):
     fail("这是中位数。题目要平均值: mean()。")
 if close(mean_d90, 92.54, 0.01) and n_low == 18:
@@ -141,7 +141,7 @@ if close(b_vol, 1.925, 0.01) and close(b_needles, -0.138, 0.002):
 if close(b_vol, -0.111, 0.002):
     fail("这还是只有体积一个变量的模型。X 里要有两列: df[['hrctv_vol', 'needles']]。")
 if close(b_vol, -0.138, 0.002) and close(b_needles, 1.925, 0.01):
-    ok("对了: 预测 D90 = 96.79 − 0.138 × 体积 + 1.92 × 加针。体积相同时,加了针的病人靶区剂量高 1.9 Gy。注意体积的斜率从 −0.111 变成了 −0.138。")
+    ok("对了: 预测 D90 = 96.79 − 0.138 × 体积 + 1.92 × 加针。体积相同时,加了针的患者靶区剂量高 1.9 Gy。注意体积的斜率从 −0.111 变成了 −0.138。")
 fail(f"现在是 {b_vol:.3f} 和 {b_needles:.3f},应该是 −0.138 和 1.925。")
 ```
 
@@ -174,7 +174,7 @@ print(f"预测 D90 = {model2.intercept_:.2f} {b_vol:+.3f} × 体积 {b_needles:+
 <div class="quiz">
 <p><b>第 4 步 · 想一想</b>: 只看体积时,斜率是 −0.111;把施源器也放进模型以后,体积的斜率变成 −0.138,更陡了。为什么?</p>
 <button class="quiz-opt" data-why="系数的大小和变量的个数没有这样的关系。加一个和结局、和体积都无关的变量,体积的斜率几乎不变。">变量越多,每个系数都会变大</button>
-<button class="quiz-opt" data-correct data-why="大肿瘤更常加针(加针的病人体积中位数 44.8 cm³,没加的 28.2 cm³),而针把剂量补回来一些。只看体积时,'肿瘤大'这件事里混着'更可能加了针',体积的害处被针的好处抵掉一部分,斜率就显得平。把施源器放进模型,问的是'施源器相同时,体积每大 1 cm³ 降多少',答案更陡。">大肿瘤更常加针,针补回了一部分剂量;不看施源器时,体积的斜率被冲淡了</button>
+<button class="quiz-opt" data-correct data-why="大肿瘤更常加针(加针的患者体积中位数 44.8 cm³,没加的 28.2 cm³),而针把剂量补回来一些。只看体积时,'肿瘤大'这件事里混着'更可能加了针',体积的害处被针的好处抵掉一部分,斜率就显得平。把施源器放进模型,问的是'施源器相同时,体积每大 1 cm³ 降多少',答案更陡。">大肿瘤更常加针,针补回了一部分剂量;不看施源器时,体积的斜率被冲淡了</button>
 <button class="quiz-opt" data-why="两次都是最小二乘,都没有算错。同一个变量,模型里别的变量不同,系数回答的问题就不同(第 1 课的'其他不变时')。">其中一个模型算错了</button>
 </div>
 
@@ -182,9 +182,9 @@ print(f"预测 D90 = {model2.intercept_:.2f} {b_vol:+.3f} × 体积 {b_needles:+
 
 <div class="step exercise">
 
-**第 5 步 · 给两位新病人预测**
+**第 5 步 · 给两位新患者预测**
 
-两位新病人,肿瘤体积都是 60 cm³: 一位打算单纯腔内,一位打算加插植针。用 `model2` 预测他们的靶区剂量,分别存进 `pred_ic` 和 `pred_is`。
+两位新患者,肿瘤体积都是 60 cm³: 一位打算单纯腔内,一位打算加插植针。用 `model2` 预测他们的靶区剂量,分别存进 `pred_ic` 和 `pred_is`。
 
 ```python
 # 在这里写你的代码。结果存进 pred_ic 和 pred_is。
@@ -193,9 +193,9 @@ print(f"预测 D90 = {model2.intercept_:.2f} {b_vol:+.3f} × 体积 {b_needles:+
 ```pycheck
 need("pred_ic", "pred_is")
 if close(pred_ic, 90.43, 0.02) and close(pred_is, 88.50, 0.02):
-    fail("两位病人放反了: needles 是 0 的那位是单纯腔内。")
+    fail("两位患者放反了: needles 是 0 的那位是单纯腔内。")
 if close(pred_ic, 89.85, 0.02):
-    fail("这是只用体积的那个模型的预测。题目要用 model2: 新病人的表里要有 hrctv_vol 和 needles 两列。")
+    fail("这是只用体积的那个模型的预测。题目要用 model2: 新患者的表里要有 hrctv_vol 和 needles 两列。")
 if close(pred_ic, 88.50, 0.02) and close(pred_is, 90.43, 0.02):
     ok("对了: 单纯腔内 88.5 Gy,加针 90.4 Gy。两个数都在 85 Gy 以上,但不加针的那位只高出 3.5 Gy。这个预测有多可靠,下一步来量。")
 fail(f"现在是 {float(pred_ic):.2f} 和 {float(pred_is):.2f},应该是 88.50 和 90.43。")
@@ -203,7 +203,7 @@ fail(f"现在是 {float(pred_ic):.2f} 和 {float(pred_is):.2f},应该是 88.50 �
 
 <details><summary>提示 1: 思路</summary>
 
-新病人也要放进一张表,列名和拟合时一样;`predict` 交回一个数组,每位病人一个数。
+新患者也要放进一张表,列名和拟合时一样;`predict` 交回一个数组,每位患者一个数。
 
 </details>
 
@@ -229,7 +229,7 @@ print(round(pred_ic, 2), round(pred_is, 2))
 
 **第 6 步 · 预测得有多准**
 
-系数说的是"有没有关系",预测要问的是"差多少"。在这 195 位病人身上算两个平均绝对误差: 对谁都猜平均值时差多少(`mae_base`),用 `model2` 预测时差多少(`mae_model`)。
+系数说的是"有没有关系",预测要问的是"差多少"。在这 195 位患者身上算两个平均绝对误差: 对谁都猜平均值时差多少(`mae_base`),用 `model2` 预测时差多少(`mae_model`)。
 
 ```python
 # 在这里写你的代码。结果存进 mae_base 和 mae_model。
@@ -242,7 +242,7 @@ if close(mae_base, 5.45, 0.02) or close(mae_model, 5.04, 0.02):
 if close(mae_model, 4.07, 0.01):
     fail("这是只用体积的那个模型。题目要 model2。")
 if close(mae_base, 4.38, 0.01) and close(mae_model, 3.99, 0.01):
-    ok("对了: 都猜平均值,平均差 4.38 Gy;用模型,平均差 3.99 Gy。两个系数都'有关系',预测却只好了 0.4 Gy。而且这是在建模的病人身上算的,对新病人只会更差: 这是练习 2 的题目。")
+    ok("对了: 都猜平均值,平均差 4.38 Gy;用模型,平均差 3.99 Gy。两个系数都'有关系',预测却只好了 0.4 Gy。而且这是在建模的患者身上算的,对新患者只会更差: 这是练习 2 的题目。")
 fail(f"现在是 {mae_base:.2f} 和 {mae_model:.2f},应该是 4.38 和 3.99。")
 ```
 
@@ -275,7 +275,7 @@ print(round(mae_base, 2), round(mae_model, 2))
 
 **第 7 步 · 换成是/否的结局: 直肠剂量和晚期副作用**
 
-在有随访的 185 位病人(`tox`)里,用直肠总剂量 `rectum_total` 预测有没有出现晚期直肠副作用 `rect_tox`。用课上的写法 `LogisticRegression(C=1e6)`。算两个数: 直肠总剂量每高 **5 Gy**,odds 变成几倍(`or_5gy`);直肠总剂量 70 Gy 的病人,出现副作用的概率(`p70`)。
+在有随访的 185 位患者(`tox`)里,用直肠总剂量 `rectum_total` 预测有没有出现晚期直肠副作用 `rect_tox`。用课上的写法 `LogisticRegression(C=1e6)`。算两个数: 直肠总剂量每高 **5 Gy**,odds 变成几倍(`or_5gy`);直肠总剂量 70 Gy 的患者,出现副作用的概率(`p70`)。
 
 ```python
 # 在这里写你的代码。结果存进 or_5gy 和 p70。
@@ -290,13 +290,13 @@ if close(or_5gy, 5.73, 0.03):
 if close(p70, 0.872, 0.005):
     fail("这是'不出现副作用'的概率。predict_proba 交回两列,第 1 列([:, 1])才是结局为 1 的概率。")
 if close(or_5gy, 1.98, 0.02) and close(p70, 0.128, 0.003):
-    ok("对了: 直肠总剂量每高 5 Gy,odds 变成 1.98 倍,差不多翻一倍;70 Gy 的病人,概率是 13%。185 位里只有 15 位出现了副作用: 这么少的事件能撑起多大的模型,是最后一部分的题目。")
+    ok("对了: 直肠总剂量每高 5 Gy,odds 变成 1.98 倍,差不多翻一倍;70 Gy 的患者,概率是 13%。185 位里只有 15 位出现了副作用: 这么少的事件能撑起多大的模型,是最后一部分的题目。")
 fail(f"现在是 {or_5gy:.2f} 和 {p70:.3f},应该是 1.98 和 0.128。")
 ```
 
 <details><summary>提示 1: 思路</summary>
 
-第 2 课: 系数是 log-odds 的变化,取 exp 才是 OR;变量变 5 个单位,先把系数乘以 5。概率用 `predict_proba`,新病人放进一张表。
+第 2 课: 系数是 log-odds 的变化,取 exp 才是 OR;变量变 5 个单位,先把系数乘以 5。概率用 `predict_proba`,新患者放进一张表。
 
 </details>
 
@@ -321,4 +321,4 @@ print(round(or_5gy, 2), round(p70, 3))
 
 </div>
 
-**这一部分做完了**: 你有了两个模型。靶区剂量: 预测 D90 = 96.79 − 0.138 × 体积 + 1.92 × 加针,在建模病人身上平均差 3.99 Gy。晚期直肠副作用: 直肠总剂量每高 5 Gy,odds 变成 1.98 倍。下一部分学完[第 5 课](/stat-ml/05-data-leakage/)以后做: 这些成绩,到新病人身上还剩多少。
+**这一部分做完了**: 你有了两个模型。靶区剂量: 预测 D90 = 96.79 − 0.138 × 体积 + 1.92 × 加针,在建模患者身上平均差 3.99 Gy。晚期直肠副作用: 直肠总剂量每高 5 Gy,odds 变成 1.98 倍。下一部分学完[第 5 课](/stat-ml/05-data-leakage/)以后做: 这些成绩,到新患者身上还剩多少。

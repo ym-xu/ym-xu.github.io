@@ -1,7 +1,7 @@
 """主题练习的模拟数据: 宫颈癌图像引导近距离放疗的剂量审计。
 
-所有数字都是编的: 只是让数据的样子像一个科室的审计数据, 不是任何真实病人或研究的结果。
-每位病人做盆腔外照射, 再做 4 次高剂量率近距离放疗; 每次近距离都记录了三个剂量。
+所有数字都是编的: 只是让数据的样子像一个科室的审计数据, 不是任何真实患者或研究的结果。
+每位患者做盆腔外照射, 再做 4 次高剂量率近距离放疗; 每次近距离都记录了三个剂量。
 
 用法:
 
@@ -11,11 +11,11 @@
 
 列(一人一行):
 
-    id            病人编号
+    id            患者编号
     age           年龄(岁)
     stage         FIGO 分期: "IB3" "IIB" "IIIB" "IIIC1" "IVA"
     histology     病理: "SCC" 鳞癌, "AC" 腺癌
-    hrctv_vol     近距离时高危靶区(HR-CTV)的体积(cm3), 少数病人缺失
+    hrctv_vol     近距离时高危靶区(HR-CTV)的体积(cm3), 少数患者缺失
     technique     施源器: "IC" 单纯腔内, "IC/IS" 腔内加插植针
     ebrt_gy       外照射总剂量(Gy)
     ebrt_fx       外照射次数
@@ -31,7 +31,7 @@ load_cervix() 另外加上三列总剂量(外照射加 4 次近距离的 EQD2, �
 
 随访表(make_cervix_followup)的列:
 
-    id          病人编号
+    id          患者编号
     fu_months   随访时间(月)
     rect_tox    晚期直肠副作用: 1 = 出现过 2 级及以上, 0 = 没有
 """
@@ -46,7 +46,7 @@ def eqd2(d, n, ab):
 
 
 def make_cervix(n=200, seed=21):
-    """造一份模拟的审计数据: n 位病人, 一人一行。seed 相同, 得到的数据就完全相同。"""
+    """造一份模拟的审计数据: n 位患者, 一人一行。seed 相同, 得到的数据就完全相同。"""
     rng = np.random.default_rng(seed)
 
     age = np.clip(rng.normal(50, 12, n), 26, 82).round().astype(int)
@@ -61,11 +61,11 @@ def make_cervix(n=200, seed=21):
     needles = rng.random(n) < 1 / (1 + np.exp(-(vol - 40) / 10))
     technique = np.where(needles, "IC/IS", "IC")
 
-    long_course = rng.random(n) < 0.10                 # 少数病人外照射 50.4 Gy / 28 次
+    long_course = rng.random(n) < 0.10                 # 少数患者外照射 50.4 Gy / 28 次
     ebrt_gy = np.where(long_course, 50.4, 45.0)
     ebrt_fx = np.where(long_course, 28, 25)
 
-    # 每次近距离的剂量: 每位病人有自己的水平, 每一次再有一点波动。
+    # 每次近距离的剂量: 每位患者有自己的水平, 每一次再有一点波动。
     # 单纯腔内时, 肿瘤越大靶区剂量越难给够; 加了插植针, 大肿瘤也能给够, 直肠也能躲开一些。
     def fractions(mean, sd_patient, sd_fraction, low, high):
         patient = rng.normal(0, sd_patient, n)
@@ -89,7 +89,7 @@ def make_cervix(n=200, seed=21):
         for k in range(4):
             df[f"{name}_{k + 1}"] = doses[k]
 
-    # 少数病人近距离时没有做 MRI, 体积没有记录
+    # 少数患者近距离时没有做 MRI, 体积没有记录
     missing = rng.choice(n, size=max(1, n // 40), replace=False)
     df.loc[missing, "hrctv_vol"] = np.nan
     return df
@@ -111,7 +111,7 @@ def load_cervix(n=200, seed=21):
 
 
 def make_cervix_followup(n=200, seed=21):
-    """随访表: 有随访的病人一人一行, 少数病人失访, 不在表里; 行的顺序是打乱的。
+    """随访表: 有随访的患者一人一行, 少数患者失访, 不在表里; 行的顺序是打乱的。
 
     晚期直肠副作用的概率随直肠 D2cc 的总 EQD2 升高而升高(同样是编的)。
     """
@@ -121,5 +121,5 @@ def make_cervix_followup(n=200, seed=21):
     tox = (rng.random(n) < p).astype(int)
     months = np.clip(rng.gamma(3.5, 9.0, n) + 6, 6, 90).round().astype(int)
     out = pd.DataFrame({"id": df["id"], "fu_months": months, "rect_tox": tox})
-    out = out[rng.random(n) > 0.07]                      # 约 7% 的病人失访
+    out = out[rng.random(n) > 0.07]                      # 约 7% 的患者失访
     return out.sample(frac=1, random_state=seed).reset_index(drop=True)

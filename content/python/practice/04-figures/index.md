@@ -6,7 +6,7 @@ toc: false
 duration: "约 35 分钟"
 prereq: "[Python 课第 4 课](/python/04-plots/);[练习 3](../03-groups/)"
 questions:
-  - "200 位病人的靶区剂量是怎么分布的,有多少落在 85 Gy 以下?"
+  - "200 位患者的靶区剂量是怎么分布的,有多少落在 85 Gy 以下?"
   - "靶区剂量和肿瘤体积是什么关系?两种施源器一样吗?"
 objectives:
   - "直方图、箱线图、散点图"
@@ -21,7 +21,7 @@ objectives:
 import matplotlib.pyplot as plt
 from cervix import load_cervix
 
-df = load_cervix()                 # 200 位病人,带三列总剂量
+df = load_cervix()                 # 200 位患者,带三列总剂量
 print("准备好了:", df.shape)
 ```
 
@@ -43,14 +43,14 @@ bars = list(ax.patches)
 if not bars:
     fail("图里还没有柱子: 用 ax.hist(...) 画直方图。")
 if abs(sum(p.get_height() for p in bars) - 200) > 0.5:
-    fail("柱子加起来应该是 200 位病人。画的是 df[\"d90_total\"] 吗?")
+    fail("柱子加起来应该是 200 位患者。画的是 df[\"d90_total\"] 吗?")
 if abs(min(p.get_x() for p in bars) - df["d90_total"].min()) > 0.01:
     fail('画的不是 d90_total 这一列。')
 if not any(len(l.get_xdata()) == 2 and l.get_xdata()[0] == 85 and l.get_xdata()[1] == 85 for l in ax.lines):
     fail("还缺 85 Gy 那条竖线: ax.axvline(85, ...)。")
 if not ax.get_xlabel() or not ax.get_ylabel():
     fail("两个轴都要有标签: ax.set_xlabel(...) 和 ax.set_ylabel(...)。")
-ok("对了。大多数病人在 88 到 98 Gy 之间;竖线左边有 19 位病人没有达到 85 Gy。右边还有一条尾巴,少数病人超过了 100 Gy。")
+ok("对了。大多数患者在 88 到 98 Gy 之间;竖线左边有 19 位患者没有达到 85 Gy。右边还有一条尾巴,少数患者超过了 100 Gy。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -99,7 +99,7 @@ if close(med[0], 92.15, 0.01) and close(med[1], 92.39, 0.01):
     fail("两个箱子的顺序反了: 第一个是 IC,第二个是 IC/IS。")
 if close(med[0], 92.39, 0.01) and close(med[1], 92.15, 0.01):
     ok("对了: 两个箱子的中位数是 92.4 和 92.2 Gy,几乎一样高,箱子也大致重叠。只看这张图,会得出'加不加针,靶区剂量没有差别'的结论。先别急着下这个结论,看下一步。")
-fail("箱子里的数据不对: 第一个箱子是 technique 为 IC 的病人的 d90_total,第二个是 IC/IS 的。")
+fail("箱子里的数据不对: 第一个箱子是 technique 为 IC 的患者的 d90_total,第二个是 IC/IS 的。")
 ```
 
 <details><summary>提示 1: 思路</summary>
@@ -163,7 +163,7 @@ ok("对了。这张图讲出了箱线图讲不出的事: 单纯腔内的点随�
 
 <details><summary>提示 1: 思路</summary>
 
-第 4 课第 4 节的写法: 对每一组各画一次散点,颜色会自动不同。没有体积记录的 5 位病人不会被画出来。
+第 4 课第 4 节的写法: 对每一组各画一次散点,颜色会自动不同。没有体积记录的 5 位患者不会被画出来。
 
 </details>
 
@@ -194,9 +194,9 @@ plt.show()
 
 <div class="quiz">
 <p><b>第 4 步 · 读图</b>: 箱线图上两种施源器的靶区剂量几乎一样,散点图上却很不一样。哪一种解释对?</p>
-<button class="quiz-opt" data-why="两张图用的是同一份数据,都没有画错。区别在于箱线图把所有病人混在一起,散点图把肿瘤体积也摆了出来。">两张图有一张画错了</button>
-<button class="quiz-opt" data-correct data-why="单纯腔内的病人多是小肿瘤,剂量容易给够;加针的病人多是大肿瘤,靠着针才把剂量拉到了同样的水平。混在一起比,两个效应正好抵消。按肿瘤大小分开看,针的作用就显出来了。">加针的病人肿瘤更大。小肿瘤不加针,和大肿瘤加针,得到了差不多的剂量;混在一起比,针的作用被肿瘤大小的差别盖住了</button>
-<button class="quiz-opt" data-why="散点图上,大肿瘤里加针的病人明显高于不加针的。说'没有作用'和图不符。">插植针对靶区剂量没有作用</button>
+<button class="quiz-opt" data-why="两张图用的是同一份数据,都没有画错。区别在于箱线图把所有患者混在一起,散点图把肿瘤体积也摆了出来。">两张图有一张画错了</button>
+<button class="quiz-opt" data-correct data-why="单纯腔内的患者多是小肿瘤,剂量容易给够;加针的患者多是大肿瘤,靠着针才把剂量拉到了同样的水平。混在一起比,两个效应正好抵消。按肿瘤大小分开看,针的作用就显出来了。">加针的患者肿瘤更大。小肿瘤不加针,和大肿瘤加针,得到了差不多的剂量;混在一起比,针的作用被肿瘤大小的差别盖住了</button>
+<button class="quiz-opt" data-why="散点图上,大肿瘤里加针的患者明显高于不加针的。说'没有作用'和图不符。">插植针对靶区剂量没有作用</button>
 </div>
 
 </div>

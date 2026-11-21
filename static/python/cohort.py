@@ -1,7 +1,7 @@
 """本课程的模拟队列。
 
 所有数字都是编的: 只是让数据的样子像一个子宫内膜癌术后阴道近距离放疗(VCB)的队列,
-不是任何真实研究的结果。每位病人在同一个 CT 上有三套计划:
+不是任何真实研究的结果。每位患者在同一个 CT 上有三套计划:
 
     5mm  在施源器表面下 5 mm 处给处方(传统做法)
     vol  体积优化
@@ -10,13 +10,13 @@
 用法:
 
     from cohort import make_cohort, make_followup
-    df = make_cohort()                   # 200 位病人, 一人一行
-    new = make_cohort(n=5000, seed=99)   # 另一批"新病人", 产生方式完全相同
-    fu = make_followup()                 # 随访表: 有随访的病人一人一行
+    df = make_cohort()                   # 200 位患者, 一人一行
+    new = make_cohort(n=5000, seed=99)   # 另一批"新患者", 产生方式完全相同
+    fu = make_followup()                 # 随访表: 有随访的患者一人一行
 
 列(一人一行):
 
-    id          病人编号
+    id          患者编号
     age         年龄(岁)
     height_cm   身高(cm)
     weight_kg   体重(kg)
@@ -25,9 +25,9 @@
     grade       分级: 1 2 3
     n_fx        近距离治疗的次数
     diameter    施源器直径(mm)
-    wall_min    阴道壁厚度的最小值(mm),少数病人缺失
-    wall_mean   阴道壁厚度的平均值(mm),少数病人缺失
-    wall_max    阴道壁厚度的最大值(mm),少数病人缺失
+    wall_min    阴道壁厚度的最小值(mm),少数患者缺失
+    wall_mean   阴道壁厚度的平均值(mm),少数患者缺失
+    wall_max    阴道壁厚度的最大值(mm),少数患者缺失
     d2cc_5mm    阴道 D2cc, 外照射加近距离的总 EQD2(Gy, α/β = 3), 5 mm 计划
     d2cc_vol    同上, 体积优化计划
     d2cc_gra    同上, 图形优化计划
@@ -37,7 +37,7 @@
 
 随访表(make_followup)的列:
 
-    id          病人编号
+    id          患者编号
     fu_months   随访时间(月)
     tox         晚期阴道毒性: 1 = 出现过(G1 及以上), 0 = 没有
 """
@@ -47,10 +47,10 @@ import pandas as pd
 
 
 def make_cohort(n=200, seed=22):
-    """造一个模拟队列: n 位病人, 一人一行。seed 相同, 得到的数据就完全相同。"""
+    """造一个模拟队列: n 位患者, 一人一行。seed 相同, 得到的数据就完全相同。"""
     rng = np.random.default_rng(seed)
 
-    # 病人和治疗
+    # 患者和治疗
     age = np.clip(rng.normal(64, 9, n), 38, 88).round()
     ebrt = rng.random(n) < 0.55                                   # 约一半多加外照射
     arm = np.where(ebrt, "EBRT+VCB", "VCB")
@@ -108,14 +108,14 @@ def make_cohort(n=200, seed=22):
         "d90_gra": (d90_5mm + d_d90_gra).round(1),
     })
 
-    # 少数病人没有壁厚测量
+    # 少数患者没有壁厚测量
     missing = rng.choice(n, size=max(1, n // 50), replace=False)
     df.loc[missing, ["wall_min", "wall_mean", "wall_max"]] = np.nan
     return df
 
 
 def make_followup(n=200, seed=22):
-    """随访表: 有随访的病人一人一行, 少数病人失访, 不在表里; 行的顺序是打乱的。
+    """随访表: 有随访的患者一人一行, 少数患者失访, 不在表里; 行的顺序是打乱的。
 
     晚期阴道毒性的概率随 5 mm 计划的阴道 D2cc 升高而升高(同样是编的)。
     """
@@ -125,5 +125,5 @@ def make_followup(n=200, seed=22):
     tox = (rng.random(n) < p).astype(int)
     months = np.clip(rng.gamma(4.0, 9.0, n) + 6, 6, 96).round().astype(int)
     out = pd.DataFrame({"id": df["id"], "fu_months": months, "tox": tox})
-    out = out[rng.random(n) > 0.06]                      # 约 6% 的病人失访
+    out = out[rng.random(n) > 0.06]                      # 约 6% 的患者失访
     return out.sample(frac=1, random_state=seed).reset_index(drop=True)

@@ -7,8 +7,8 @@ toc: false
 duration: "约 35 分钟"
 prereq: "[统计机器学习课第 4–5 课](/stat-ml/);[练习 1](../01-first-model/)"
 questions:
-  - "练习 1 的 3.99 Gy,到新病人身上还剩多少?"
-  - "缺肿瘤体积的 5 位病人怎么办?"
+  - "练习 1 的 3.99 Gy,到新患者身上还剩多少?"
+  - "缺肿瘤体积的 5 位患者怎么办?"
   - "随机数也能'预测'靶区剂量吗?"
 objectives:
   - "交叉验证和重复交叉验证"
@@ -16,7 +16,7 @@ objectives:
   - "事件少时的分层 k 折"
 ---
 
-练习 1 的模型在建模病人身上平均差 3.99 Gy。这个数是模型给自己打的分。这一部分给它一个诚实的分数。
+练习 1 的模型在建模患者身上平均差 3.99 Gy。这个数是模型给自己打的分。这一部分给它一个诚实的分数。
 
 先运行这一块。和练习 1 一样的三张表;另外准备了 5 折的分法 `cv`、一个算交叉验证平均绝对误差的函数 `cv_mae`,和 30 列随机数 `noise`(第 4 步用)。
 
@@ -30,7 +30,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import SelectKBest, f_regression
 
-full = load_cervix()                                            # 200 位病人,5 位缺肿瘤体积
+full = load_cervix()                                            # 200 位患者,5 位缺肿瘤体积
 full["needles"] = (full["technique"] == "IC/IS").astype(int)
 df = full.dropna().copy()                                       # 肿瘤体积齐全的 195 位
 tox = full.merge(make_cervix_followup(), on="id")               # 有随访的 185 位
@@ -55,7 +55,7 @@ print(len(full), len(df), len(tox), noise.shape)
 
 **第 1 步 · 训练误差和交叉验证误差**
 
-模型还是练习 1 的那个: 用 `cols` 里的两个变量预测 `y`,数据是 `df`。算它在建模病人身上的平均绝对误差(`mae_train`)和 5 折交叉验证的平均绝对误差(`mae_cv`)。
+模型还是练习 1 的那个: 用 `cols` 里的两个变量预测 `y`,数据是 `df`。算它在建模患者身上的平均绝对误差(`mae_train`)和 5 折交叉验证的平均绝对误差(`mae_cv`)。
 
 ```python
 # 在这里写你的代码。结果存进 mae_train 和 mae_cv。
@@ -66,7 +66,7 @@ need("mae_train", "mae_cv")
 if close(mae_cv, -4.16, 0.01):
     fail("符号反了: scikit-learn 的 neg_mean_absolute_error 是负的误差。用准备好的 cv_mae,它已经把负号去掉了。")
 if close(mae_train, 3.99, 0.01) and close(mae_cv, 4.16, 0.01):
-    ok("对了: 训练 3.99 Gy,交叉验证 4.16 Gy。差得不多,因为模型只有两个变量,没有多少地方可以去凑建模病人。对谁都猜平均值,交叉验证是 4.48 Gy: 模型只好了 0.3 Gy。")
+    ok("对了: 训练 3.99 Gy,交叉验证 4.16 Gy。差得不多,因为模型只有两个变量,没有多少地方可以去凑建模患者。对谁都猜平均值,交叉验证是 4.48 Gy: 模型只好了 0.3 Gy。")
 fail(f"现在是 {mae_train:.2f} 和 {mae_cv:.2f},应该是 3.99 和 4.16。")
 ```
 
@@ -144,7 +144,7 @@ print(each.round(2), round(each.mean(), 2))
 
 <div class="step exercise">
 
-**第 3 步 · 缺肿瘤体积的 5 位病人**
+**第 3 步 · 缺肿瘤体积的 5 位患者**
 
 到现在都只用了 195 位。把全部 200 位(`full`)用上: 做一个 Pipeline,先用中位数补上缺的肿瘤体积,再做线性回归;把它的交叉验证误差存进 `mae_all`。
 
@@ -155,9 +155,9 @@ print(each.round(2), round(each.mean(), 2))
 ```pycheck
 need("mae_all")
 if close(mae_all, 4.16, 0.005):
-    fail("这还是 195 位病人的结果。X 用 full[cols],y 用 full['d90_total']。")
+    fail("这还是 195 位患者的结果。X 用 full[cols],y 用 full['d90_total']。")
 if close(mae_all, 4.05, 0.01):
-    ok("对了: 200 位病人,4.05 Gy。补缺失值这一步在 Pipeline 里,每一轮只用留下来建模的那 4 份算中位数,被拿出来的病人没有参与。这里只缺 5 个值,放在外面补结果也差不多;病人少、缺得多的时候就不一样了。")
+    ok("对了: 200 位患者,4.05 Gy。补缺失值这一步在 Pipeline 里,每一轮只用留下来建模的那 4 份算中位数,被拿出来的患者没有参与。这里只缺 5 个值,放在外面补结果也差不多;患者少、缺得多的时候就不一样了。")
 fail(f"现在是 {mae_all:.2f},应该是 4.05。")
 ```
 
@@ -189,9 +189,9 @@ print(round(mae_all, 2))
 
 **第 4 步 · 随机数也能"预测"靶区剂量吗**
 
-`noise` 里是 30 列随机数,和靶区剂量毫无关系。做两件事,都只用这 30 列,数据是 195 位病人(`y`):
+`noise` 里是 30 列随机数,和靶区剂量毫无关系。做两件事,都只用这 30 列,数据是 195 位患者(`y`):
 
-- 泄漏的做法: 先用**全部**病人挑出和 `y` 关系最强的 5 列(`SelectKBest(f_regression, k=5)`),再对这 5 列做交叉验证,误差存进 `leaky`。
+- 泄漏的做法: 先用**全部**患者挑出和 `y` 关系最强的 5 列(`SelectKBest(f_regression, k=5)`),再对这 5 列做交叉验证,误差存进 `leaky`。
 - 诚实的做法: 把"挑 5 列"和线性回归绑成一个 Pipeline,整个交给交叉验证,误差存进 `honest`。
 
 ```python
@@ -201,11 +201,11 @@ print(round(mae_all, 2))
 ```pycheck
 need("leaky", "honest")
 if close(leaky, 4.62, 0.01) and close(honest, 4.41, 0.01):
-    fail("两个数放反了: 先在全部病人里挑、再交叉验证的那个是 leaky。")
+    fail("两个数放反了: 先在全部患者里挑、再交叉验证的那个是 leaky。")
 if close(leaky, honest, 0.001):
-    fail("两个数一样,说明两次用的是同一种做法。泄漏的做法里,挑变量在交叉验证之前、用全部病人做;诚实的做法里,挑变量在 Pipeline 里面。")
+    fail("两个数一样,说明两次用的是同一种做法。泄漏的做法里,挑变量在交叉验证之前、用全部患者做;诚实的做法里,挑变量在 Pipeline 里面。")
 if close(leaky, 4.41, 0.01) and close(honest, 4.62, 0.01):
-    ok("对了: 泄漏的做法 4.41 Gy,比'都猜平均值'的 4.48 还好,好像随机数能预测靶区剂量。诚实的做法 4.62 Gy,比猜平均值还差: 这才是随机数的真实水平。差别只在挑变量这一步有没有偷看被拿出来的病人。")
+    ok("对了: 泄漏的做法 4.41 Gy,比'都猜平均值'的 4.48 还好,好像随机数能预测靶区剂量。诚实的做法 4.62 Gy,比猜平均值还差: 这才是随机数的真实水平。差别只在挑变量这一步有没有偷看被拿出来的患者。")
 fail(f"现在是 {leaky:.2f} 和 {honest:.2f},应该是 4.41 和 4.62。")
 ```
 
@@ -237,10 +237,10 @@ print(list(picked), round(leaky, 2), round(honest, 2))
 <div class="step">
 
 <div class="quiz">
-<p><b>第 5 步 · 想一想</b>: 同事的做法是: 先在全部 200 位病人里做单因素分析,把 P 值小于 0.05 的变量挑出来,再用这些变量做 5 折交叉验证,报告交叉验证的成绩。这个成绩可信吗?</p>
-<button class="quiz-opt" data-why="交叉验证本身没有做错,但被拿出来的病人已经参与了挑变量。他们的结局影响了哪些变量被选中,等于提前看过考卷。">可信: 成绩是交叉验证的,不是训练的</button>
-<button class="quiz-opt" data-correct data-why="这和第 4 步是同一件事。单因素筛选用了全部病人的结局,被拿出来的那一份也在里面。成绩会偏乐观,候选变量越多、病人越少,偏得越厉害。筛选要放进 Pipeline,在每一轮里只用建模的那几份来做。">不可信: 挑变量用了全部病人,这一步要放进交叉验证里</button>
-<button class="quiz-opt" data-why="P 值的界值不是问题所在。换成 0.01 或 0.10,只要筛选用了全部病人,泄漏就在。">不可信: 界值应该更严格,用 0.01</button>
+<p><b>第 5 步 · 想一想</b>: 同事的做法是: 先在全部 200 位患者里做单因素分析,把 P 值小于 0.05 的变量挑出来,再用这些变量做 5 折交叉验证,报告交叉验证的成绩。这个成绩可信吗?</p>
+<button class="quiz-opt" data-why="交叉验证本身没有做错,但被拿出来的患者已经参与了挑变量。他们的结局影响了哪些变量被选中,等于提前看过考卷。">可信: 成绩是交叉验证的,不是训练的</button>
+<button class="quiz-opt" data-correct data-why="这和第 4 步是同一件事。单因素筛选用了全部患者的结局,被拿出来的那一份也在里面。成绩会偏乐观,候选变量越多、患者越少,偏得越厉害。筛选要放进 Pipeline,在每一轮里只用建模的那几份来做。">不可信: 挑变量用了全部患者,这一步要放进交叉验证里</button>
+<button class="quiz-opt" data-why="P 值的界值不是问题所在。换成 0.01 或 0.10,只要筛选用了全部患者,泄漏就在。">不可信: 界值应该更严格,用 0.01</button>
 </div>
 
 </div>
@@ -249,7 +249,7 @@ print(list(picked), round(leaky, 2), round(honest, 2))
 
 **第 6 步 · 事件少的时候: 分层**
 
-换到副作用的模型。185 位病人里只有 15 位出现了晚期直肠副作用(`tox["rect_tox"]`)。数一数每一份里有几个事件: 用普通的 5 折(准备好的 `cv`)数一次,存进 `counts_plain`;再用分层的 5 折(`StratifiedKFold`,`shuffle=True, random_state=0`)数一次,存进 `counts_strat`。两个都是 5 个数的列表。
+换到副作用的模型。185 位患者里只有 15 位出现了晚期直肠副作用(`tox["rect_tox"]`)。数一数每一份里有几个事件: 用普通的 5 折(准备好的 `cv`)数一次,存进 `counts_plain`;再用分层的 5 折(`StratifiedKFold`,`shuffle=True, random_state=0`)数一次,存进 `counts_strat`。两个都是 5 个数的列表。
 
 ```python
 # 在这里写你的代码。结果存进 counts_plain 和 counts_strat。
@@ -298,9 +298,9 @@ print(counts_plain, counts_strat)
 
 <div class="step exercise">
 
-**第 7 步 · 交叉验证之后: 给一位缺数据的新病人预测**
+**第 7 步 · 交叉验证之后: 给一位缺数据的新患者预测**
 
-交叉验证只用来打分。真正拿去用的,是在全部 200 位病人上重新拟合的那一个。把第 3 步的 Pipeline 在全部病人上拟合,然后给一位新病人预测: 打算加插植针,肿瘤体积还没量(`np.nan`)。预测值存进 `pred_unknown`。
+交叉验证只用来打分。真正拿去用的,是在全部 200 位患者上重新拟合的那一个。把第 3 步的 Pipeline 在全部患者上拟合,然后给一位新患者预测: 打算加插植针,肿瘤体积还没量(`np.nan`)。预测值存进 `pred_unknown`。
 
 ```python
 # 在这里写你的代码。结果存进 pred_unknown。
@@ -309,15 +309,15 @@ print(counts_plain, counts_strat)
 ```pycheck
 need("pred_unknown")
 if close(pred_unknown, 92.22, 0.02):
-    fail("这是不加针的预测。这位病人打算加插植针: needles 是 1。")
+    fail("这是不加针的预测。这位患者打算加插植针: needles 是 1。")
 if close(pred_unknown, 94.20, 0.02):
-    ok("对了: 94.2 Gy。体积没量,Pipeline 自动用建模病人的中位数(32.6 cm³)补上,再代进公式。补缺失值的规则也是模型的一部分: 新病人来了,用的是同一条规则。")
+    ok("对了: 94.2 Gy。体积没量,Pipeline 自动用建模患者的中位数(32.6 cm³)补上,再代进公式。补缺失值的规则也是模型的一部分: 新患者来了,用的是同一条规则。")
 fail(f"现在是 {float(pred_unknown):.2f},应该是 94.20。")
 ```
 
 <details><summary>提示 1: 思路</summary>
 
-Pipeline 和普通模型一样有 `fit` 和 `predict`。新病人放进一张表,列名和 `cols` 一样,缺的那格写 `np.nan`。
+Pipeline 和普通模型一样有 `fit` 和 `predict`。新患者放进一张表,列名和 `cols` 一样,缺的那格写 `np.nan`。
 
 </details>
 
