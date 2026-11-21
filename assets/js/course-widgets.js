@@ -1434,6 +1434,8 @@
         tiles[i].g.style.width = part == null ? '0' : (Math.max(0, Math.min(1, part)) * 100).toFixed(1) + '%';
       },
       // a slider the reader may move once a step has played: {label, min, max, value, oninput(value, say)}
+      // the numbers the text of the steps quotes; tools/check_course.py prints them
+      facts: function (o) { root.setAttribute('data-facts', JSON.stringify(o)); },
       control: function (o) {
         ctlFn = o ? o.oninput : null; ctl.hidden = !o;
         if (o) { ctlCap.textContent = o.label; ctlIn.min = o.min; ctlIn.max = o.max; ctlIn.step = o.step || 1; ctlIn.value = o.value; }
@@ -2058,6 +2060,9 @@
         endFresh.setAttribute('x', QX(k) + 7); endFresh.setAttribute('y', QY(last.fresh) + 3.5); endFresh.textContent = '新病人 ' + last.fresh.toFixed(2);
       }
 
+      api.facts({ start: START, mean: G1[0].mean, places: all.length, cuts: [first.thr, second.thr, third.thr], two: G2.map(function (q) { return [q.hi - q.lo, q.mean]; }),
+        four: G4.map(function (q) { return [q.hi - q.lo, q.mean]; }), err: [mse(G2), mse(G3), mse(G4)], more: leftC.length + rightC.length, guess: predict(G4, NEWX),
+        sizes: { 3: [SIZES[2].train, SIZES[2].fresh], 4: [SIZES[3].train, SIZES[3].fresh], last: [SIZES.length, SIZES[SIZES.length - 1].train, SIZES[SIZES.length - 1].fresh] }, lowest: [lowest.g.length, lowest.fresh] });
       function reset(layers) {
         show(layers);
         fade(scan, 0); fade(fresh, 0); fade(probe, 0); fade(walker, 0);
@@ -2177,7 +2182,457 @@
     }
   };
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene) };
+  // ---------- shared by the diagrams of algorithms ----------
+  function stageKit(svg) {                         // layers that fade in and out, text, opacity
+    var L = {};
+    return {
+      T: function (parent, x, y, s, cls, anchor) { return el('text', { x: x, y: y, 'class': cls || '', 'text-anchor': anchor || 'start' }, parent, s); },
+      layer: function (name) { return (L[name] = el('g', { 'class': 'stage-layer' }, svg)); },
+      show: function (names) { for (var k in L) L[k].setAttribute('class', 'stage-layer' + (names.indexOf(k) >= 0 ? ' on' : '')); },
+      fade: function (node, v) { node.style.opacity = v; }
+    };
+  }
+  // A regression tree on one predictor, grown the way the tree diagram shows: every place between two
+  // neighbours is tried, the cut that lowers the squared error most is kept, and the same again inside
+  // each group, down to `depth` levels and never leaving fewer than `leaf` patients in a group.
+  // pts: [{x, y}]. Returns the groups from left to right: [{x1, value, size}], x1 the upper limit of the group.
+  function growTree(pts, depth, leaf) {
+    var P = pts.slice().sort(function (a, b) { return a.x - b.x; }), n = P.length, s1 = [0], s2 = [0], out = [], i;
+    for (i = 0; i < n; i++) { s1.push(s1[i] + P[i].y); s2.push(s2[i] + P[i].y * P[i].y); }
+    function sse(lo, hi) { var s = s1[hi] - s1[lo]; return s2[hi] - s2[lo] - s * s / (hi - lo); }
+    function grow(lo, hi, level, x1) {
+      var best = -1, bestErr = sse(lo, hi) - 1e-9, k, e;
+      if (level < depth) {
+        for (k = lo + leaf; k <= hi - leaf; k++) {
+          if (P[k].x > P[k - 1].x) { e = sse(lo, k) + sse(k, hi); if (e < bestErr) { bestErr = e; best = k; } }
+        }
+      }
+      if (best < 0) { out.push({ x1: x1, value: (s1[hi] - s1[lo]) / (hi - lo), size: hi - lo }); return; }
+      grow(lo, best, level + 1, (P[best - 1].x + P[best].x) / 2);
+      grow(best, hi, level + 1, x1);
+    }
+    grow(0, n, 0, Infinity);
+    return out;
+  }
+  function treeValue(tree, x) {
+    for (var i = 0; i < tree.length - 1; i++) if (x <= tree[i].x1) return tree[i].value;
+    return tree[tree.length - 1].value;
+  }
+  function stairPath(tree, X, Y) {                 // a tree's prediction as a staircase across the plot
+    var d = '', x0 = XD[0];
+    tree.forEach(function (g, k) {
+      var x1 = Math.min(XD[1], g.x1);
+      d += (k ? 'V' + Y(g.value).toFixed(1) : 'M' + X(x0).toFixed(1) + ' ' + Y(g.value).toFixed(1)) + 'H' + X(x1).toFixed(1);
+      x0 = x1;
+    });
+    return d;
+  }
+  // Under a plot: errors against the size of the model. o: {first, last, bottom, top, unit, lines: [{values, cls, dot, name, text}]},
+  // values[k] the error at size k. upto(k) draws the lines as far as size k; note(k, text) marks one size on the first line.
+  function sizeChart(kit, g, o) {
+    function X(k) { return M.l + 4 + (k - o.first) / (o.last - o.first) * (W - M.l - M.r - 74); }
+    var low = o.bottom || 0;
+    function Y(v) { return 322 - (v - low) / (o.top - low) * 58; }
+    el('line', { x1: M.l, x2: X(o.last), y1: 322, y2: 322, 'class': 'w-axis' }, g);
+    kit.T(g, X(o.first), 334, o.first + o.unit, '', 'middle'); kit.T(g, X(o.last), 334, o.last + o.unit, '', 'middle');
+    var ring = el('circle', { r: 5.5, 'class': 's-ring' }, g), ringText = kit.T(g, 0, 0, '', 's-v s-n s-small s-halo');
+    ring.style.display = 'none';
+    var parts = o.lines.map(function (ln) {
+      return { ln: ln, line: el('polyline', { 'class': ln.cls, points: '' }, g), dot: el('circle', { r: 3.4, 'class': ln.dot }, g), end: kit.T(g, 0, 0, '', ln.text) };
+    });
+    return {
+      upto: function (k) {
+        parts.forEach(function (p, j) {
+          var pts = [], i;
+          for (i = o.first; i <= k; i++) pts.push(X(i).toFixed(1) + ',' + Y(p.ln.values[i]).toFixed(1));
+          p.line.setAttribute('points', pts.join(' '));
+          var y = Y(p.ln.values[k]);
+          p.dot.setAttribute('cx', X(k)); p.dot.setAttribute('cy', y);
+          p.end.setAttribute('x', X(k) + 7); p.end.setAttribute('y', j ? Math.min(319, y + 3.5) : y + 3.5);
+          p.end.textContent = p.ln.name + ' ' + p.ln.values[k].toFixed(2);
+        });
+        // keep the two labels apart
+        if (parts.length > 1) {
+          var a = +parts[0].end.getAttribute('y'), b = +parts[1].end.getAttribute('y');
+          if (Math.abs(a - b) < 11) { parts[0].end.setAttribute('y', Math.min(a, b) - (11 - Math.abs(a - b)) / 2); parts[1].end.setAttribute('y', Math.max(a, b) + (11 - Math.abs(a - b)) / 2); }
+        }
+      },
+      note: function (k, text, dx, dy) {
+        var y = Y(o.lines[0].values[k]);
+        ring.setAttribute('cx', X(k)); ring.setAttribute('cy', y); ring.style.display = '';
+        ringText.setAttribute('x', X(k) + (dx == null ? 10 : dx)); ringText.setAttribute('y', y + (dy == null ? 15 : dy)); ringText.textContent = text;
+      }
+    };
+  }
+
+  // --- scene: gradient boosting, tree after tree (stat-ml lesson 7) ---
+  // Runs on the 30 shared patients with the lesson's settings: trees of 2 levels, learning rate 0.05.
+  // Above: the patients and the prediction so far. Below, on the same x axis: how far off each patient
+  // still is (the residual), and the small tree that is fitted to those residuals next.
+  var boostScene = {
+    label: '分步图: 梯度提升怎样让一棵棵小树去补前面剩下的误差',
+    height: 338,
+    tiles: ['用了几棵小树', '建模病人的误差', '这一步'],
+    build: function (api) {
+      var svg = api.svg, sc = getScene(), kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, i, m, j;
+      var P = sc.train.slice().sort(function (a, b) { return a.x - b.x; }), n = P.length, RATE = 0.05, MOST = 400, USUAL = 100;
+
+      // --- the algorithm ---
+      var start = mean(P.map(function (p) { return p.y; })), GX = [];
+      for (i = 0; i <= 220; i++) GX.push(XD[0] + (XD[1] - XD[0]) * i / 220);
+      function mseOf(pred, pts) { var s = 0; pts.forEach(function (p, k) { s += (p.y - pred[k]) * (p.y - pred[k]); }); return s / pts.length; }
+      var trees = [], onPatients = [P.map(function () { return start; })], onGrid = [GX.map(function () { return start; })];
+      var onFresh = sc.fresh.map(function () { return start; }), errTrain = [mseOf(onPatients[0], P)], errFresh = [mseOf(onFresh, sc.fresh)];
+      for (m = 1; m <= MOST; m++) {
+        var before = onPatients[m - 1];
+        var t = growTree(P.map(function (p, k) { return { x: p.x, y: p.y - before[k] }; }), 2, 1);    // a small tree for what is still missing
+        trees.push(t);
+        onPatients.push(before.map(function (v, k) { return v + RATE * treeValue(t, P[k].x); }));       // only a small step of it is added
+        onGrid.push(onGrid[m - 1].map(function (v, k) { return v + RATE * treeValue(t, GX[k]); }));
+        for (j = 0; j < onFresh.length; j++) onFresh[j] += RATE * treeValue(t, sc.fresh[j].x);
+        errTrain.push(mseOf(onPatients[m], P)); errFresh.push(mseOf(onFresh, sc.fresh));
+      }
+      var bestM = 0;
+      for (m = 1; m <= MOST; m++) if (errFresh[m] < errFresh[bestM]) bestM = m;
+
+      // --- the plot: patients, the prediction so far ---
+      var plot = axes(svg);
+      [].forEach.call(svg.querySelectorAll('text'), function (tx) { if (tx.textContent === 'Δ (Gy)') svg.appendChild(tx); });
+      var fresh = el('g', {}, plot);
+      sc.shown.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 2.6, 'class': 'w-pt new' }, fresh); });
+      var sticks = P.map(function (p) { return el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(p.y), 'class': 'w-res s-res' }, plot); });
+      var ghost = el('path', { 'class': 's-ghost' }, plot), curve = el('path', { 'class': 'w-curve' }, plot);
+      P.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var note = T(plot, W - M.r - 4, H - M.b - 8, '', 's-k s-halo', 'end');
+      function gridPath(values) { return values.map(function (v, k) { return (k ? 'L' : 'M') + sx(GX[k]).toFixed(1) + ' ' + sy(v).toFixed(1); }).join(''); }
+      // the prediction after m trees, plus a share (0 … 1) of the step to m + 1
+      function model(mm, share) {
+        var a = onGrid[mm], b = share ? onGrid[mm + 1] : a, pa = onPatients[mm], pb = share ? onPatients[mm + 1] : pa;
+        curve.setAttribute('d', gridPath(a.map(function (v, k) { return lerp(v, b[k], share || 0); })));
+        sticks.forEach(function (s, k) { s.setAttribute('y2', sy(lerp(pa[k], pb[k], share || 0))); });
+      }
+
+      // --- under the plot: what is still missing, patient by patient, and the next small tree ---
+      var rest = kit.layer('rest');
+      function RY(r) { return 297 - Math.max(-6.2, Math.min(6.2, r)) * 5.9; }
+      T(rest, M.l + 4, 263, '还差多少 = 实际 − 现在的预测', 's-k');
+      [-4, 0, 4].forEach(function (v) {
+        el('line', { x1: M.l, x2: W - M.r, y1: RY(v), y2: RY(v), 'class': v ? 'w-grid' : 'w-zero' }, rest);
+        T(rest, M.l - 5, RY(v) + 3.5, (v > 0 ? '+' : '') + minus(v), '', 'end');
+      });
+      var small = el('path', { 'class': 's-line' }, rest);
+      var dots = P.map(function () { return el('circle', { r: 2.4, 'class': 's-pat' }, rest); });
+      var leafNames = [0, 1, 2, 3].map(function () { return T(rest, 0, 0, '', 's-v s-n s-halo s-tiny', 'middle'); });
+      function residuals(mm, share, from) {         // the dots: residuals after mm trees (+ a share of the next step); "from" lets them travel in
+        var pa = onPatients[mm], pb = share ? onPatients[mm + 1] : pa;
+        dots.forEach(function (d, k) {
+          var y = RY(P[k].y - lerp(pa[k], pb[k], share || 0));
+          d.setAttribute('cx', sx(P[k].x)); d.setAttribute('cy', from ? lerp(sy(P[k].y), y, from.u) : y);
+        });
+      }
+      function smallTree(mm, opacity) {             // the tree that is fitted to the residuals after mm trees
+        var t = trees[mm];
+        small.setAttribute('d', stairPath(t, sx, RY)); fade(small, opacity);
+        var x0 = XD[0];
+        leafNames.forEach(function (tx, k) {
+          var g = t[k];
+          var x1 = g ? Math.min(XD[1], g.x1) : x0;
+          if (!g || opacity < 1 || sx(x1) - sx(x0) < 26) { fade(tx, 0); x0 = x1; return; }
+          tx.setAttribute('x', Math.max(M.l + 14, Math.min(W - M.r - 14, (sx(x0) + sx(x1)) / 2))); tx.setAttribute('y', RY(g.value) - 5);
+          tx.textContent = (g.value > 0 ? '+' : '') + num(g.value); fade(tx, 1); x0 = x1;
+        });
+      }
+
+      // --- under the plot, last step: the error against the number of trees ---
+      var sizes = kit.layer('sizes');
+      var chart = sizeChart(kit, sizes, { first: 0, last: MOST, unit: ' 棵', top: Math.max(errTrain[0], errFresh[0]) * 1.02, lines: [
+        { values: errFresh, cls: 's-line', dot: 's-dot', name: '新病人', text: 's-t s-n s-small' },
+        { values: errTrain, cls: 's-curve2', dot: 's-token', name: '建模病人', text: 's-k s-n' }] });
+      chart.note(bestM, '新病人身上最低: ' + bestM + ' 棵,' + errFresh[bestM].toFixed(2), bestM > MOST * 0.55 ? -150 : 10, 17);
+
+      api.facts({ start: start, firstTree: trees[0].map(function (g) { return [g.size, g.value]; }), errTrain: { 0: errTrain[0], 1: errTrain[1], 2: errTrain[2], 100: errTrain[USUAL], 400: errTrain[MOST] },
+        errFresh: { 0: errFresh[0], 100: errFresh[USUAL], 400: errFresh[MOST] }, best: [bestM, errFresh[bestM], errTrain[bestM]] });
+      function reset(layers) { kit.show(layers); fade(fresh, 0); fade(ghost, 0); fade(note, 0); fade(small, 0); leafNames.forEach(function (tx) { fade(tx, 0); }); sticks.forEach(function (s) { fade(s, 1); }); }
+      function tiles(mm) { api.tile(0, mm + ' 棵'); api.tile(1, errTrain[mm].toFixed(2), null, errTrain[mm] / errTrain[0]); }
+      function at(mm) { model(mm); residuals(mm); tiles(mm); }
+
+      var steps = [
+        function () {                                 // 1 the patients
+          reset([]);
+          curve.setAttribute('d', ''); sticks.forEach(function (s, k) { s.setAttribute('y2', sy(P[k].y)); });
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模病人');
+        },
+        function () {                                 // 2 start from the mean; the residuals drop into the lower panel
+          reset(['rest']);
+          model(0); sticks.forEach(function (s, k) { s.setAttribute('y2', sy(P[k].y)); });
+          residuals(0, 0, { u: 0 });
+          api.tile(0, '0 棵'); api.tile(2, num(start) + ' Gy', '都猜平均值');
+          api.tween(300, 800, function (u) { sticks.forEach(function (s, k) { s.setAttribute('y2', lerp(sy(P[k].y), sy(start), E(u))); }); });
+          api.tween(1100, 900, function (u) { residuals(0, 0, { u: E(u) }); });
+          api.at(2000, function () { tiles(0); });
+        },
+        function () {                                 // 3 a small tree guesses what is missing
+          reset(['rest']);
+          at(0); api.tile(2, trees[0].length + ' 组', '第 1 棵小树');
+          smallTree(0, 0);
+          api.tween(300, 600, function (u) { fade(small, u); });
+          api.at(900, function () { smallTree(0, 1); });
+        },
+        function () {                                 // 4 only 5% of it is added
+          reset(['rest']);
+          at(0); smallTree(0, 1); api.tile(2, '5%', '只加进去');
+          ghost.setAttribute('d', gridPath(onGrid[0].map(function (v, k) { return v + treeValue(trees[0], GX[k]); })));
+          note.textContent = '虚线: 把小树全加进去;实线: 只加 5%';
+          api.tween(200, 400, function (u) { fade(ghost, u); fade(note, u); });
+          api.tween(900, 1100, function (u) { model(0, E(u)); residuals(0, E(u)); });
+          api.at(2000, function () { tiles(1); });
+        },
+        function () {                                 // 5 the next tree looks at what is missing now
+          reset(['rest']);
+          at(1); smallTree(0, 0); api.tile(2, trees[1].length + ' 组', '第 2 棵小树');
+          api.at(300, function () { smallTree(1, 1); });
+          api.tween(1300, 900, function (u) { model(1, E(u)); residuals(1, E(u)); });
+          api.at(2200, function () { tiles(2); smallTree(2, 1); api.tile(2, trees[2].length + ' 组', '第 3 棵小树'); });
+        },
+        function () {                                 // 6 and so on, a hundred times
+          reset(['rest']);
+          at(2); smallTree(2, 1); api.tile(2, '—', '还差的,最多');
+          function show(mm) {
+            at(mm); smallTree(Math.min(mm, MOST - 1), 1);
+            var worst = 0;
+            P.forEach(function (p, k) { worst = Math.max(worst, Math.abs(p.y - onPatients[mm][k])); });
+            api.tile(2, worst.toFixed(2) + ' Gy', '还差的,最多');
+          }
+          api.tween(400, 3600, function (u) { show(Math.round(2 + u * (USUAL - 2))); });
+          api.at(4000, function () {
+            show(USUAL);
+            api.control({ label: '自己拖: 用前 ' + USUAL + ' 棵小树', min: 0, max: MOST, value: USUAL, oninput: function (k, say) { show(k); say('自己拖: 用前 ' + k + ' 棵小树'); } });
+          });
+        },
+        function () {                                 // 7 how many trees
+          reset(['sizes']);
+          function show(mm) { model(mm); tiles(mm); chart.upto(mm); api.tile(2, errFresh[mm].toFixed(2), '新病人身上的误差'); }
+          show(0);
+          api.tween(200, 500, function (u) { fade(fresh, u); });
+          api.tween(500, 3000, function (u) { show(Math.round(u * MOST)); });
+          api.at(3500, function () {
+            show(MOST);
+            api.control({ label: '自己拖: 用前 ' + MOST + ' 棵小树', min: 0, max: MOST, value: MOST, oninput: function (k, say) { show(k); say('自己拖: 用前 ' + k + ' 棵小树'); } });
+          });
+        }
+      ];
+      return function (k) { steps[k](); };
+    }
+  };
+
+  // --- scene: a random forest: resample the patients, grow a tree, repeat, average (stat-ml lesson 7) ---
+  // Runs on the 30 shared patients with the lesson's settings: 300 trees, at least 5 patients per leaf.
+  // (With one predictor there is nothing to choose among at a split, so the only randomness is the resampling.)
+  var forestScene = {
+    label: '分步图: 随机森林怎样重抽病人、每批种一棵树、再取平均',
+    height: 338,
+    tiles: ['用了几棵树', '新病人身上的误差', '这一步'],
+    build: function (api) {
+      var svg = api.svg, sc = getScene(), kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, i, b, j;
+      var P = sc.train.slice().sort(function (a, c) { return a.x - c.x; }), n = P.length, B = 300, LEAF = 5, NEWX = 3.0;
+      var rng = mulberry32(SEED * 13 + 7), GX = [];
+      for (i = 0; i <= 220; i++) GX.push(XD[0] + (XD[1] - XD[0]) * i / 220);
+
+      // --- the algorithm ---
+      function mseFresh(pred) { var s = 0; sc.fresh.forEach(function (p, k) { s += (p.y - pred[k]) * (p.y - pred[k]); }); return s / sc.fresh.length; }
+      var draws = [], trees = [], errEach = [], errForest = [0], sumFresh = sc.fresh.map(function () { return 0; });
+      var sumGrid = [GX.map(function () { return 0; })], answers = [], meanAnswer = [0];
+      for (b = 0; b < B; b++) {
+        var idx = [];
+        for (i = 0; i < n; i++) idx.push(Math.floor(rng() * n));              // 30 draws; a patient can come up again
+        draws.push(idx);
+        var t = growTree(idx.map(function (k) { return P[k]; }), Infinity, LEAF);
+        trees.push(t);
+        var pred = sc.fresh.map(function (p) { return treeValue(t, p.x); });
+        errEach.push(mseFresh(pred));
+        for (j = 0; j < pred.length; j++) sumFresh[j] += pred[j];
+        errForest.push(mseFresh(sumFresh.map(function (v) { return v / (b + 1); })));   // the average of the first b + 1 trees
+        sumGrid.push(sumGrid[b].map(function (v, k) { return v + treeValue(t, GX[k]); }));
+        answers.push(treeValue(t, NEWX));
+        meanAnswer.push((meanAnswer[b] * b + answers[b]) / (b + 1));
+      }
+      var alone = growTree(P, Infinity, LEAF), errAlone = mseFresh(sc.fresh.map(function (p) { return treeValue(alone, p.x); }));
+      var errTypical = mean(errEach);
+
+      // --- the plot ---
+      var plot = axes(svg);
+      var faintPool = [], faintG = el('g', {}, plot);
+      var rug = el('g', {}, plot), rugTicks = answers.map(function (v) { return el('line', { x1: sx(NEWX) - 7, x2: sx(NEWX) + 7, y1: sy(v), y2: sy(v), 'class': 's-rug' }, rug); });
+      var ghost = el('path', { 'class': 's-ghost' }, plot), one = el('path', { 'class': 's-curve2' }, plot), avg = el('path', { 'class': 'w-curve' }, plot);
+      var pts = P.map(function (p) { return el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var times = P.map(function (p) { return T(plot, sx(p.x) + 6, sy(p.y) - 5, '', 's-v s-n s-tiny s-halo'); });
+      var probe = el('g', {}, plot);
+      el('line', { x1: sx(NEWX), x2: sx(NEWX), y1: sy(YD[0]), y2: sy(YD[1]), 'class': 'w-mean' }, probe);
+      var probeDot = el('circle', { cx: sx(NEWX), r: 5, 'class': 's-token' }, probe);
+      var note = T(plot, W - M.r - 4, H - M.b - 8, '', 's-k s-halo', 'end');
+      function gridPath(values) { return values.map(function (v, k) { return (k ? 'L' : 'M') + sx(GX[k]).toFixed(1) + ' ' + sy(v).toFixed(1); }).join(''); }
+      function average(k) { avg.setAttribute('d', gridPath(sumGrid[k].map(function (v) { return v / k; }))); fade(avg, 1); }
+      function faint(from, to) {                    // the trees from … to (not including), drawn thin; at most the last 40
+        var lo = Math.max(from, to - 40), k;
+        for (k = 0; k < 40; k++) {
+          var p = faintPool[k] || (faintPool[k] = el('path', { 'class': 's-faint' }, faintG));
+          if (lo + k < to) { p.setAttribute('d', stairPath(trees[lo + k], sx, sy)); p.style.display = ''; } else p.style.display = 'none';
+        }
+      }
+      function sample(counts) {                     // how often each patient is in the sample: the dot's size, a hollow dot for "not drawn"
+        pts.forEach(function (c, k) {
+          var m = counts ? counts[k] : 1;
+          c.setAttribute('class', 'w-pt' + (m ? '' : ' no')); c.setAttribute('r', m <= 1 ? 3.4 : m === 2 ? 4.6 : 5.6);
+          times[k].textContent = m > 1 ? '×' + m : '';
+        });
+      }
+      function countsOf(idx, upto) { var c = P.map(function () { return 0; }); idx.slice(0, upto).forEach(function (k) { c[k]++; }); return c; }
+
+      // --- under the plot: the sample that was drawn ---
+      var draw = kit.layer('draw');
+      T(draw, M.l, 266, '抽 30 次,每次抽完放回去再抽:', 's-k');
+      function slot(k) { return [M.l + 8 + (k % 15) * 19.6, 281 + Math.floor(k / 15) * 17]; }
+      var slots = [];
+      for (i = 0; i < n; i++) slots.push(el('circle', { cx: slot(i)[0], cy: slot(i)[1], r: 3.2, 'class': 's-pat' }, draw));
+      var drawNote = T(draw, M.l, 326, '', 's-t s-small');
+      var fliers = [];
+      for (i = 0; i < n; i++) fliers.push(el('circle', { r: 3.2, 'class': 's-token' }, svg));
+      function drawn(bb, upto) {                    // the first "upto" draws of sample bb have landed
+        slots.forEach(function (s, k) { fade(s, k < upto ? 1 : 0.12); });
+        var c = countsOf(draws[bb], upto);
+        sample(upto ? c : null);
+        if (upto === n) {
+          var seen = c.filter(function (v) { return v > 0; }).length;
+          drawNote.textContent = '抽到 ' + seen + ' 位不同的病人,' + (n - seen) + ' 位没抽到,最多的被抽到 ' + Math.max.apply(null, c) + ' 次';
+        } else drawNote.textContent = '';
+      }
+      function drawing(bb, ms, gap, dur) {          // the draws of sample bb, one after another; returns when it ends
+        draws[bb].forEach(function (k, d) {
+          api.tween(ms + d * gap, dur, function (u) {
+            var a = [sx(P[k].x), sy(P[k].y)], c = slot(d), f = fliers[d];
+            f.setAttribute('cx', lerp(a[0], c[0], E(u))); f.setAttribute('cy', lerp(a[1], c[1], E(u))); fade(f, u < 1 ? 1 : 0);
+            if (u === 1) drawn(bb, d + 1);
+          });
+        });
+        return ms + (n - 1) * gap + dur;
+      }
+
+      // --- under the plot: error against the number of trees ---
+      var sizes = kit.layer('sizes');
+      var flat = errForest.map(function () { return errAlone; });
+      var lowest = 1;
+      for (b = 2; b <= B; b++) if (errForest[b] < errForest[lowest]) lowest = b;
+      var chart = sizeChart(kit, sizes, { first: 1, last: B, unit: ' 棵', bottom: errForest[lowest] - 0.35, top: Math.max.apply(null, errForest.slice(1).concat([errAlone])) + 0.1, lines: [
+        { values: errForest, cls: 's-line', dot: 's-dot', name: '森林', text: 's-t s-n s-small' },
+        { values: flat, cls: 's-ghost', dot: 's-hide', name: '一棵树', text: 's-k s-n' }] });
+
+      // --- under the plot: what the 300 trees say about one new patient ---
+      var hist = kit.layer('hist'), LOW = -8, WIDTH = 0.25, bins = [];
+      function HX(v) { return M.l + (v - LOW) / (0 - LOW) * (W - M.l - M.r); }
+      el('line', { x1: M.l, x2: W - M.r, y1: 322, y2: 322, 'class': 'w-axis' }, hist);
+      [-8, -6, -4, -2, 0].forEach(function (v) { T(hist, HX(v), 334, minus(v), '', 'middle'); });
+      T(hist, M.l, 266, '300 棵树各自给这位新病人猜的 Δ (Gy)', 's-k');
+      for (i = 0; i < (0 - LOW) / WIDTH; i++) bins.push(el('rect', { x: HX(LOW + i * WIDTH) + 0.5, width: HX(LOW + WIDTH) - HX(LOW) - 1, y: 322, height: 0, 'class': 's-hist' }, hist));
+      var histMean = el('line', { y1: 272, y2: 322, 'class': 's-pin-stem' }, hist), histName = T(hist, 0, 284, '', 's-v s-n s-small s-halo');
+      function answersUpto(k) {
+        var c = bins.map(function () { return 0; });
+        for (var q = 0; q < k; q++) c[Math.max(0, Math.min(bins.length - 1, Math.floor((answers[q] - LOW) / WIDTH)))]++;
+        bins.forEach(function (r, q) { r.setAttribute('height', c[q] * 0.95); r.setAttribute('y', 322 - c[q] * 0.95); });
+        rugTicks.forEach(function (r, q) { r.style.display = q < k ? '' : 'none'; });
+        var mAns = meanAnswer[k];
+        histMean.setAttribute('x1', HX(mAns)); histMean.setAttribute('x2', HX(mAns));
+        histName.setAttribute('x', HX(mAns) + 5); histName.textContent = '平均 ' + num(mAns);
+        probeDot.setAttribute('cy', sy(mAns));
+      }
+
+      // --- under the plot: one tree against the forest ---
+      var bars = kit.layer('bars'), most = Math.max(errTypical, errAlone, errForest[B]);
+      [['重抽的树,单独用(平均)', errTypical, 's-bar dim'], ['一棵树,用全部病人', errAlone, 's-bar mid'], ['300 棵取平均', errForest[B], 's-bar']].forEach(function (row, k) {
+        var y = 268 + k * 24;
+        T(bars, M.l, y + 9, row[0], 's-t s-small');
+        el('rect', { x: 170, y: y, width: row[1] / most * 120, height: 11, rx: 2, 'class': row[2] }, bars);
+        T(bars, 170 + row[1] / most * 120 + 5, y + 9.5, row[1].toFixed(2), 's-v s-n s-small');
+      });
+
+      var c0 = countsOf(draws[0], n);
+      api.facts({ aloneGroups: alone.length, errAlone: errAlone, seen: c0.filter(function (v) { return v > 0; }).length, most: Math.max.apply(null, c0),
+        groups: [trees[0].length, trees[1].length, trees[2].length], errEach: errEach.slice(0, 3), answers: answers.slice(0, 3), errTypical: errTypical,
+        errForest: { 3: errForest[3], 10: errForest[10], 50: errForest[50], 100: errForest[100], 300: errForest[B] }, lowest: [lowest, errForest[lowest]],
+        answerMean: meanAnswer[B], answerRange: [Math.min.apply(null, answers), Math.max.apply(null, answers)] });
+      function reset(layers) {
+        kit.show(layers);
+        [ghost, one, avg, probe, rug, note].forEach(function (g) { fade(g, 0); });
+        fliers.forEach(function (f) { fade(f, 0); });
+        faint(0, 0); sample(null);
+      }
+      function err(v) { api.tile(1, v.toFixed(2), null, v / errTypical); }
+      function tree(bb) { one.setAttribute('d', stairPath(trees[bb], sx, sy)); fade(one, 1); }
+      function forestOf(k) { faint(0, k); average(k); api.tile(0, k + ' 棵'); err(errForest[k]); chart.upto(k); }
+
+      var steps = [
+        function () {                                 // 1 one tree on all patients
+          reset([]);
+          ghost.setAttribute('d', stairPath(alone, sx, sy)); avg.setAttribute('d', stairPath(alone, sx, sy));
+          api.tile(0, '1 棵'); api.tile(2, alone.length + ' 组', '这棵树分成');
+          api.tween(200, 600, function (u) { fade(avg, u); });
+          api.at(800, function () { err(errAlone); });
+        },
+        function () {                                 // 2 resample the patients
+          reset(['draw']);
+          fade(ghost, 1); drawn(0, 0);
+          api.tile(0, '0 棵'); api.tile(2, '—', '抽到不同的病人');
+          var end = drawing(0, 300, 85, 450);
+          api.at(end + 50, function () { drawn(0, n); api.tile(2, countsOf(draws[0], n).filter(function (v) { return v > 0; }).length + ' 位', '抽到不同的病人'); });
+        },
+        function () {                                 // 3 a tree on this sample
+          reset(['draw']);
+          fade(ghost, 1); drawn(0, n); tree(0); fade(one, 0);
+          note.textContent = '虚线: 用全部病人种的那棵';
+          api.tile(0, '1 棵'); api.tile(2, trees[0].length + ' 组', '这棵树分成');
+          api.tween(200, 700, function (u) { fade(one, u); fade(note, u); });
+          api.at(900, function () { err(errEach[0]); });
+        },
+        function () {                                 // 4 again, and again
+          reset(['draw']);
+          drawn(0, n); tree(0); api.tile(0, '1 棵'); err(errEach[0]); api.tile(2, num(answers[0]), '在 3.0 mm 处猜');
+          var end = 200;
+          [1, 2].forEach(function (bb) {
+            api.at(end, function () { drawn(bb, 0); faint(0, bb); fade(one, 0); });
+            end = drawing(bb, end + 100, 28, 320) + 60;
+            api.at(end, function () {
+              drawn(bb, n); tree(bb);
+              api.tile(0, (bb + 1) + ' 棵'); err(errEach[bb]); api.tile(2, num(answers[bb]), '在 3.0 mm 处猜');
+            });
+            end += 700;
+          });
+        },
+        function () {                                 // 5 average them, up to 300
+          reset(['sizes']);
+          faint(0, 3); average(3); api.tile(0, '3 棵'); err(errForest[3]); chart.upto(3); api.tile(2, errAlone.toFixed(2), '一棵树(全部病人)');
+          api.tween(900, 3200, function (u) { forestOf(Math.round(3 + u * (B - 3))); });
+          api.at(4100, function () {
+            forestOf(B);
+            api.control({ label: '自己拖: 用前 ' + B + ' 棵树', min: 1, max: B, value: B, oninput: function (k, say) { forestOf(k); say('自己拖: 用前 ' + k + ' 棵树'); } });
+          });
+        },
+        function () {                                 // 6 a new patient
+          reset(['hist']);
+          faint(B - 40, B); average(B); api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, '—', '3.0 mm 的新病人');
+          fade(probe, 1); fade(rug, 1); answersUpto(0);
+          api.tween(400, 2600, function (u) { var k = Math.max(1, Math.round(u * B)); answersUpto(k); api.tile(2, num(meanAnswer[k]) + ' Gy', '3.0 mm 的新病人'); });
+        },
+        function () {                                 // 7 why the average is better
+          reset(['bars']);
+          faint(B - 40, B); average(B); fade(ghost, 1);
+          note.textContent = '虚线: 一棵树;粗线: 300 棵的平均'; fade(note, 1);
+          api.tile(0, B + ' 棵'); err(errForest[B]); api.tile(2, errAlone.toFixed(2), '一棵树(全部病人)');
+        }
+      ];
+      return function (k) { steps[k](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

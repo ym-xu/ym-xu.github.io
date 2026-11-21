@@ -77,6 +77,10 @@ def main():
                 if 'stage' in (w.get_attribute('class') or ''):
                     # a stepped diagram: every step at its end state, its tiles and its status line
                     w.evaluate("el => el.setAttribute('data-still', '1')")
+                    facts = w.get_attribute('data-facts')
+                    if facts:
+                        import json, re
+                        print(f'  图 {wi + 1} ({name}) 读数:', re.sub(r'(\d+\.\d{3})\d+', r'\1', json.dumps(json.loads(facts), ensure_ascii=False)))
                     w.locator('.stage-again').tap()
                     while True:
                         tiles = ' | '.join(x.inner_text().replace('\n', ' ') for x in w.locator('.stage-tile').all())
