@@ -238,7 +238,7 @@ Python 代码块在页面上是 CodeMirror 6 编辑器(`assets/js/vendor/py-edit
 回车保持缩进、冒号后缩进 4 格,Tab / Shift+Tab 缩进,括号和引号自动补全,Shift+回车运行;手机键盘和中文输入法打出的弯引号,在注释以外自动变成直引号;
 混进中文标点时,报错下面的提示会指出是哪个符号。配色沿用 Chroma 的类名,和静态代码块一样(syntax.css,浅色深色都有)。
 练习框至少 6 行高,起始代码后面留一个空行,点空白处就能接着写。编辑器文件没加载时,退回原来的可编辑 `<pre>`,练习照样能做。
-读写一个代码块的代码一律通过 `pyodide-run.js` 的 `codeOf(card)`(页面上是 `window.pyCodeOf`),页面上已经没有 `pre` 了。R 课(webr-run.js)没有换。
+读写一个代码块的代码一律通过 `pyodide-run.js` 的 `codeOf(card)`(页面上是 `window.pyCodeOf`),页面上已经没有 `pre` 了。编辑器只在两门课里加载(`layouts/partials/scripts.html`);博客文章里的 Python 块和 R 课(webr-run.js)保持原来的可编辑框。
 
 **对照外面的改写稿时查出来的几类错**(2026-11-21,Python 课;写新课和改课时照着查):
 - 讲代码的句子要和旁边的代码逐句对一遍: 说"两个函数"下面是不是真写了两个,说"超过"代码里是不是 `>`,说"在第几节"是不是那一节。
