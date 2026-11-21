@@ -20,11 +20,11 @@ objectives:
 
 第 5 课给每个结果配上了区间。这一课问另一个问题: 两组之间看到的差别,两个量之间看到的关系,**会不会只是碰巧**?
 
-回答这个问题的工具叫假设检验,它的产物就是论文里到处都是的 **P 值**。P 值大概是医学文献里被误读得最多的一个数。这一课不从公式讲起,而是让你先亲手"打乱"一次数据,看看碰巧能造出多大的差别;然后再讲临床研究里最常用的几种检验,各自在什么时候用。
+回答这个问题的工具叫假设检验,它的产物就是论文里到处都是的 **P 值**。P 值大概是医学文献里被误读得最多的一个数。这一课不从公式讲起,而是让你先亲手"打乱"一次分组,看看碰巧能造出多大的差别;然后再讲临床研究里最常用的几种检验,各自在什么时候用。
 
 > 🔬 第 4 节的例题是一张来自已发表论文的四格表: 我们用 Python 算出的 P 值,和论文里印的一模一样。三套计划两两比较再做校正(第 6 节),是我们自己的研究里的固定做法。
 
-**练习怎么做**: 讲解里比的是**体积优化**和阴道 D2cc,练习换成**图形优化**和靶区 D90。
+**练习怎么做**: 讲解里比的是 **Volume** 和阴道 D2cc,练习换成 **Graphical** 和靶区 D90。
 
 ## 0. 准备
 
@@ -60,16 +60,16 @@ print(df.shape, merged.shape)
 **它在算什么**
 
 1. 算出实际的两组平均值之差。
-2. 假设"分组和结果没有关系"。如果真是这样,组别只是贴在患者身上的标签,换一种贴法也无所谓。于是把标签**随机打乱**重新贴一遍。
+2. 假设"分组和结果没有关系"(这叫无效假设, null hypothesis)。如果真是这样,组别只是贴在患者身上的标签,换一种贴法也无所谓。于是把标签**随机打乱**重新贴一遍。
 3. 用打乱后的分组,再算一次两组之差。
-4. 重复几千次,得到"纯粹碰巧时"差别的分布。
-5. 数一数: 有多少次打乱出来的差别,不小于实际的差别。这个比例就是 **P 值**。
+4. 把打乱和再算这两步重复几千次,得到"纯粹碰巧时"差别的分布。
+5. 数一数: 有多少次打乱出来的差别(不管正负),不小于实际的差别。这个比例就是 **P 值**。
 
 所以 P 值回答的问题是: **如果分组和结果其实没有关系,像现在这么大(或者更大)的差别,有多容易碰上?** P 值小,说明"只是碰巧"这个解释很勉强。
 
 <div class="demo">
 
-**设定**: 40 位模拟患者,单纯近距离和外照射加近距离各 20 位。上面一行实心点是前一组,下面一行空心点是后一组,横轴是换方案后的 Δ,蓝色短线是每组的平均值。实际的两组平均值相差 1.79 Gy。
+**设定**: 40 位模拟患者,单纯近距离和外照射加近距离各 20 位。上面一行实心点是单纯近距离组,下面一行空心点是外照射加近距离组,横轴是换方案后的 Δ,蓝色短线是每组的平均值。实际的两组平均值相差 1.79 Gy。
 
 **你做什么**: 点几次"打乱 1 次",看患者怎样被重新分到两行,两组的差变成多少;再点"打乱 200 次"。
 
@@ -132,7 +132,7 @@ print(f"壁厚: 相差 {diff_wall:+.2f} mm,P = {p_wall:.3f}")
 
 ```pycheck
 need("diff_wall", "p_wall")
-if p_wall != p_wall:
+if diff_wall != diff_wall:
     fail('结果是 NaN: 数据里还有缺失值。dropna(subset=["wall_mean"]) 先去掉没有测量的患者。')
 if close(diff_wall, -0.142, 0.002):
     fail('差值的符号反了: 第二处填 "EBRT+VCB",让外照射加近距离组做第一组。')
@@ -199,7 +199,7 @@ BMI 的两个 P 值是 0.25 和 0.31,和打乱分组得到的 0.31 是一回事�
 
 **它在算什么**
 
-1. 每位患者算一个差值: 体积优化减 5 mm。
+1. 每位患者算一个差值: Volume 减 5 mm。
 2. 不管正负,把差值的大小排名次: 差得最小的是第 1 名。
 3. 把正的差值的名次加起来,负的差值的名次也加起来。
 4. 如果换计划其实没有影响,差值应该有正有负、大小相当,两个名次和差不多。两个和差得越远,P 值越小。
@@ -218,13 +218,13 @@ print(f"配对的检验(Wilcoxon 符号秩):        P = {paired.pvalue:.4f}")
 print(f"当成两组不相干的患者(Mann–Whitney): P = {unpaired.pvalue:.2f}")
 ```
 
-同样的 30 位患者、同样的数据: 配对的检验 P = 0.0003,当成两组来比 P = 0.14。前一个结论是"体积优化确实降低了 D2cc",后一个是"没看出差别"。数据没有变,变的只是有没有用上"这两个数来自同一位患者"。
+同样的 30 位患者、同样的数据: 配对的检验 P = 0.0003,当成两组来比 P = 0.14。前一个结论是"Volume 确实降低了 D2cc",后一个是"没看出差别"。数据没有变,变的只是有没有用上"这两个数来自同一位患者"。
 
 全部 200 位患者:
 
 ```python
 res = stats.wilcoxon(df["d2cc_vol"], df["d2cc_5mm"])
-print(f"体积优化 − 5 mm: 中位数 {df['delta_vol'].median():.1f} Gy,P = {res.pvalue:.1g}")
+print(f"Volume − 5 mm: 中位数 {df['delta_vol'].median():.1f} Gy,P = {res.pvalue:.1g}")
 ```
 
 <div class="quiz">
@@ -236,14 +236,14 @@ print(f"体积优化 − 5 mm: 中位数 {df['delta_vol'].median():.1f} Gy,P = {
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的配对检验**
+**练习 2 · 轮到你: Graphical 的配对检验**
 
-用 Wilcoxon 符号秩检验比较图形优化和 5 mm 计划的阴道 D2cc(全部 200 位患者),把 P 值存进 `p_gra`。
+用 Wilcoxon 符号秩检验比较 Graphical 和 5 mm 计划的阴道 D2cc(全部 200 位患者),把 P 值存进 `p_gra`。
 
 ```python
 res_gra = stats.___(df["d2cc_gra"], df[___])
 p_gra = res_gra.pvalue
-print(f"图形优化 − 5 mm: 中位数 {df['delta_gra'].median():.1f} Gy,P = {p_gra:.1g}")
+print(f"Graphical − 5 mm: 中位数 {df['delta_gra'].median():.1f} Gy,P = {p_gra:.1g}")
 ```
 
 ```pycheck
@@ -251,9 +251,9 @@ need("p_gra")
 if 5e-9 < p_gra < 2e-8:
     fail("这是 Mann–Whitney 的结果,把两套计划当成了两组不相干的患者。配对的检验是 stats.wilcoxon。")
 if 3e-18 < p_gra < 1e-17:
-    fail('这是体积优化的结果。第一个参数已经是 d2cc_gra,第二处填 "d2cc_5mm"。')
+    fail('这是 Volume 的结果。第一个参数已经是 d2cc_gra,第二处填 "d2cc_5mm"。')
 if 5e-24 < p_gra < 1.5e-23:
-    ok("对了: 图形优化 − 5 mm 的中位数是 −3.4 Gy,P = 9e-24,写进论文是 P < 0.001。200 位患者里这么一致的下降,不可能是碰巧。")
+    ok("对了: Graphical − 5 mm 的中位数是 −3.4 Gy,P = 9e-24,写进论文是 P < 0.001。200 位患者里这么一致的下降,不可能是碰巧。")
 fail(f"现在 p_gra = {p_gra:.2g},应该在 9e-24 左右: stats.wilcoxon(df[\"d2cc_gra\"], df[\"d2cc_5mm\"])。")
 ```
 
@@ -268,7 +268,7 @@ fail(f"现在 p_gra = {p_gra:.2g},应该在 9e-24 左右: stats.wilcoxon(df[\"d2
 ```python
 res_gra = stats.wilcoxon(df["d2cc_gra"], df["d2cc_5mm"])
 p_gra = res_gra.pvalue
-print(f"图形优化 − 5 mm: 中位数 {df['delta_gra'].median():.1f} Gy,P = {p_gra:.1g}")
+print(f"Graphical − 5 mm: 中位数 {df['delta_gra'].median():.1f} Gy,P = {p_gra:.1g}")
 ```
 
 </details>
@@ -326,7 +326,7 @@ print(f"Fisher 精确检验:          P = {stats.fisher_exact(table).pvalue:.3f}
 - `chi2_contingency` 默认对四格表做"连续性校正"(Yates 校正),结果偏保守;`correction=False` 是不校正的卡方检验。
 - **Fisher 精确检验**(Fisher's exact test)不靠近似,直接算。只要有一格的期望人数小于 5,卡方的近似就不可靠,这时用 Fisher。这张表期望人数最小的一格是 14.2,两种都可以。
 
-这个例子的教训不是"该选哪一个",而是: **P 值在 0.05 附近时,不要让这条线替你下结论**。18% 对 35.7% 这个差别本身,比 P 值是 0.055 还是 0.041 重要;120 位患者、34 个事件,这个差别估计得还不够准。应该报告的是两个比例、它们的差和区间,再给出 P 值,让读者自己判断。
+这个例子的教训不是"该选哪一个",而是: **P 值在 0.05 附近时,不要让这条线替你下结论**。18% 对 35.7% 这个差别本身,比 P 值是 0.055 还是 0.041 重要;120 位患者、34 个事件,这个差别估计得还不够准。应该报告的是两个比例、它们的差和这个差的区间,再给出 P 值,让读者自己判断。
 
 <div class="exercise">
 
@@ -387,7 +387,7 @@ rho = stats.spearmanr(d["wall_mean"], d["delta_vol"])
 print(f"Pearson r = {r.statistic:.2f},Spearman ρ = {rho.statistic:.2f}(P = {rho.pvalue:.1g})")
 ```
 
-两个都在 0.6 左右: 壁越厚,体积优化后 D2cc 降得越少。这里的 P 值检验的是"相关系数其实是 0"。
+两个都在 0.6 左右: 壁越厚,Volume 后 D2cc 降得越少。这里的 P 值检验的是"相关系数其实是 0"。
 
 两者的区别在有极端值时才显出来。假设队列里多了一位很特殊的患者: 壁厚 15 mm,Δ 却是 −9 Gy。
 
@@ -402,13 +402,13 @@ print(f"加上这一位: Pearson r = {stats.pearsonr(x_out, y_out).statistic:.2f
 
 真实的数据里就可能有这样的患者。这是我们自己的研究用 Spearman 的原因,也是第 4 课说"先画散点图"的原因: 相关系数是一个数,藏得住一位特殊的患者,图藏不住。
 
-**相关不等于因果**。壁厚和 Δ 相关,可以解释成"壁薄的患者,靶区离施源器近,优化的余地大";但相关系数本身不能证明这个解释。两个量都受第三个量影响时,它们也会相关。
+**相关不等于因果**。壁厚和 Δ 相关,可以解释成"壁薄的患者,靶区离施源器近,调整的余地大";但相关系数本身不能证明这个解释。两个量都受第三个量影响时,它们也会相关。
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 壁厚和图形优化的 Δ**
+**练习 4 · 轮到你: 壁厚和 Graphical 的 Δ**
 
-算平均壁厚和图形优化的 Δ(`delta_gra`)的 Spearman 相关系数,把系数存进 `rho_gra`,P 值存进 `p_rho`。用上面去掉了缺失值的 `d`。
+算平均壁厚和 Graphical 的 Δ(`delta_gra`)的 Spearman 相关系数,把系数存进 `rho_gra`,P 值存进 `p_rho`。用上面去掉了缺失值的 `d`。
 
 ```python
 res_rho = stats.___(d["wall_mean"], d[___])
@@ -423,9 +423,9 @@ if rho_gra != rho_gra:
 if close(rho_gra, 0.5230, 0.0005):
     fail("这是 Pearson 相关系数。题目要的是 Spearman: stats.spearmanr。")
 if close(rho_gra, 0.5900, 0.0005):
-    fail('这是体积优化的结果: 第二处填 "delta_gra"。')
+    fail('这是 Volume 的结果: 第二处填 "delta_gra"。')
 if close(rho_gra, 0.5253, 0.0005):
-    ok("对了: ρ = 0.53,P = 3e-15。图形优化也一样: 壁越厚,D2cc 降得越少。相关比体积优化的 0.59 弱一点,因为图形优化的 Δ 本身散得更开。")
+    ok("对了: ρ = 0.53,P = 3e-15。Graphical 也一样: 壁越厚,D2cc 降得越少。相关比 Volume 的 0.59 弱一点,因为 Graphical 的 Δ 本身散得更开。")
 fail(f"现在 rho_gra = {rho_gra:.3f},应该是 0.525。")
 ```
 
@@ -457,13 +457,13 @@ p_values = np.array([stats.spearmanr(rng.normal(size=len(df)), df["delta_vol"]).
 print("20 个随机变量里,P < 0.05 的有", (p_values < 0.05).sum(), "个;最小的 P =", p_values.min().round(3))
 ```
 
-20 个纯粹的随机数里,有 1 个"和 Δ 显著相关",P = 0.027。这不是运气不好,而是必然: 每个检验有 5% 的机会碰巧过线,做 20 个,平均就有 1 个过线。如果一项研究测了 20 个指标,只报告那个 P = 0.027 的,读者就被骗了。这个问题叫**多重比较**(multiple comparisons)。
+20 个纯粹的随机数里,有 1 个"和 Δ 显著相关",P = 0.027。这不是运气不好,而是意料之中: 每个检验有 5% 的机会碰巧过线,做 20 个,平均就有 1 个过线。如果一项研究测了 20 个指标,只报告那个 P = 0.027 的,读者就被骗了。这个问题叫**多重比较**(multiple comparisons)。
 
 <div class="frame">
 
 **背景**: 一项分析里做了不止一个检验。检验越多,至少有一个碰巧过线的机会越大。
 
-**目标**: 把"整组检验里至少错一个"的机会控制在 5%。
+**目标**: 把"整组检验里至少有一个碰巧过线"的机会控制在 5% 以内。
 
 **做法**: **Holm 校正**: 把 P 值按从小到大的顺序放大,最小的放大得最多。
 
@@ -476,7 +476,7 @@ print("20 个随机变量里,P < 0.05 的有", (p_values < 0.05).sum(), "个;最
 3. 保证顺序不乱: 如果某个校正后的值比它前面的还小,就取前面那个值。超过 1 的记成 1。
 4. 校正后的 P 值再和 0.05 比。
 
-最简单的校正(Bonferroni)是把每个 P 值都乘以 m。Holm 只对最小的那个这么严,后面的逐步放松,所以不会更差,而且同样控制住了错误。
+最简单的校正(Bonferroni)是把每个 P 值都乘以 m。Holm 只对最小的那个这么严,后面的逐步放松,所以过线的结果不会比 Bonferroni 少,而且同样控制住了错误。
 
 ```python
 def holm(p_values):
@@ -495,7 +495,7 @@ print(holm([0.012, 0.030, 0.045]))
 
 三个 P 值本来都小于 0.05。校正以后: 0.012 × 3 = 0.036,还过线;0.030 × 2 = 0.06 和 0.045 × 1(不能比前一个小,所以也是 0.06)都不过线了。
 
-什么时候要校正: 同一个问题用了好几个检验来回答时。这门课的主线就是一个例子: 三套计划两两比较,是三个检验(体积优化 − 5 mm、图形优化 − 5 mm、图形优化 − 体积优化)。我们自己的研究里,这三个比较总是一起报告,P 值做 Holm 校正。
+什么时候要校正: 同一个问题用了好几个检验来回答时。这门课的主线就是一个例子: 三套计划两两比较,是三个检验(Volume − 5 mm、Graphical − 5 mm、Graphical − Volume)。我们自己的研究里,这三个比较总是一起报告,P 值做 Holm 校正。
 
 另一种常用的校正叫 **Benjamini–Hochberg**(BH),控制的是"过线的结果里有多少是假的"(错误发现率, false discovery rate),比 Holm 宽松,适合一次筛很多个指标的探索性分析。SciPy 里有现成的: `stats.false_discovery_control(p_values)`。
 
@@ -530,7 +530,7 @@ if not all(abs(a / b - 1) < 1e-4 for a, b in zip(p_raw, want_raw)):
 want_holm = [2 * want_raw[0], 3 * want_raw[1], want_raw[2]]
 if not all(abs(a / b - 1) < 1e-4 for a, b in zip(p_holm, want_holm)):
     fail("p_holm 不对: 把三个原始的 P 值交给 holm,也就是 holm(p_raw)。")
-ok("对了。三个比较校正后仍然远小于 0.05: 最小的 P 乘了 3,第二小的乘了 2,最大的没有变。三套计划的 D90 两两都不同: 体积优化比 5 mm 低 1.45 Gy,图形优化比 5 mm 低 2.45 Gy,图形优化比体积优化又低 1.1 Gy(都是中位数)。")
+ok("对了。三个比较校正后仍然远小于 0.05: 最小的 P 乘了 3,第二小的乘了 2,最大的没有变。三套计划的 D90 两两都不同: Volume 比 5 mm 低 1.45 Gy,Graphical 比 5 mm 低 2.45 Gy,Graphical 比 Volume 又低 1.1 Gy(都是中位数)。")
 ```
 
 <details><summary>提示</summary>
@@ -561,7 +561,7 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 - **P 值不是"结论正确的概率"**,也不是"没有差别的概率"(第 1 节的想一想)。
 - **统计上显著,不等于临床上重要**。D2cc 降低 0.3 Gy 就算 P < 0.001,也改变不了任何治疗决定。多大的差别才有意义,是临床问题,要在看数据之前想好。
 
-所以报告一个比较时,三样东西写在一起: **估计值、95% 区间、P 值**,比如"中位数 −2.0 Gy(95% CI −2.4 到 −1.5;*P* < 0.001)"。
+所以报告一个比较时,三样东西写在一起: **估计值、95% 区间、P 值**,比如"差值的中位数 −2.0 Gy(95% CI −2.4 到 −1.5;*P* < 0.001)"。
 
 <div class="quiz">
 <p><b>想一想</b>: 一项只有 24 位患者的研究比较两种计划方式的副作用,P = 0.40。作者写道: "两种方式的副作用没有差别。"这句话有什么问题?</p>
@@ -586,8 +586,8 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 
 ## 小结
 
-- P 值: 如果其实没有关系,像现在这么大的差别有多容易碰上。把分组打乱几千次,数一数就知道。
-- 两组不同的患者用 Mann–Whitney(或 t 检验);同一批患者比两次用 Wilcoxon 符号秩(或配对 t 检验)。配对的数据用了不配对的检验,会看不出本来存在的差别。
+- P 值: 如果其实没有关系,像现在这么大(或者更大)的差别有多容易碰上。把分组打乱几千次,数一数就知道。
+- 两组不同的患者用 Mann–Whitney(或 t 检验);同一批患者比两次用 Wilcoxon 符号秩(或配对 t 检验)。配对的数据用了不配对的检验,可能看不出本来存在的差别。
 - 四格表用卡方检验,有的格期望人数小于 5 时用 Fisher。
 - Spearman 相关只看名次,不怕极端值;相关不等于因果。
 - 同一个问题做了几个检验,就要校正(Holm)。
@@ -619,13 +619,13 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 
 <div class="paper">
 
-方法里写清楚每种比较用了什么检验、是不是双侧、有没有校正:
+方法里写清楚每种比较用了什么检验、是不是双侧(差别不管正负都算,这一课用的都是双侧)、有没有校正:
 
 > Paired comparisons between plans used the Wilcoxon signed-rank test, with Holm correction for the three pairwise comparisons. Independent groups were compared with the Mann–Whitney U test and categorical variables with the chi-square or Fisher's exact test. Associations were assessed with Spearman's rank correlation. All tests were two-sided; *P* < 0.05 was considered statistically significant.
 
 结果里写估计值、区间和确切的 P 值:
 
-> Vaginal D2cc was lower with volume-based optimisation than with the 5 mm prescription (median difference −2.0 Gy, 95% CI −2.4 to −1.5; *P* < 0.001).
+> Vaginal D2cc was lower with the Volume plan than with the 5 mm prescription (median difference −2.0 Gy, 95% CI −2.4 to −1.5; *P* < 0.001).
 
 **审稿人可能问**: 做了多少个检验?有没有做多重比较的校正?
 
@@ -646,8 +646,7 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 | 报错或现象 | 原因和办法 |
 |---|---|
 | 相关系数或 P 值是 NaN | 数据里有缺失值。先 `dropna(subset=[...])`,并记下用了多少位患者。 |
-| `ValueError: The samples x and y must have the same length` | 配对的检验要求两列一样长、一一对应。检查两列是不是来自同一张表的同一批患者。 |
-| `wilcoxon` 提示 `zero_method` 或 "exact p-value" 之类的警告 | 有些患者的差值正好是 0,或者有相同的名次。通常不影响结论;患者很少时在论文里说明用的是哪种处理。 |
+| `ValueError: Array shapes are incompatible for broadcasting.` | 配对的检验要求两列一样长、一一对应。检查两列是不是来自同一张表的同一批患者。 |
 | P 值显示成 `1.6e-07` | 科学计数法: 小数点往左移 7 位。论文里写 *P* < 0.001。 |
 | 卡方检验的 P 值和别人的软件不一样 | 检查有没有做连续性校正(`correction=True` 是默认)。 |
 
@@ -655,7 +654,7 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 
 - SciPy 文档: [Statistical functions (scipy.stats)](https://docs.scipy.org/doc/scipy/reference/stats.html)。本课用到的检验都在这一页。
 - Wasserstein RL, Lazar NA. [The ASA statement on p-values: context, process, and purpose](https://doi.org/10.1080/00031305.2016.1154108). *The American Statistician* 2016;70:129–133。美国统计学会关于 P 值的六条声明,第 7 节的内容大多出自这里。
-- Altman DG, Bland JM. [Absence of evidence is not evidence of absence](https://www.bmj.com/content/311/7003/485). *BMJ* 1995;311:485。
+- Altman DG, Bland JM. [Absence of evidence is not evidence of absence](https://www.bmj.com/content/311/7003/485). *BMJ* 1995;311:485。一页的短文,讲的就是"没有检出差别"不等于"没有差别"。
 
 {{< practice >}}
 

@@ -17,7 +17,7 @@ objectives:
   - "用自己的数据重复这套流程"
 ---
 
-前六课都在网页里,用的是准备好的数据。真正的研究要用你自己的数据,而患者的数据不能传到任何网页上。所以最后一课做三件事: 在你自己的电脑上装好 Python;说清楚患者数据的规矩;然后把一份 Excel 从头到尾做一遍,做出 Table 1、主要结果、一张图,甚至结果部分的句子。
+前六课都在网页里,用的是准备好的数据。真正的研究要用你自己的数据,而患者的数据不能传到任何网页上。所以最后一课做三件事: 在你自己的电脑上装好 Python;说清楚患者数据的规矩;然后把一份 Excel 从头到尾做一遍,做出 Table 1、主要结果、一张图,甚至论文结果部分的句子。
 
 这一课的分析没有新的方法,用的全是前六课学过的东西。新的是把它们**连起来**,以及一条贯穿始终的原则: 从原始数据到论文里的每一个数,中间的每一步都写在代码里,随时可以重新运行一遍。
 
@@ -36,7 +36,7 @@ objectives:
 - Windows: 在开始菜单里搜索 "PowerShell",打开它。
 - macOS: 打开"终端"(在"应用程序 → 实用工具"里)。
 
-**第三步: 安装这门课用过的包**。在终端里输入下面这一行,按回车,等它下载完:
+**第三步: 安装这门课用过的包**。在终端里输入下面和你的系统对应的那一行(只输冒号后面的命令),按回车,等它下载完:
 
 ```text
 Windows:   py -m pip install jupyterlab pandas matplotlib scipy openpyxl
@@ -52,13 +52,13 @@ Windows:   py -m jupyterlab
 macOS:     python3 -m jupyterlab
 ```
 
-也可以直接输入 `jupyter lab`,效果一样。浏览器会自动打开 JupyterLab。它看起来像网页,其实完全运行在你自己的电脑上,不联网也能用,数据不会离开这台电脑。用完以后,关掉浏览器的页面,再回到终端按 Ctrl + C 结束它。
+多数电脑上也可以直接输入 `jupyter lab`,效果一样;提示找不到这个命令的话,就用上面那一行。浏览器会自动打开 JupyterLab。它看起来像网页,其实完全运行在你自己的电脑上,不联网也能用,数据不会离开这台电脑。用完以后,关掉浏览器的页面,再回到终端按 Ctrl + C 结束它(它会先问一句要不要关闭,输入 y 再按回车)。
 
-**第五步: 新建一个笔记本**(notebook)。在 JupyterLab 左边的文件列表里找到你的项目文件夹(下一节),点 "Python 3 (ipykernel)" 新建一个笔记本。笔记本由一个个格子(cell)组成,和这门课网页上的代码块一样: 在格子里写代码,按 Shift + 回车运行,结果显示在下面。前面的格子里定义的名字,后面的格子可以接着用。笔记本存成 `.ipynb` 文件。
+**第五步: 新建一个笔记本**(notebook)。在 JupyterLab 左边的文件列表里进入你的项目文件夹(见下一节),点 Notebook 一栏里的 "Python 3 (ipykernel)" 新建一个笔记本。笔记本由一个个格子(cell)组成,和这门课网页上的代码块一样: 在格子里写代码,按 Shift + 回车运行,结果显示在下面。前面的格子里定义的名字,后面的格子可以接着用。笔记本存成 `.ipynb` 文件。
 
 试一下: 在第一个格子里输入 `import pandas as pd` 和 `print(pd.__version__)`,运行。能显示出版本号,就装好了。
 
-如果你的单位已经装了 Anaconda,不用再装一遍: 它自带 Python、这些包和 JupyterLab,从开始菜单里打开 JupyterLab 就行。
+如果你的单位已经装了 Anaconda,不用再装一遍: 它自带 Python、这些包和 JupyterLab,打开 Anaconda Navigator,在里面启动 JupyterLab 就行。
 
 ## 2. 一个项目的文件夹
 
@@ -73,7 +73,7 @@ vcb-practice/
 
 规矩只有一条: **箭头是单向的**。代码读 `data/` 里的原始数据,把结果写进 `outputs/`;原始数据永远不被改动,`outputs/` 里的东西永远不手工修改。这样任何一个数出了问题,都能顺着代码查回去;数据更新了,重新运行一遍,所有的表和图就都更新了。
 
-练习用的文件在这里: [cohort.xlsx](/python/cohort.xlsx)(模拟患者,可以放心下载)。下载以后放进 `data/` 文件夹。它有两张工作表: `patients`(200 位患者的基线和三套计划的剂量)和 `followup`(随访)。
+练习用的文件在这里: [cohort.xlsx](/python/cohort.xlsx)(模拟患者,可以放心下载)。下载以后放进 `data/` 文件夹。它有两张工作表(sheet): `patients`(200 位患者的基线和三套计划的剂量)和 `followup`(随访)。
 
 ## 3. 患者数据的规矩
 
@@ -104,7 +104,10 @@ vcb-practice/
 
 ```python
 #| norun
+import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from scipy import stats
 
 df = pd.read_excel("data/cohort.xlsx", sheet_name="patients")
 fu = pd.read_excel("data/cohort.xlsx", sheet_name="followup")
@@ -136,7 +139,7 @@ df[["age", "height_cm", "weight_kg", "diameter", "n_fx"]].describe().loc[["min",
 - **编号有没有重复**: 一位患者被录了两次,是最常见的错误之一。
 - **缺了多少**: 三列壁厚各缺 4 个。`[lambda s: s > 0]` 只留下缺失数大于 0 的列。
 - **分类变量有哪些取值**: 有没有同一类写成两种样子的。
-- **数值的范围合不合理**: 年龄 40 到 87 岁,身高 143 到 175 cm,施源器直径 25 到 35 mm,近距离 2 或 3 次,都在合理的范围里。
+- **数值的范围合不合理**: 年龄 40 到 87 岁,身高 143 到 175 cm,体重 43.7 到 145.2 kg(最重的那位第 5 课见过),施源器直径 25 到 35 mm,近距离 2 或 3 次,都在合理的范围里。
 
 ### 4.2 清理和合并
 
@@ -150,7 +153,7 @@ data = df.merge(fu, on="id", how="left", validate="one_to_one")
 print(data.shape, "|", data["tox"].isna().sum(), "位患者没有随访记录")
 ```
 
-`validate="one_to_one"` 是给合并上的保险: 如果哪一张表里同一个编号出现了两次,它会直接报错,而不是悄悄把行复制一份(第 3 课)。合并后还是 200 行,12 位患者没有随访记录。
+`validate="one_to_one"` 是给合并加的一道保险: 如果哪一张表里同一个编号出现了两次,它会直接报错,而不是悄悄把行复制一份(第 3 课)。合并后还是 200 行,12 位患者没有随访记录。
 
 清理的每一步都是一行代码,旁边写着为什么。半年以后审稿人问"那 4 位患者是怎么处理的",答案就在这里。
 
@@ -158,7 +161,7 @@ print(data.shape, "|", data["tox"].isna().sum(), "位患者没有随访记录")
 
 **练习 1 · 轮到你: 数一数能用的患者**
 
-后面要分析壁厚和副作用的关系,只能用**既有壁厚测量、又有随访记录**的患者。有几位?存进 `n_both`。
+如果要分析壁厚和副作用的关系,只能用**既有壁厚测量、又有随访记录**的患者。有几位?存进 `n_both`。
 
 ```python
 has_wall = data["wall_mean"].notna()
@@ -199,7 +202,7 @@ print(f"有壁厚测量 {has_wall.sum()} 位,有随访 {has_fu.sum()} 位,两样
 
 ### 4.3 把前几课写过的函数拿过来
 
-前几课写过四个小函数。在网页里,每一课的代码是分开的,所以这里再写一遍;在自己的电脑上,可以把它们存进一个文件 `my_functions.py`,以后每个项目里写一句 `from my_functions import median_iqr, boot_ci` 就能用,和导入别人的包是一回事。
+前几课写过四个小函数。在网页里,每一课的代码是分开的,所以这里再写一遍;在自己的电脑上,可以把它们存进一个文件 `my_functions.py`,以后每个项目里放一份(和笔记本在同一个文件夹),写一句 `from my_functions import median_iqr, boot_ci` 就能用,和导入别人的包是一回事。这个文件的开头要写上 `import numpy as np`,因为函数里用到了 `np`。
 
 ```python
 def median_iqr(x, digits=1):
@@ -286,7 +289,7 @@ results
 
 `f"{metric}_{a}"` 用 f 字符串拼出列名: `metric` 是 `"d2cc"`、`a` 是 `"vol"` 时,拼出来就是 `"d2cc_vol"`。每一对算好以后是一个字典,攒成一张表;`set_index("comparison")` 把比较的名字当成行名。
 
-读这张表: 体积优化比 5 mm 低 2.0 Gy(95% CI −2.4 到 −1.5),图形优化比 5 mm 低 3.4 Gy(−4.3 到 −2.8),图形优化比体积优化又低 1.45 Gy(−2.1 到 −0.9)。三个区间都不包含 0,校正后的 P 值都远小于 0.001。
+读这张表: Volume 比 5 mm 低 2.0 Gy(95% CI −2.4 到 −1.5),Graphical 比 5 mm 低 3.4 Gy(−4.3 到 −2.8),Graphical 比 Volume 又低 1.45 Gy(−2.1 到 −0.9)。三个区间都不包含 0,校正后的 P 值都远小于 0.001。
 
 <div class="exercise">
 
@@ -308,7 +311,7 @@ except Exception:
 if close(med[0], -2.0, 0.01):
     fail('这是 D2cc 的结果。指标的名字填 "d90"。')
 if close(med[0], -1.45, 0.01) and close(med[1], -2.45, 0.01) and close(med[2], -1.10, 0.01):
-    ok("对了: 靶区 D90 也跟着降了,体积优化比 5 mm 低 1.45 Gy(−1.8 到 −1.15),图形优化低 2.45 Gy(−2.7 到 −1.85)。阴道的剂量降下来是好处,靶区的剂量降下来是代价: 这就是这类研究要权衡的两头。换一个指标只改了一个词,这是把分析写成函数的好处。")
+    ok("对了: 靶区 D90 也跟着降了,Volume 比 5 mm 低 1.45 Gy(−1.8 到 −1.15),Graphical 低 2.45 Gy(−2.7 到 −1.85)。阴道的剂量降下来是好处,靶区的剂量降下来是代价: 这就是这类研究要权衡的两头。换一个指标只改了一个词,这是把分析写成函数的好处。")
 fail(f'现在三个中位数是 {med},应该是 −1.45、−2.45、−1.10。指标的名字填 "d90"(带引号)。')
 ```
 
@@ -346,7 +349,7 @@ for plan, name in [("vol", "Volume"), ("gra", "Graphical")]:
 
 **练习 3 · 轮到你: D90 的变化和壁厚**
 
-图形优化计划的 D90 的变化(`d90_gra` 减 `d90_5mm`)和平均壁厚的 Spearman 相关系数是多少?存进 `rho_d90`。
+Graphical 计划的 D90 的变化(`d90_gra` 减 `d90_5mm`)和平均壁厚的 Spearman 相关系数是多少?存进 `rho_d90`。
 
 ```python
 res_d90 = stats.spearmanr(d["wall_mean"], d[___] - d[___])
@@ -361,7 +364,7 @@ if rho_d90 != rho_d90:
 if close(rho_d90, -0.6373, 0.001):
     fail("大小对了,符号反了: 变化是新计划减 5 mm,d90_gra 在前。")
 if close(rho_d90, 0.6995, 0.001):
-    fail('这是体积优化的结果: 第一处填 "d90_gra"。')
+    fail('这是 Volume 的结果: 第一处填 "d90_gra"。')
 if close(rho_d90, 0.6373, 0.001):
     ok("对了: ρ = 0.64(n = 196)。壁越厚,靶区 D90 降得越少,比 D2cc 的相关(0.53)还强一些。")
 fail(f"现在 rho_d90 = {rho_d90:.3f},应该是 0.637。")
@@ -413,7 +416,7 @@ print(pd.read_csv("results_d2cc.csv", index_col=0)[["median", "low", "high"]])
 
 **练习 4 · 轮到你: D90 的图**
 
-画图形优化的 D90 变化和平均壁厚的散点图(两种治疗方式不同颜色),存成 300 dpi 的 `figure_d90.png`。
+画 Graphical 的 D90 变化和平均壁厚的散点图(两种治疗方式不同颜色),存成 300 dpi 的 `figure_d90.png`。
 
 ```python
 fig, ax = plt.subplots(figsize=(3.5, 2.8))
@@ -435,7 +438,7 @@ if not os.path.exists("figure_d90.png"):
 xy = np.vstack([np.asarray(c.get_offsets()) for c in ax.collections])
 want = (d["d90_gra"] - d["d90_5mm"]).sum()
 if close(np.nansum(xy[:, 1]), (d["d90_vol"] - d["d90_5mm"]).sum(), 0.5):
-    fail('纵轴画的是体积优化: 第一处填 "d90_gra"。')
+    fail('纵轴画的是 Volume: 第一处填 "d90_gra"。')
 if not close(np.nansum(xy[:, 1]), want, 0.5):
     fail('纵轴应该是 d90_gra 减 d90_5mm: 第一处填 "d90_gra"。')
 ok("对了。图和文件都有了: 196 位患者,壁越厚,D90 降得越少。")
@@ -474,7 +477,7 @@ def p_text(p):
     return "< 0.001" if p < 0.001 else f"= {p:.3f}"
 
 r = results.loc["Volume − 5 mm"]
-sentence = (f"Vaginal D2cc was lower with volume-based optimisation than with the 5 mm prescription "
+sentence = (f"Vaginal D2cc was lower with the Volume plan than with the 5 mm prescription "
             f"(median difference {r['median']:.2f} Gy, 95% CI {r['low']:.2f} to {r['high']:.2f}; P {p_text(r['p_holm'])}).")
 print(sentence)
 ```
@@ -485,11 +488,11 @@ print(sentence)
 
 **练习 5 · 轮到你: D90 的句子**
 
-用练习 2 的 `results_d90`,写出图形优化和 5 mm 比较的那一句,存进 `sentence_d90`。
+用练习 2 的 `results_d90`,写出 Graphical 和 5 mm 比较的那一句,存进 `sentence_d90`。
 
 ```python
 r = results_d90.loc[___]
-sentence_d90 = (f"CTV D90 was lower with graphical optimisation than with the 5 mm prescription "
+sentence_d90 = (f"CTV D90 was lower with the Graphical plan than with the 5 mm prescription "
                 f"(median difference {r['median']:.2f} Gy, 95% CI {r[___]:.2f} to {r['high']:.2f}; P {p_text(r['p_holm'])}).")
 print(sentence_d90)
 ```
@@ -498,7 +501,7 @@ print(sentence_d90)
 need("sentence_d90")
 s = str(sentence_d90)
 if "-1.45" in s:
-    fail('这是体积优化那一行。第一处填 "Graphical − 5 mm"。')
+    fail('这是 Volume 那一行。第一处填 "Graphical − 5 mm"。')
 if "-2.45" in s and "-2.70" in s and "-1.85" in s and "< 0.001" in s:
     ok("对了: median difference −2.45 Gy, 95% CI −2.70 to −1.85; P < 0.001。从原始的表,到 Table 1、结果、图、正文里的句子,全部由代码生成。数据如果更新,重新运行一遍,这些就都更新了。Python 课到这里结束。")
 fail('句子里应该有 -2.45、-2.70、-1.85 和 < 0.001。第一处填行名 "Graphical − 5 mm",第二处填 "low"。')
@@ -514,7 +517,7 @@ fail('句子里应该有 -2.45、-2.70、-1.85 和 < 0.001。第一处填行名 
 
 ```python
 r = results_d90.loc["Graphical − 5 mm"]
-sentence_d90 = (f"CTV D90 was lower with graphical optimisation than with the 5 mm prescription "
+sentence_d90 = (f"CTV D90 was lower with the Graphical plan than with the 5 mm prescription "
                 f"(median difference {r['median']:.2f} Gy, 95% CI {r['low']:.2f} to {r['high']:.2f}; P {p_text(r['p_holm'])}).")
 print(sentence_d90)
 ```
@@ -525,15 +528,15 @@ print(sentence_d90)
 
 ## 5. 用你自己的数据
 
-如果[主题练习](/python/practice/)还没有做完,先把它做完: 那是一份陌生的数据(宫颈癌近距离放疗的剂量审计),没有填空,六部分正好对应前六课。
+如果[主题练习](/python/practice/)还没有做完,先把它做完: 那是一份陌生的数据(宫颈癌近距离放疗的剂量审计),基本不给填空,六部分正好对应前六课。
 
 然后是真正的毕业任务: 把上面的流程用在一份你自己的数据上。照这张清单做:
 
-1. **建文件夹**: `data/`、`outputs/` 和一个笔记本。原始的表放进 `data/`,先确认里面没有姓名和病历号。
+1. **建文件夹**: `data/`、`outputs/` 和一个笔记本。原始的表放进 `data/` 之前,先确认里面没有姓名和病历号。
 2. **读入和检查**: 行数和列数对不对;每列的类型;编号有没有重复;每列缺了多少;分类变量有哪些取值;数值的范围合不合理。
 3. **清理**: 每一处改动写一行代码,旁边写上原因。不在 Excel 里手工改。
 4. **Table 1**: 先想好按什么分组、列哪些变量,连续变量用中位数(四分位间距)还是均值(标准差)。
-5. **主要结果**: 一个事先想好的问题,对应一个估计值、一个 95% 区间、一个 P 值。比较了几次,就校正几次。
+5. **主要结果**: 一个事先想好的问题,对应一个估计值、一个 95% 区间、一个 P 值。比较了几次,就按几次来校正。
 6. **图**: 一张图讲一件事,能画出每位患者就画出来,轴标签带单位。
 7. **存结果**: 表存成文件,图存成 300 dpi 的文件,正文里的数由代码填。
 8. **从头运行一遍**: 在 JupyterLab 的菜单里选 "Kernel → Restart Kernel and Run All Cells"。全部重新运行一遍,结果不变,才算做完。
@@ -600,4 +603,4 @@ print(sentence_d90)
 - [JupyterLab 的官方文档](https://jupyterlab.readthedocs.io/en/stable/): 界面和快捷键的说明。
 - Wilson G, et al. [Good enough practices in scientific computing](https://doi.org/10.1371/journal.pcbi.1005510). *PLoS Computational Biology* 2017;13:e1005510。给不是程序员的研究者的一份实用清单: 数据怎么放、代码怎么写、项目怎么组织。
 
-**接下来**: Python 课到这里结束。你已经能把一份数据从 Excel 做到 Table 1、主要结果和图。这些都是在**描述**已经发生的事。下一步是**预测**: 一位新患者,还没有做优化的计划,能不能先知道换了计划会怎样?这是下一门课[使用机器学习方法进行放疗临床预测](/stat-ml/)(统计机器学习课)要讲的。
+**接下来**: Python 课到这里结束。你已经能把一份数据从 Excel 做到 Table 1、主要结果和图。这些都是在**描述**已经发生的事。下一步是**预测**: 一位新患者,还没有做 Volume 或 Graphical 计划,能不能先知道换了计划会怎样?这是下一门课[使用机器学习方法进行放疗临床预测](/stat-ml/)(统计机器学习课)要讲的。

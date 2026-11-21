@@ -25,7 +25,7 @@ Python 里处理表格的包叫 **pandas**。这一课用它读入课程的模�
 
 > 🔬 这一课的第 6 节,把一篇已发表论文里的一张小表敲进来算一算。除此以外,表里的患者都是模拟的。
 
-**练习怎么做**: 讲解里算的是**体积优化**计划(`vol`)和阴道 D2cc。练习换成**图形优化**计划(`gra`): 每讲完一步,你对图形优化再做一遍。
+**练习怎么做**: 讲解里算的是 **Volume** 计划(`vol`)和阴道 D2cc。练习换成 **Graphical** 计划(`gra`): 每讲完一步,你对 Graphical 再做一遍。
 
 ## 1. 把表读进来
 
@@ -178,7 +178,7 @@ df["delta_vol"] = df["d2cc_vol"] - df["d2cc_5mm"]
 df[["id", "bmi", "d2cc_5mm", "d2cc_vol", "delta_vol"]].round(1).head()
 ```
 
-`bmi` 就是第 1 课练习 1 的公式,这次一下算了 200 位患者。`delta_vol` 是换成体积优化计划后,阴道 D2cc 比 5 mm 计划变了多少: 负数表示降低。第一位患者从 76.9 降到 72.9 Gy,Δ = −4.0 Gy。这一列后面每一课都会用到。
+`bmi` 就是第 1 课练习 1 的公式,这次一下算了 200 位患者。`delta_vol` 是换成 Volume 计划后,阴道 D2cc 比 5 mm 计划变了多少: 负数表示降低。第一位患者从 76.9 降到 72.9 Gy,Δ = −4.0 Gy。这一列后面每一课都会用到。
 
 比较的结果也可以存成一列:
 
@@ -203,14 +203,14 @@ df.sort_values("delta_vol").head(3)[["id", "wall_mean", "d2cc_5mm", "d2cc_vol", 
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的剂量差**
+**练习 2 · 轮到你: Graphical 的剂量差**
 
-加一列 `delta_gra`: 图形优化计划的阴道 D2cc 减 5 mm 计划的。再算出这一列的中位数,存进 `median_gra`(中位数的函数是 `median`)。
+加一列 `delta_gra`: Graphical 计划的阴道 D2cc 减 5 mm 计划的。再算出这一列的中位数,存进 `median_gra`(中位数的函数是 `median`)。
 
 ```python
 df["delta_gra"] = df[___] - df[___]
 median_gra = df["delta_gra"].___()
-print(f"图形优化: Δ 的中位数 {median_gra:.1f} Gy")
+print(f"Graphical: Δ 的中位数 {median_gra:.1f} Gy")
 ```
 
 ```pycheck
@@ -218,11 +218,11 @@ need("median_gra")
 if "delta_gra" not in df.columns:
     fail("表里还没有 delta_gra 这一列。")
 if close(median_gra, -3.4, 0.01):
-    ok("对了: 换成图形优化,阴道 D2cc 的变化中位数是 −3.4 Gy,比体积优化的 −2.0 Gy 降得多。")
+    ok("对了: 换成 Graphical,阴道 D2cc 的变化中位数是 −3.4 Gy,比 Volume 的 −2.0 Gy 降得多。")
 if close(median_gra, 3.4, 0.01):
-    fail("大小对了,符号反了: 要用图形优化减 5 mm,降低才是负数。")
+    fail("大小对了,符号反了: 要用 Graphical 减 5 mm,降低才是负数。")
 if close(median_gra, -2.0, 0.01):
-    fail("这是体积优化的结果: 第一处要填 \"d2cc_gra\"。")
+    fail("这是 Volume 的结果: 第一处要填 \"d2cc_gra\"。")
 if close(median_gra, -3.55, 0.01):
     fail("这是平均数。题目要的是中位数: median()。")
 fail(f"现在 median_gra = {median_gra:.2f},应该是 −3.4。")
@@ -239,7 +239,7 @@ fail(f"现在 median_gra = {median_gra:.2f},应该是 −3.4。")
 ```python
 df["delta_gra"] = df["d2cc_gra"] - df["d2cc_5mm"]
 median_gra = df["delta_gra"].median()
-print(f"图形优化: Δ 的中位数 {median_gra:.1f} Gy")
+print(f"Graphical: Δ 的中位数 {median_gra:.1f} Gy")
 ```
 
 </details>
@@ -250,7 +250,7 @@ print(f"图形优化: Δ 的中位数 {median_gra:.1f} Gy")
 
 **练习 3 · 轮到你: 多少位患者降到了 68 Gy 以下**
 
-5 mm 计划达到 68 Gy 的 148 位患者里,换成图形优化后降到 68 Gy 以下的有几位?把人数存进 `n_crossed`。
+5 mm 计划达到 68 Gy 的 148 位患者里,换成 Graphical 后降到 68 Gy 以下的有几位?把人数存进 `n_crossed`。
 
 ```python
 crossed = df["high_5mm"] & (df["d2cc_gra"] ___ 68)
@@ -261,11 +261,11 @@ print(f"{n_crossed} 位,占这 148 位的 {n_crossed / df['high_5mm'].sum():.1%}
 ```pycheck
 need("n_crossed")
 if n_crossed == 54:
-    ok("对了: 148 位里有 54 位(36.5%)换成图形优化后降到了 68 Gy 以下。体积优化是 36 位。")
+    ok("对了: 148 位里有 54 位(36.5%)换成 Graphical 后降到了 68 Gy 以下。Volume 是 36 位。")
 if n_crossed == 94:
     fail("这是换了以后仍然达到 68 Gy 的人数: 要找的是降到 68 Gy 以下的,用 <。")
 if n_crossed == 104:
-    fail("这是全部 200 位里图形优化计划低于 68 Gy 的人数。别去掉前面的 df[\"high_5mm\"] &。")
+    fail("这是全部 200 位里 Graphical 计划低于 68 Gy 的人数。别去掉前面的 df[\"high_5mm\"] &。")
 fail(f"现在是 {n_crossed} 位,应该是 54 位。空里填一个比较符号。")
 ```
 
@@ -428,7 +428,7 @@ paper["diff_vs_5mm"] = (paper["mean"] - paper.loc[0, "mean"]).round(1)
 paper
 ```
 
-`paper.loc[0, "mean"]` 取出第 0 行(5 mm)的平均值 70.8;整列减去它,就是每种方式比 5 mm 低多少: 体积优化低 1.5 Gy,图形优化低 2.7 Gy。
+`paper.loc[0, "mean"]` 取出第 0 行(5 mm)的平均值 70.8;整列减去它,就是每种方式比 5 mm 低多少: Volume 低 1.5 Gy,Graphical 低 2.7 Gy。
 
 论文里印的差值是 −1.56 和 −2.69,和这里的 −1.5、−2.7 差一点。这不是谁算错了: 论文是用没有四舍五入的平均值相减的,我们手里只有保留了一位小数的平均值。**先算、最后再四舍五入**,是处理数据的一条通用规矩,所以中间结果尽量保留原样,只在显示的时候用 `round()`。
 
@@ -495,7 +495,7 @@ print(pd.read_csv("cohort_clean.csv").shape)
 
 **审稿人可能问**: 缺失的数据是怎么处理的?会不会影响结论?
 
-**怎么回答**: 说明每个变量缺了多少、为什么缺(没有做这项测量)、分析时怎么办(只用有测量的患者,没有用 0 或平均值去填)。缺得很少(这里 2%)时,对结论的影响通常很小;缺得多时,要比较有测量和没有测量的患者是否相似,并考虑插补。
+**怎么回答**: 说明每个变量缺了多少、为什么缺(没有做这项测量)、分析时怎么办(只用有测量的患者,也就是完整病例分析;没有用 0 或平均值去填)。缺得很少(这里 2%)时,对结论的影响通常很小;缺得多时,要比较有测量和没有测量的患者是否相似,并考虑插补。
 
 **审稿人可能问**: 数据是怎么整理的,能重复吗?
 

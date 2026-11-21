@@ -149,7 +149,7 @@ print(type(arm), type(age), type(d2cc), type(high))
 print(high)
 ```
 
-`str` 是文字(字符串, string),`int` 是整数(integer),`float` 是小数(浮点数, float),`bool` 是真假(布尔值, boolean)。比较用 `>`、`>=`、`<`、`<=`,**"等于"要写两个等号 `==`**(一个等号是存值),"不等于"写 `!=`。几个条件可以用 `and`、`or`、`not` 连起来。
+`str` 是文字(字符串, string),`int` 是整数(integer),`float` 是小数(浮点数, float),`bool` 是真假(布尔值, boolean)。比较用 `>`、`>=`、`<`、`<=`,**"等于"要写两个等号 `==`**(一个等号是存值),"不等于"写 `!=`。几个条件可以用 `and`(都成立才算)、`or`(有一个成立就算)、`not`(反过来)连起来。
 
 <div class="quiz">
 <p><b>想一想</b>: <code>arm</code> 里存着治疗方式。要判断它是不是 <code>"VCB"</code>,应该写哪一个?</p>
@@ -178,7 +178,7 @@ plans = ["5mm", "vol", "gra"]
 d2cc = [71.4, 67.9, 66.2]
 print(d2cc[0])                  # 第一个
 print(d2cc[-1])                 # 最后一个
-print(d2cc[1] - d2cc[0])        # 体积优化减 5 mm
+print(d2cc[1] - d2cc[0])        # Volume 减 5 mm
 print(len(d2cc), max(d2cc), min(d2cc), sum(d2cc) / len(d2cc))
 ```
 
@@ -195,14 +195,14 @@ print(len(d2cc), max(d2cc), min(d2cc), sum(d2cc) / len(d2cc))
 
 <div class="exercise">
 
-**练习 2 · 图形优化比 5 mm 降了多少**
+**练习 2 · Graphical 比 5 mm 降了多少**
 
-还是这位患者,`d2cc` 里的三个数依次是 5 mm、体积优化、图形优化计划的阴道 D2cc。算出**图形优化减 5 mm** 的差,存进 `delta_gra`。把 `___` 换成表示位置的数字,再点"运行并检查"。
+还是这位患者,`d2cc` 里的三个数依次是 5 mm、Volume、Graphical 计划的阴道 D2cc。算出 **Graphical 减 5 mm** 的差,存进 `delta_gra`。把 `___` 换成表示位置的数字,再点"运行并检查"。
 
 ```python
 d2cc = [71.4, 67.9, 66.2]
 delta_gra = d2cc[___] - d2cc[___]
-print(f"图形优化比 5 mm 变了 {delta_gra:.1f} Gy")
+print(f"Graphical 比 5 mm 变了 {delta_gra:.1f} Gy")
 ```
 
 ```pycheck
@@ -210,18 +210,18 @@ need("delta_gra")
 if close(delta_gra, -5.2):
     ok("对了: 66.2 − 71.4 = −5.2 Gy,负数表示降低。")
 elif close(delta_gra, 5.2):
-    fail("差的大小对了,符号反了: 要用图形优化减 5 mm。")
+    fail("差的大小对了,符号反了: 要用 Graphical 减 5 mm。")
 elif close(delta_gra, -1.7):
-    fail("这是图形优化减体积优化。5 mm 在第几个位置?")
+    fail("这是 Graphical 减 Volume。5 mm 在第几个位置?")
 elif close(delta_gra, -3.5):
-    fail("这是体积优化减 5 mm。图形优化在第几个位置?")
+    fail("这是 Volume 减 5 mm。Graphical 在第几个位置?")
 else:
     fail(f"现在 delta_gra = {delta_gra:.1f}。位置从 0 开始数: 5 mm 是 [0]。")
 ```
 
 <details><summary>提示</summary>
 
-位置从 0 开始数: 5 mm 是 `d2cc[0]`,图形优化是第三个。
+位置从 0 开始数: 5 mm 是 `d2cc[0]`,Graphical 是第三个。
 
 </details>
 
@@ -230,7 +230,7 @@ else:
 ```python
 d2cc = [71.4, 67.9, 66.2]
 delta_gra = d2cc[2] - d2cc[0]
-print(f"图形优化比 5 mm 变了 {delta_gra:.1f} Gy")
+print(f"Graphical 比 5 mm 变了 {delta_gra:.1f} Gy")
 ```
 
 也可以写 `d2cc[-1] - d2cc[0]`,`-1` 是最后一个。
