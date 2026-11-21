@@ -17,6 +17,7 @@
 //   leak               variables chosen before cross-validation: pure noise looks predictive
 //   shrink             ridge or lasso: the stronger the constraint, the smaller the coefficients
 //   split              one split of a tree, placed by hand: two groups, each predicted by its own mean
+//   permute            shuffle one variable among the test patients: how much worse the predictions get
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -987,7 +988,98 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree };
+  // ---------- figure 12: permutation importance ----------
+  // The scene of the figure "permute": 80 patients to fit a straight-line model on three variables (wall
+  // thickness, number of fractions, age; age has no effect), 40 more to test it on. shuffled(v, k) gives the
+  // test patients with variable v dealt out again among them; the k-th shuffle of a variable is always the same.
+  function permScene(seed, mulberry32, normal) {
+    var rng = mulberry32(seed), NTR = 80, NTE = 40, rows = [], i, r, s, t;
+    for (i = 0; i < NTR + NTE; i++) {
+      var wall = Math.round(Math.exp(Math.log(3.6) + 0.30 * normal(rng)) * 10) / 10, fx = rng() < 0.5 ? 2 : 3, age = Math.round(64 + 9 * normal(rng));
+      rows.push({ x: [wall, fx, age], y: Math.round(((fx / 2.5) * 1.6 * (wall - 5) + 2.0 * normal(rng)) * 10) / 10 });
+    }
+    var train = rows.slice(0, NTR), test = rows.slice(NTR), m = 4, A = [], b = [];
+    for (r = 0; r < m; r++) { A.push(new Float64Array(m)); b.push(0); }
+    train.forEach(function (p) {
+      var v = [1].concat(p.x);
+      for (r = 0; r < m; r++) { b[r] += v[r] * p.y; for (s = 0; s < m; s++) A[r][s] += v[r] * v[s]; }
+    });
+    for (r = 0; r < m; r++) {                                             // Gaussian elimination
+      var piv = r; for (s = r + 1; s < m; s++) if (Math.abs(A[s][r]) > Math.abs(A[piv][r])) piv = s;
+      t = A[r]; A[r] = A[piv]; A[piv] = t; t = b[r]; b[r] = b[piv]; b[piv] = t;
+      for (s = r + 1; s < m; s++) { var f = A[s][r] / A[r][r]; b[s] -= f * b[r]; for (t = r; t < m; t++) A[s][t] -= f * A[r][t]; }
+    }
+    var w = new Float64Array(m);
+    for (r = m - 1; r >= 0; r--) { var acc = b[r]; for (s = r + 1; s < m; s++) acc -= A[r][s] * w[s]; w[r] = acc / A[r][r]; }
+    function predict(x) { return w[0] + w[1] * x[0] + w[2] * x[1] + w[3] * x[2]; }
+    function shuffled(v, k) {
+      var g = mulberry32(seed * 100 + v * 1000 + k), order = test.map(function (_, j) { return j; }), j, q;
+      for (i = order.length - 1; i > 0; i--) { j = Math.floor(g() * (i + 1)); q = order[i]; order[i] = order[j]; order[j] = q; }
+      return test.map(function (p, n) { var x = p.x.slice(); x[v] = test[order[n]].x[v]; return x; });
+    }
+    return { test: test, predict: predict, shuffled: shuffled, coef: w };
+  }
+  function permute(root) {
+    var sc = permScene(67, mulberry32, normal), test = sc.test, n = test.length, names = ['壁厚', '次数', '年龄'];
+    var base = test.map(function (p) { return sc.predict(p.x); });
+    function maeOf(pred) { var e = 0; test.forEach(function (p, i) { e += Math.abs(p.y - pred[i]) / n; }); return e; }
+    var baseErr = maeOf(base), clicks = [0, 0, 0], sums = [0, 0, 0];
+    var w = 360, hgt = 260, m = { l: 36, r: 8, t: 10, b: 34 }, lo = -9.5, hi = 5.5;
+    function px(v) { return m.l + (v - lo) / (hi - lo) * (w - m.l - m.r); }
+    function py(v) { return m.t + (hi - v) / (hi - lo) * (hgt - m.t - m.b); }
+    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hgt, role: 'img', 'aria-label': '散点图: 40 位病人,模型的预测值和实际的 Δ' }, root);
+    [-8, -4, 0, 4].forEach(function (v) {
+      el('line', { x1: m.l, x2: w - m.r, y1: py(v), y2: py(v), 'class': 'w-grid' }, svg);
+      el('text', { x: m.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, minus(v));
+      el('line', { x1: px(v), x2: px(v), y1: hgt - m.b, y2: hgt - m.b + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: hgt - m.b + 16, 'text-anchor': 'middle' }, svg, minus(v));
+    });
+    el('line', { x1: m.l, x2: w - m.r, y1: hgt - m.b, y2: hgt - m.b, 'class': 'w-axis' }, svg);
+    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: hgt - m.b, 'class': 'w-axis' }, svg);
+    el('text', { x: (m.l + w - m.r) / 2, y: hgt - 3, 'text-anchor': 'middle' }, svg, '模型的预测值 (Gy)');
+    el('text', { x: m.l + 5, y: m.t + 10 }, svg, '实际的 Δ (Gy)');
+    el('line', { x1: px(lo), x2: px(hi), y1: py(lo), y2: py(hi), 'class': 'w-mean' }, svg);
+    var moves = el('g', {}, svg);
+    var dots = test.map(function (p, i) { return el('circle', { cx: px(base[i]), cy: py(p.y), r: 3.4, 'class': 'w-pt' }, svg); });
+    legend(root, [['pt', '40 位没参与建模的病人'], ['dash', '预测值 = 实际值'], ['hres', '打乱以后预测值挪了多远']]);
+    var ctls = h('div', 'w-ctls', root);
+    var btns = names.map(function (nm, v) { return button(ctls, '打乱' + nm, v === 0 ? 'primary' : ''); }), back = button(ctls, '恢复');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '预测值和实际值平均差多少');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / 3.6 * 100).toFixed(1) + '%'; val.textContent = gy(v); };
+    }
+    var setBase = bar('原来', 'new'), setNow = bar('打乱以后', 'train');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function show(pred, text) {
+      while (moves.firstChild) moves.removeChild(moves.firstChild);
+      test.forEach(function (p, i) {
+        if (Math.abs(pred[i] - base[i]) > 0.02) el('line', { x1: px(base[i]), x2: px(pred[i]), y1: py(p.y), y2: py(p.y), 'class': 'w-res' }, moves);
+        dots[i].setAttribute('cx', px(Math.max(lo, Math.min(hi, pred[i]))));
+      });
+      setBase(baseErr); setNow(maeOf(pred));
+      status.textContent = text;
+    }
+    btns.forEach(function (b, v) {
+      b.addEventListener('click', function () {
+        clicks[v]++;
+        var pred = sc.shuffled(v, clicks[v]).map(sc.predict), d = maeOf(pred) - baseErr;
+        sums[v] += d;
+        show(pred, '第 ' + clicks[v] + ' 次打乱' + names[v] + ': 误差' + (d >= 0.005 ? '多了 ' + d.toFixed(2) : d <= -0.005 ? '少了 ' + (-d).toFixed(2) : '没有变') + (Math.abs(d) >= 0.005 ? ' Gy' : '')
+          + '。' + (clicks[v] > 1 ? '打乱' + names[v] + '的 ' + clicks[v] + ' 次,平均' + (Math.abs(sums[v] / clicks[v]) < 0.005 ? '没有变。' : (sums[v] > 0 ? '多 ' : '少 ') + Math.abs(sums[v] / clicks[v]).toFixed(2) + ' Gy。') : ''));
+      });
+    });
+    back.addEventListener('click', function () { clicks = [0, 0, 0]; sums = [0, 0, 0]; show(base, START); });
+    var START = '每个点是一位病人: 越靠近斜线,预测越准。点一个按钮,把这 40 位病人的那一个变量随机互换,别的不动。';
+    show(base, START);
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

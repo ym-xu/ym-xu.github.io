@@ -639,6 +639,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-key.no { background: none; border: 1.4px solid var(--link); }
 .widget .w-key.line { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 2px solid var(--fg); }
 .widget .w-key.res { width: 0; height: 1em; border-radius: 0; background: none; border-left: 1.5px solid var(--link); }
+.widget .w-key.dash { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 1.5px dashed var(--link); }
+.widget .w-key.hres { width: 1em; height: 0; border-radius: 0; background: none; border-top: 1.5px solid var(--link); }
 .widget .w-ctl { display: block; margin: .5rem 0 .7rem; font-size: .95rem; }
 .widget .w-ctl input[type="range"] { display: block; width: 100%; height: 32px; margin: .15rem 0 0; accent-color: var(--link); }
 .widget .w-bars-title { margin: 0 0 .3rem; font-size: .86rem; color: var(--muted); }
