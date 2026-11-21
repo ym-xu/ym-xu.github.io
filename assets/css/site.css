@@ -674,6 +674,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .stage-tiles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.25fr); gap: 6px; margin-bottom: .45rem; }
 .stage-tile { min-width: 0; padding: .32rem .55rem .36rem; border-radius: var(--radius-sm); background: var(--surface); }
 .stage-tile-k { display: block; font-size: .72rem; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-tile { position: relative; overflow: hidden; }
+.stage-tile-g { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--candy, var(--link)); transition: width .2s linear; }
 .stage-tile-v { display: block; font-size: 1rem; line-height: 1.35; font-weight: 700; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
 .content .widget.stage svg { max-width: 600px; }
 .widget.stage text { font-variant-numeric: lining-nums; }
@@ -712,7 +714,14 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget.stage .s-dot { fill: var(--link); }
 .widget.stage .s-mark { fill: var(--bg); stroke: var(--muted); stroke-width: 1.3; }
 .widget.stage .s-trail { stroke: var(--s-ink); stroke-width: 5; stroke-linecap: round; opacity: .4; }
-.widget.stage .s-zone { fill: var(--s-ink); opacity: .1; }
+.widget.stage .s-band { opacity: .5; }
+.widget.stage .s-gain { fill: var(--s-ink); opacity: .45; }
+.widget.stage .s-gain.now { fill: var(--link); opacity: 1; }
+.widget.stage .s-pat { fill: var(--link); }
+.widget.stage .s-tag { stroke: none; opacity: .75; transition: stroke .25s ease; }
+.widget.stage .s-tag.hit { stroke: var(--link); stroke-width: 1.6; opacity: 1; }
+.widget.stage .s-tiny { font-size: 9px; }
+.widget.stage .s-ring { fill: none; stroke: var(--w-bad); stroke-width: 1.5; }
 .widget.stage .s-scan { stroke: var(--s-ink); stroke-width: 1.6; }
 .widget.stage .s-res { opacity: .55; }
 .widget.stage .s-curve2 { fill: none; stroke: var(--s-ink); stroke-width: 1.6; stroke-linejoin: round; }
@@ -730,6 +739,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .stage-nav .w-btn { flex: 0 0 auto; white-space: nowrap; }
 .widget .stage-nav .stage-next { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .widget .stage-nav .stage-again { width: 44px; padding: 0; font-size: 1.15rem; line-height: 1; }
+.content .widget .stage-ctl { margin: .7rem 0 0; font-size: .92rem; }
+.widget .stage-ctl[hidden] { display: none; }
 .content .widget .stage-status { min-height: 0; margin: .9rem 0 .1rem; font-size: .8rem; color: var(--muted); letter-spacing: .02em; }
 .stage-step { display: none; }
 .stage-step.on { display: block; }

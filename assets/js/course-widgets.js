@@ -1409,7 +1409,7 @@
     var tileBox = h('div', 'stage-tiles', fig);
     var tiles = scene.tiles.map(function (label) {
       var t = h('div', 'stage-tile', tileBox);
-      return { label: label, k: h('span', 'stage-tile-k', t, label), v: h('span', 'stage-tile-v', t, '—') };
+      return { label: label, k: h('span', 'stage-tile-k', t, label), v: h('span', 'stage-tile-v', t, '—'), g: h('i', 'stage-tile-g', t) };
     });
     var svg = el('svg', { viewBox: '0 0 360 ' + scene.height, role: 'img', 'aria-label': scene.label }, fig);
     var prog = h('div', 'stage-progress'); root.insertBefore(prog, first);
@@ -1417,6 +1417,8 @@
     var nav = h('div', 'stage-nav'); root.insertBefore(nav, first);
     var back = button(nav, '← 上一步', 'stage-back'), again = button(nav, '↻', 'stage-again'), next = button(nav, '', 'primary stage-next');
     again.setAttribute('aria-label', '重播这一步'); again.title = '重播这一步';
+    var ctl = h('label', 'w-ctl stage-ctl'), ctlCap = h('span', '', ctl), ctlIn = h('input', '', ctl), ctlFn = null;
+    ctlIn.type = 'range'; ctl.hidden = true; root.insertBefore(ctl, first);
     var status = h('p', 'w-status stage-status'); root.insertBefore(status, first);
     status.setAttribute('aria-live', 'polite');
     var body = h('div', 'stage-text'); root.insertBefore(body, first);
@@ -1426,7 +1428,16 @@
     // the reader moves on; a tween calls fn with 0 … 1 and never sets a starting state by itself.
     var api = {
       svg: svg, instant: false,
-      tile: function (i, value, label) { tiles[i].v.textContent = value; tiles[i].k.textContent = label || tiles[i].label; },
+      // a tile: its value, optionally another label, optionally a bar (0 … 1) under the value
+      tile: function (i, value, label, part) {
+        tiles[i].v.textContent = value; tiles[i].k.textContent = label || tiles[i].label;
+        tiles[i].g.style.width = part == null ? '0' : (Math.max(0, Math.min(1, part)) * 100).toFixed(1) + '%';
+      },
+      // a slider the reader may move once a step has played: {label, min, max, value, oninput(value, say)}
+      control: function (o) {
+        ctlFn = o ? o.oninput : null; ctl.hidden = !o;
+        if (o) { ctlCap.textContent = o.label; ctlIn.min = o.min; ctlIn.max = o.max; ctlIn.step = o.step || 1; ctlIn.value = o.value; }
+      },
       at: function (ms, fn) { if (api.instant) fn(); else timers.push(setTimeout(fn, ms)); },
       tween: function (ms, dur, fn) {
         if (api.instant) { fn(1); return; }
@@ -1451,6 +1462,7 @@
       cur = Math.max(0, Math.min(n - 1, i));
       api.instant = !!quiet || still();
       tiles.forEach(function (t, k) { api.tile(k, '—'); });
+      api.control(null);
       enter(cur);
       texts.forEach(function (t, k) { t.classList.toggle('on', k === cur); });
       segs.forEach(function (s, k) { s.className = k < cur ? 'done' : k === cur ? 'now' : ''; });
@@ -1469,6 +1481,7 @@
     back.addEventListener('click', function () { go(cur - 1); });
     next.addEventListener('click', function () { go(cur + 1); });
     again.addEventListener('click', function () { go(cur); });
+    ctlIn.addEventListener('input', function () { if (ctlFn) ctlFn(+ctlIn.value, function (text) { ctlCap.textContent = text; }); });
     root.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowRight' && cur < n - 1) { go(cur + 1); e.preventDefault(); }
       if (e.key === 'ArrowLeft' && cur > 0) { go(cur - 1); e.preventDefault(); }
@@ -1854,8 +1867,9 @@
 
   // --- scene: how a regression tree is grown, cut by cut (the algorithm of stat-ml lesson 7) ---
   // The algorithm really runs here, on the 30 simulated patients all figures share: every place a
-  // group can be cut is tried, the cut with the smallest squared error is kept, and the same is
-  // done again inside each group. The tiles show what it computes.
+  // group can be cut is tried, the cut that lowers the squared error most is kept, and the same is
+  // done again inside each group. Two views move together: the patients on the plot, with one
+  // tinted band per group, and the same patients as small dots inside the nodes of the tree.
   var treeScene = {
     label: '分步图: 一棵回归树怎样一刀一刀长出来',
     height: 338,
@@ -1898,177 +1912,265 @@
 
       var all = cuts(0, n), first = bestOf(all);
       var leftC = cuts(0, first.i), rightC = cuts(first.i, n), second = bestOf(leftC), third = bestOf(rightC);
-      var G1 = groups([]), G2 = groups([first.i]), G4 = groups([first.i, second.i, third.i]), fullIdx = [];
-      for (i = 1; i < n; i++) if (P[i].x > P[i - 1].x) fullIdx.push(i);
-      var GF = groups(fullIdx), NEWX = 3.0;
+      var G1 = groups([]), G2 = groups([first.i]), G3 = groups([first.i, second.i]), G4 = groups([first.i, second.i, third.i]), NEWX = 3.0, START = mse(G1);
+      // after these three cuts: always the cut that lowers the error most, until nothing is left to cut
+      var order = [first.i, second.i, third.i], SIZES = [];
+      while (true) {
+        var top = null;
+        groups(order).forEach(function (q) {
+          var list = cuts(q.lo, q.hi);
+          if (list.length) { var c = bestOf(list); if (!top || q.sse - c.sse > top.gain) top = { i: c.i, gain: q.sse - c.sse }; }
+        });
+        if (!top) break;
+        order.push(top.i);
+      }
+      for (i = 0; i <= order.length; i++) { var gi = groups(order.slice(0, i)); SIZES.push({ g: gi, train: mse(gi), fresh: mseNew(gi) }); }
+      var lowest = SIZES.reduce(function (a, c) { return c.fresh < a.fresh ? c : a; });
+
+      // the colour of a group says what it predicts: the further the dose falls, the deeper the blue
+      function tint(v) { return 'color-mix(in oklab, var(--s-ink) ' + Math.round(8 + 62 * Math.max(0, Math.min(1, (1.5 - v) / 7))) + '%, var(--bg))'; }
 
       // --- the plot ---
-      var plot = axes(svg);
-      var zone = el('rect', { y: M.t, height: H - M.t - M.b, 'class': 's-zone' }, plot);
+      var plot = axes(svg), bands = el('g', {}, plot), bandPool = [];
+      [].forEach.call(svg.querySelectorAll('text'), function (t) { if (t.textContent === 'Δ (Gy)') svg.appendChild(t); });   // keep the axis title above the bands
+      var gains = el('g', {}, plot), gainPool = [];
       var fresh = el('g', {}, plot);
       sc.shown.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 2.6, 'class': 'w-pt new' }, fresh); });
       var sticks = P.map(function (p) { return el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(p.y), 'class': 'w-res s-res' }, plot); });
       var fixed = el('g', {}, plot), scan = el('line', { y1: M.t, y2: H - M.b, 'class': 's-scan' }, plot);
       var stair = el('path', { 'class': 'w-curve' }, plot);
-      P.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var pts = P.map(function (p) { return el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var names = [0, 1, 2, 3].map(function () { return T(plot, 0, 0, '', 's-v s-n s-halo s-small', 'middle'); });
+      var gainNote = T(plot, W - M.r - 4, H - M.b - 31, '', 's-k s-halo', 'end');
       var probe = el('g', {}, plot), probeLine = el('line', { x1: sx(NEWX), x2: sx(NEWX), y1: sy(YD[0]), 'class': 's-scan' }, probe);
       var probeDot = el('circle', { cx: sx(NEWX), r: 5, 'class': 's-token' }, probe);
 
-      function model(g, stickAmount) {              // draw a tree's prediction: one level per group
+      function model(g, stickAmount) {              // draw a tree's prediction: one level and one band per group
         stair.setAttribute('d', g.map(function (q) { return 'M' + sx(q.x0).toFixed(1) + ' ' + sy(q.mean).toFixed(1) + 'H' + sx(q.x1).toFixed(1); }).join(''));
-        g.forEach(function (q) {
-          for (var k = q.lo; k < q.hi; k++) sticks[k].setAttribute('y2', lerp(sy(P[k].y), sy(q.mean), stickAmount == null ? 1 : stickAmount));
+        g.forEach(function (q, k) {
+          for (var j = q.lo; j < q.hi; j++) sticks[j].setAttribute('y2', lerp(sy(P[j].y), sy(q.mean), stickAmount == null ? 1 : stickAmount));
+          if (!bandPool[k]) bandPool[k] = el('rect', { y: M.t, height: H - M.t - M.b, 'class': 's-band' }, bands);
+          bandPool[k].setAttribute('x', sx(q.x0)); bandPool[k].setAttribute('width', Math.max(0, sx(q.x1) - sx(q.x0)));
+          bandPool[k].style.fill = tint(q.mean); bandPool[k].style.display = '';
+        });
+        for (var k = g.length; k < bandPool.length; k++) bandPool[k].style.display = 'none';
+        names.forEach(function (t, k) {           // the mean of each group, written on its level (up to four groups)
+          var q = g.length <= 4 ? g[k] : null;
+          if (!q) { fade(t, 0); return; }
+          t.setAttribute('x', Math.max(M.l + 16, Math.min(W - M.r - 16, (sx(q.x0) + sx(q.x1)) / 2))); t.setAttribute('y', sy(q.mean) - 6);
+          t.textContent = num(q.mean); fade(t, 1);
         });
       }
+      function blank() { stair.setAttribute('d', ''); bandPool.forEach(function (r) { r.style.display = 'none'; }); names.forEach(function (t) { fade(t, 0); }); }
       function fixedCuts(list) {
         while (fixed.firstChild) fixed.removeChild(fixed.firstChild);
         list.forEach(function (c) { el('line', { x1: sx(c.thr), x2: sx(c.thr), y1: M.t, y2: H - M.b, 'class': 'w-mean' }, fixed); });
       }
       function scanAt(thr) { scan.setAttribute('x1', sx(thr)); scan.setAttribute('x2', sx(thr)); fade(scan, 1); }
-      function zoneOn(x0, x1) { zone.setAttribute('x', sx(x0)); zone.setAttribute('width', sx(x1) - sx(x0)); fade(zone, ''); }
+      // small bars on the x axis: how much a cut at this place lowers the error (taller is better)
+      function gainBars(list, before, upto, at, offset) {
+        var most = Math.max.apply(null, list.map(function (c) { return before - c.sse; }));
+        list.forEach(function (c, k) {
+          var r = gainPool[offset + k] || (gainPool[offset + k] = el('rect', { width: 3, 'class': 's-gain' }, gains));
+          var hgt = k < upto ? Math.max(0.6, (before - c.sse) / most * 27) : 0;
+          r.setAttribute('x', sx(c.thr) - 1.5); r.setAttribute('y', H - M.b - hgt); r.setAttribute('height', hgt);
+          r.setAttribute('class', 's-gain' + (k === at ? ' now' : '')); r.style.display = '';
+        });
+      }
+      function noGains() { gainPool.forEach(function (r) { r.style.display = 'none'; }); fade(gainNote, 0); }
 
-      // --- under the plot: the error at every place tried (same x axis as the plot) ---
-      var curve = layer('curve');
-      T(curve, M.l + 4, 264, '切在每个位置时的误差(越低越好)', 's-k');
-      el('line', { x1: M.l, x2: W - M.r, y1: 332, y2: 332, 'class': 'w-grid' }, curve);
-      var lines = [el('polyline', { 'class': 's-curve2', points: '' }, curve), el('polyline', { 'class': 's-curve2', points: '' }, curve)];
-      var marks = [0, 1].map(function () {
-        var g = el('g', {}, curve);
-        el('circle', { r: 4, 'class': 's-dot' }, g);
-        return { g: g, label: T(g, 0, -9, '', 's-v s-n s-halo', 'middle') };
+      // --- under the plot: the tree, with the same patients inside its nodes ---
+      var tree = layer('tree'), edges = [], pills = {}, tags = [];
+      [[150, 269, 100, 280], [210, 269, 262, 280], [84, 295, 50, 306], [116, 295, 140, 306], [246, 295, 222, 306], [278, 295, 310, 306]].forEach(function (e) {
+        edges.push(el('line', { x1: e[0], y1: e[1], x2: e[2], y2: e[3], 'class': 's-edge' }, tree));
       });
-      var now = el('circle', { r: 3.4, 'class': 's-token' }, curve), range = [0, 1];
-      function CY(v) { return 328 - (v - range[0]) / (range[1] - range[0]) * 50; }
-      function trace(k, list, other, upto) {         // the first "upto" places of one search
-        lines[k].setAttribute('points', list.slice(0, upto).map(function (c) { return sx(c.thr).toFixed(1) + ',' + CY((c.sse + other) / n).toFixed(1); }).join(' '));
+      function pill(cx, cy, s) {
+        var g = el('g', {}, tree);
+        g.box = el('rect', { x: cx - 56, y: cy - 8.5, width: 112, height: 17, rx: 8.5, 'class': 's-node' }, g);
+        T(g, cx, cy + 3.5, s, 's-t s-small', 'middle');
+        return g;
       }
-      function mark(k, c, other) {
-        if (!c) { fade(marks[k].g, 0); return; }
-        marks[k].g.setAttribute('transform', 'translate(' + sx(c.thr).toFixed(1) + ' ' + CY((c.sse + other) / n).toFixed(1) + ')');
-        marks[k].label.textContent = ((c.sse + other) / n).toFixed(2); fade(marks[k].g, 1);
+      pills.root = pill(180, 261, '壁厚 ≤ ' + first.thr.toFixed(2) + ' mm?');
+      pills.left = pill(100, 287, '壁厚 ≤ ' + second.thr.toFixed(2) + ' mm?');
+      pills.right = pill(262, 287, '壁厚 ≤ ' + third.thr.toFixed(2) + ' mm?');
+      for (i = 0; i < 4; i++) {
+        var tg = el('g', {}, tree);
+        tg.box = el('rect', { height: 13, rx: 6.5, 'class': 's-tag' }, tg); tg.text = T(tg, 0, 0, '', 's-v s-n s-tiny', 'middle');
+        tags.push(tg);
       }
-
-      // --- under the plot: the finished tree as questions ---
-      var tree = layer('tree'), parts = {};
-      function edge(a, b) { return el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], 'class': 's-edge' }, tree); }
-      function node(cx, cy, w, s, leaf) {
-        var r = el('rect', { x: cx - w / 2, y: cy - 9, width: w, height: 18, rx: leaf ? 9 : 5, 'class': 's-node' }, tree);
-        T(tree, cx, cy + 3.6, s, (leaf ? 's-v s-n' : 's-t') + ' s-small', 'middle');
-        return r;
+      var legendYes = T(tree, W - M.r, 262, '左: 是 · 右: 否', 's-k', 'end');
+      var dots = P.map(function () { return el('circle', { r: 1.9, 'class': 's-pat' }, tree); });
+      var walker = el('circle', { r: 5, 'class': 's-token' }, tree);
+      // where the leaves of each stage sit: 0 no cut, 1 one cut, 2 three cuts
+      var STAGES = [
+        { leaves: [{ cx: 180, cy: 266, q: G1[0] }], pills: [], edges: [] },
+        { leaves: [{ cx: 100, cy: 292, q: G2[0] }, { cx: 262, cy: 292, q: G2[1] }], pills: ['root'], edges: [0, 1] },
+        { leaves: [50, 140, 222, 310].map(function (cx, k) { return { cx: cx, cy: 316, q: G4[k] }; }), pills: ['root', 'left', 'right'], edges: [0, 1, 2, 3, 4, 5] }
+      ];
+      function seats(stage) {                       // a place for every patient inside the leaf it belongs to
+        var out = [];
+        STAGES[stage].leaves.forEach(function (lf) {
+          var m = lf.q.hi - lf.q.lo, rows = m > 8 ? 2 : 1, cols = Math.ceil(m / rows);
+          for (var j = 0; j < m; j++) out[lf.q.lo + j] = [lf.cx + (j % cols - (cols - 1) / 2) * 4.4, lf.cy + (Math.floor(j / cols) - (rows - 1) / 2) * 4.4];
+        });
+        return out;
       }
-      var LX = [50, 138, 222, 310];
-      parts.e0 = edge([150, 274], [96, 283]); parts.e1 = edge([210, 274], [264, 283]);
-      parts.e00 = edge([78, 301], [LX[0], 311]); parts.e01 = edge([114, 301], [LX[1], 311]);
-      parts.e10 = edge([246, 301], [LX[2], 311]); parts.e11 = edge([282, 301], [LX[3], 311]);
-      parts.root = node(180, 265, 116, '壁厚 ≤ ' + first.thr.toFixed(2) + ' mm?');
-      parts.n0 = node(96, 292, 110, '壁厚 ≤ ' + second.thr.toFixed(2) + ' mm?');
-      parts.n1 = node(264, 292, 110, '壁厚 ≤ ' + third.thr.toFixed(2) + ' mm?');
-      G4.forEach(function (q, k) { parts['l' + k] = node(LX[k], 320, 58, num(q.mean), true); });
-      T(tree, W - M.r, 262, '左: 是,右: 否', 's-k', 'end');
+      function treeAt(stage, from, u) {             // the tree at a stage; the dots travel there from "from" (seats or plot positions)
+        var to = seats(stage), st = STAGES[stage];
+        dots.forEach(function (d, j) {
+          var a = from ? from[j] : to[j];
+          d.setAttribute('cx', lerp(a[0], to[j][0], u)); d.setAttribute('cy', lerp(a[1], to[j][1], u));
+        });
+        ['root', 'left', 'right'].forEach(function (k) { fade(pills[k], st.pills.indexOf(k) >= 0 ? 1 : 0); });
+        edges.forEach(function (e, k) { fade(e, st.edges.indexOf(k) >= 0 ? 1 : 0); });
+        fade(legendYes, stage ? 1 : 0);
+        tags.forEach(function (tg, k) {
+          var lf = st.leaves[k];
+          if (!lf) { fade(tg, 0); return; }
+          var s = (lf.q.hi - lf.q.lo) + ' 位 · ' + num(lf.q.mean), w = s.length * 5.4 + 12;
+          tg.text.textContent = s; tg.text.setAttribute('x', lf.cx); tg.text.setAttribute('y', lf.cy + 18.5);
+          tg.box.setAttribute('x', lf.cx - w / 2); tg.box.setAttribute('y', lf.cy + 9); tg.box.setAttribute('width', w);
+          tg.box.style.fill = tint(lf.q.mean); fade(tg, u);
+        });
+      }
       function hot(node, on) { node.setAttribute('class', node.getAttribute('class').replace(/ (hot|hit)/g, '') + (on ? ' ' + on : '')); }
       var goLeft = NEWX <= first.thr, goLeft2 = NEWX <= (goLeft ? second.thr : third.thr), leafK = (goLeft ? 0 : 2) + (goLeft2 ? 0 : 1);
-      var path = [parts.root, goLeft ? parts.e0 : parts.e1, goLeft ? parts.n0 : parts.n1, parts['e' + (goLeft ? 0 : 1) + (goLeft2 ? 0 : 1)], parts['l' + leafK]];
+      var walk = [[180, 261], goLeft ? [100, 287] : [262, 287], [STAGES[2].leaves[leafK].cx, 316]];
 
-      // --- under the plot: a small tree against a tree grown to the end ---
-      var bars = layer('bars'), newSmall = mseNew(G4), newFull = mseNew(GF), top = Math.max(newSmall, newFull, mse(G4));
-      [[G4.length + ' 组', mse(G4), newSmall, 262], [GF.length + ' 组', mse(GF), newFull, 302]].forEach(function (row) {
-        T(bars, M.l, row[3] + 13, '分成 ' + row[0], 's-t');
-        [[row[1], 's-bar', '建模病人 '], [row[2], 's-bar dim', '新病人 ']].forEach(function (b, k) {
-          var w = Math.max(1, b[0] / top * 150), y = row[3] + k * 12;
-          el('rect', { x: 104, y: y, width: w, height: 8, rx: 2, 'class': b[1] }, bars);
-          T(bars, 104 + w + 5, y + 8, b[2] + b[0].toFixed(2), 's-k s-n');
-        });
-      });
+      // --- under the plot, last step: the error against the number of groups ---
+      var sizes = layer('sizes'), vmax = Math.max.apply(null, SIZES.map(function (s) { return Math.max(s.train, s.fresh); }));
+      function QX(k) { return M.l + 4 + (k - 1) / (SIZES.length - 1) * (W - M.l - M.r - 70); }
+      function QY(v) { return 322 - v / vmax * 58; }
+      el('line', { x1: M.l, x2: QX(SIZES.length), y1: 322, y2: 322, 'class': 'w-axis' }, sizes);
+      T(sizes, QX(1), 334, '1 组', '', 'middle'); T(sizes, QX(SIZES.length), 334, SIZES.length + ' 组', '', 'middle');
+      el('circle', { cx: QX(lowest.g.length), cy: QY(lowest.fresh), r: 5.5, 'class': 's-ring' }, sizes);
+      T(sizes, QX(lowest.g.length) + 10, QY(lowest.fresh) + 15, '新病人身上最低: ' + lowest.g.length + ' 组,' + lowest.fresh.toFixed(2), 's-v s-n s-small s-halo');
+      var lineTrain = el('polyline', { 'class': 's-curve2', points: '' }, sizes), lineFresh = el('polyline', { 'class': 's-line', points: '' }, sizes);
+      var endTrain = T(sizes, 0, 0, '', 's-k s-n'), endFresh = T(sizes, 0, 0, '', 's-t s-n s-small');
+      var dotTrain = el('circle', { r: 3.4, 'class': 's-token' }, sizes), dotFresh = el('circle', { r: 3.4, 'class': 's-dot' }, sizes);
+      function sizesUpto(k) {                       // the first k trees of the sequence (1 … k groups)
+        var part = SIZES.slice(0, k), last = part[k - 1];
+        lineTrain.setAttribute('points', part.map(function (s, j) { return QX(j + 1).toFixed(1) + ',' + QY(s.train).toFixed(1); }).join(' '));
+        lineFresh.setAttribute('points', part.map(function (s, j) { return QX(j + 1).toFixed(1) + ',' + QY(s.fresh).toFixed(1); }).join(' '));
+        dotTrain.setAttribute('cx', QX(k)); dotTrain.setAttribute('cy', QY(last.train));
+        dotFresh.setAttribute('cx', QX(k)); dotFresh.setAttribute('cy', QY(last.fresh));
+        endTrain.setAttribute('x', QX(k) + 7); endTrain.setAttribute('y', Math.min(319, QY(last.train) + 3.5)); endTrain.textContent = '建模病人 ' + last.train.toFixed(2);
+        endFresh.setAttribute('x', QX(k) + 7); endFresh.setAttribute('y', QY(last.fresh) + 3.5); endFresh.textContent = '新病人 ' + last.fresh.toFixed(2);
+      }
 
       function reset(layers) {
         show(layers);
-        fade(zone, 0); fade(scan, 0); fade(fresh, 0); fade(probe, 0); fade(now, 0);
+        fade(scan, 0); fade(fresh, 0); fade(probe, 0); fade(walker, 0);
         sticks.forEach(function (s) { fade(s, 1); });
-        fixedCuts([]);
-        lines.forEach(function (l) { l.setAttribute('points', ''); });
-        mark(0, null); mark(1, null);
-        path.forEach(function (p) { hot(p, ''); });
+        fixedCuts([]); noGains();
+        hot(pills.root.box, ''); hot(pills.left.box, ''); hot(pills.right.box, '');
+        tags.forEach(function (tg) { hot(tg.box, ''); });
+        pts.forEach(function (c) { fade(c, 1); });
       }
-      function search(k, list, other, lo, hi, base, ms, dur) {   // try every place of one group, one after another
+      function err(v) { api.tile(1, v.toFixed(2), null, v / START); }
+      // one candidate cut of a search, shown: the cut, both means, the bars so far, the error
+      function candidate(list, k, before, other, base, offset) {
+        var c = list[k];
+        scanAt(c.thr); gainBars(list, before, k + 1, k, offset);
+        model(groups(base.concat([c.i])));
+        err((c.sse + other) / n);
+      }
+      function search(list, before, other, base, offset, ms, dur) {     // try every place of one group, one after another
         api.tween(ms, dur, function (u) {
-          var upto = Math.min(list.length, Math.floor(u * list.length) + 1), c = list[upto - 1];
-          scanAt(c.thr); trace(k, list, other, upto);
-          model(groups(base.concat([c.i])));
-          now.setAttribute('cx', sx(c.thr)); now.setAttribute('cy', CY((c.sse + other) / n)); fade(now, 1);
-          api.tile(1, ((c.sse + other) / n).toFixed(2)); api.tile(2, upto + ' / ' + list.length, '试过的位置');
+          var k = Math.min(list.length - 1, Math.floor(u * list.length));
+          candidate(list, k, before, other, base, offset);
+          api.tile(2, (k + 1) + ' / ' + list.length, '试过的位置');
         });
       }
 
       var steps = [
         function () {                                 // 1 the patients
           reset([]);
-          stair.setAttribute('d', ''); model(G1, 0); stair.setAttribute('d', '');
+          model(G1, 0); blank();
           api.tile(0, '—'); api.tile(1, '—'); api.tile(2, n + ' 位', '建模病人');
         },
         function () {                                 // 2 no cut: everyone gets the mean
-          reset([]);
+          reset(['tree']);
           model(G1, 0);
           api.tile(0, '1 组'); api.tile(2, num(G1[0].mean) + ' Gy', '都猜平均值');
+          var home = P.map(function (p) { return [sx(p.x), sy(p.y)]; });
+          treeAt(0, home, 0); fade(tags[0], 0);
           api.tween(300, 900, function (u) { model(G1, E(u)); });
-          api.at(1200, function () { api.tile(1, mse(G1).toFixed(2)); });
+          api.tween(900, 900, function (u) { treeAt(0, home, E(u)); });
+          api.at(1800, function () { err(START); });
         },
         function () {                                 // 3 try every place
-          reset(['curve']);
-          range = [first.sse / n - 0.25, mse(G1) + 0.1];
+          reset(['tree']);
+          treeAt(0, null, 1); model(G1);
           api.tile(0, '2 组');
-          model(G1);
-          search(0, all, 0, 0, n, [], 400, 3600);
-          api.at(4000, function () { mark(0, first, 0); });
+          gainNote.textContent = '小条: 切在这里,误差能降多少'; fade(gainNote, 1);
+          search(all, G1[0].sse, 0, [], 0, 400, 3600);
+          api.at(4000, function () {
+            var at = all.indexOf(first);
+            candidate(all, at, G1[0].sse, 0, [], 0);
+            api.tile(2, all.length + ' / ' + all.length, '试过的位置');
+            api.control({
+              label: '自己拖: 切在 ' + first.thr.toFixed(2) + ' mm', min: 0, max: all.length - 1, value: at,
+              oninput: function (k, say) { candidate(all, k, G1[0].sse, 0, [], 0); say('自己拖: 切在 ' + all[k].thr.toFixed(2) + ' mm'); }
+            });
+          });
         },
         function () {                                 // 4 keep the best one
-          reset(['curve']);
-          range = [first.sse / n - 0.25, mse(G1) + 0.1];
-          trace(0, all, 0, all.length); mark(0, first, 0);
+          reset(['tree']);
           var last = all[all.length - 1];
-          scanAt(last.thr); model(groups([last.i]));
-          api.tile(0, '2 组'); api.tile(1, ((last.sse) / n).toFixed(2)); api.tile(2, first.thr.toFixed(2) + ' mm', '误差最小的位置');
+          gainNote.textContent = '最高的小条: 降得最多'; fade(gainNote, 1);
+          candidate(all, all.length - 1, G1[0].sse, 0, [], 0); gainBars(all, G1[0].sse, all.length, all.indexOf(first), 0);
+          treeAt(0, null, 1);
+          api.tile(0, '2 组'); api.tile(2, first.thr.toFixed(2) + ' mm', '降得最多的位置');
           api.tween(300, 700, function (u) { scanAt(lerp(last.thr, first.thr, E(u))); });
-          api.at(1000, function () { fade(scan, 0); fixedCuts([first]); model(G2); api.tile(1, mse(G2).toFixed(2)); });
+          api.at(1000, function () { fade(scan, 0); fixedCuts([first]); model(G2); err(mse(G2)); });
+          var from = seats(0);
+          api.tween(1100, 900, function (u) { treeAt(1, from, E(u)); });
         },
         function () {                                 // 5 the same again inside each group
-          reset(['curve']);
-          var lo = Math.min(second.sse + G2[1].sse, third.sse + G2[0].sse) / n;
-          range = [lo - 0.2, mse(G2) + 0.1];
-          fixedCuts([first]); model(G2);
-          api.tile(0, '4 组'); api.tile(1, mse(G2).toFixed(2));
-          zoneOn(XD[0], first.thr);
-          search(0, leftC, G2[1].sse, 0, first.i, [first.i], 400, 2200);
-          api.at(2650, function () { mark(0, second, G2[1].sse); fixedCuts([first, second]); model(groups([first.i, second.i])); zoneOn(first.thr, XD[1]); });
-          search(1, rightC, stat(0, second.i).sse + stat(second.i, first.i).sse, first.i, n, [first.i, second.i], 2900, 1300);
-          api.at(4250, function () {
-            mark(1, third, stat(0, second.i).sse + stat(second.i, first.i).sse);
-            fade(zone, 0); fade(scan, 0); fade(now, 0); fixedCuts([first, second, third]); model(G4);
-            api.tile(1, mse(G4).toFixed(2)); api.tile(2, (leftC.length + rightC.length) + ' 个', '又试了');
+          reset(['tree']);
+          fixedCuts([first]); model(G2); treeAt(1, null, 1);
+          api.tile(0, '4 组'); err(mse(G2));
+          gainNote.textContent = '每一组里,各自再试一遍'; fade(gainNote, 1);
+          search(leftC, G2[0].sse, G2[1].sse, [first.i], 0, 400, 2000);
+          api.at(2450, function () { candidate(leftC, leftC.indexOf(second), G2[0].sse, G2[1].sse, [first.i], 0); fixedCuts([first, second]); });
+          search(rightC, G2[1].sse, G3[0].sse + G3[1].sse, [first.i, second.i], leftC.length, 2700, 1300);
+          var from = seats(1);
+          api.at(4050, function () {
+            candidate(rightC, rightC.indexOf(third), G2[1].sse, G3[0].sse + G3[1].sse, [first.i, second.i], leftC.length);
+            fade(scan, 0); fixedCuts([first, second, third]); model(G4);
+            err(mse(G4)); api.tile(2, (leftC.length + rightC.length) + ' 个', '又试了');
           });
+          api.tween(4100, 900, function (u) { treeAt(2, from, E(u)); });
         },
         function () {                                 // 6 a new patient
           reset(['tree']);
-          fixedCuts([first, second, third]); model(G4);
-          sticks.forEach(function (s) { fade(s, 0.25); });
+          fixedCuts([first, second, third]); model(G4); treeAt(2, null, 1);
+          sticks.forEach(function (s) { fade(s, 0.2); });
           var yhat = predict(G4, NEWX);
-          api.tile(0, '4 组'); api.tile(1, mse(G4).toFixed(2)); api.tile(2, '—', '新病人的预测');
+          api.tile(0, '4 组'); err(mse(G4)); api.tile(2, '—', '新病人的预测');
           probeLine.setAttribute('y2', sy(YD[0])); probeDot.setAttribute('cy', sy(YD[0])); fade(probe, 1);
-          path.forEach(function (p, k) { api.at(300 + k * 260, function () { hot(p, k === path.length - 1 ? 'hit' : 'hot'); }); });
-          api.tween(1500, 700, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
-          api.at(2200, function () { api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
+          api.tween(300, 700, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
+          walker.setAttribute('cx', walk[0][0]); walker.setAttribute('cy', walk[0][1] - 14);
+          api.at(1000, function () { fade(walker, 1); hot(pills.root.box, 'hot'); });
+          [0, 1].forEach(function (k) {
+            api.tween(1200 + k * 700, 500, function (u) {
+              walker.setAttribute('cx', lerp(walk[k][0], walk[k + 1][0], E(u))); walker.setAttribute('cy', lerp(walk[k][1], walk[k + 1][1], E(u)) - 14 * (k ? 1 - E(u) : 1));
+            });
+          });
+          api.at(1700, function () { hot((goLeft ? pills.left : pills.right).box, 'hot'); });
+          api.at(2400, function () { fade(walker, 0); hot(tags[leafK].box, 'hit'); api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
         },
         function () {                                 // 7 cut until nothing is left to cut
-          reset(['bars']);
-          fixedCuts([]); model(G4);
-          api.tile(0, GF.length + ' 组'); api.tile(1, mse(G4).toFixed(2)); api.tile(2, newSmall.toFixed(2), '新病人身上的误差');
-          api.tween(300, 2400, function (u) {
-            var k = Math.max(3, Math.round(u * fullIdx.length));
-            // the cuts are added in the order the algorithm would find them: the first three, then left to right
-            var idx = [first.i, second.i, third.i].concat(fullIdx.filter(function (v) { return v !== first.i && v !== second.i && v !== third.i; })).slice(0, k);
-            var g = groups(idx);
-            model(g); api.tile(0, g.length + ' 组'); api.tile(1, mse(g).toFixed(2)); api.tile(2, mseNew(g).toFixed(2), '新病人身上的误差');
+          reset(['sizes']);
+          model(G4); sizesUpto(4);
+          api.tile(0, '4 组'); err(SIZES[3].train); api.tile(2, SIZES[3].fresh.toFixed(2), '新病人身上的误差');
+          api.tween(600, 3000, function (u) {
+            var k = Math.max(4, Math.round(4 + u * (SIZES.length - 4))), s = SIZES[k - 1];
+            model(s.g); sizesUpto(k);
+            api.tile(0, k + ' 组'); err(s.train); api.tile(2, s.fresh.toFixed(2), '新病人身上的误差');
           });
-          api.tween(2700, 500, function (u) { fade(fresh, u); });
+          api.tween(300, 500, function (u) { fade(fresh, u); });
         }
       ];
       return function (k) { steps[k](); };
