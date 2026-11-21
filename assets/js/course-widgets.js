@@ -22,6 +22,7 @@
 //   threshold          move the cut-off on predicted probabilities: sensitivity against specificity, one point of the ROC curve
 //   calib              a calibration plot under four kinds of stated probabilities: right, too high, too extreme, too timid
 //   netbenefit         the threshold probability against the net benefit of three strategies: by the model, everyone, no one
+//   samplesize         the three criteria of Riley et al. for a yes/no outcome: parameters, event proportion, expected R²
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1345,7 +1346,47 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig };
+  // ---------- figure 17: sample size for a yes/no outcome ----------
+  // The three criteria of Riley et al. (as in the R package pmsampsize): little overfitting (expected shrinkage
+  // 0.9), a small gap between apparent and adjusted R², and a precise overall risk (within 0.05). Three sliders:
+  // candidate parameters, proportion of events, expected Cox-Snell R². No random numbers.
+  function sampleSizeFig(root) {
+    function need(p, phi, r2) {
+      var mx = 1 - Math.exp(2 * (phi * Math.log(phi) + (1 - phi) * Math.log(1 - phi))), s2 = r2 / (r2 + 0.05 * mx);
+      return [Math.ceil(p / ((0.9 - 1) * Math.log(1 - r2 / 0.9))), Math.ceil(p / ((s2 - 1) * Math.log(1 - r2 / s2))), Math.ceil(Math.pow(1.96 / 0.05, 2) * phi * (1 - phi))];
+    }
+    function slider(label, lo, hi, step, value, fmt) {
+      var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+      input.type = 'range'; input.min = lo; input.max = hi; input.step = step; input.value = value;
+      input.setAttribute('aria-label', label);
+      return { input: input, show: function () { cap.textContent = label + ': ' + fmt(+input.value); } };
+    }
+    var sp = slider('候选参数的个数', 1, 30, 1, 8, function (v) { return String(v); });
+    var sf = slider('事件的比例', 0.05, 0.5, 0.01, 0.18, function (v) { return Math.round(v * 100) + '%'; });
+    var sr = slider('预期的 R²(Cox–Snell)', 0.01, 0.3, 0.01, 0.05, function (v) { return v.toFixed(2); });
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '每条准则要求的病人数');
+    function bar(label) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill train', h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v, top, lead) { fill.style.width = Math.min(100, v / top * 100).toFixed(1) + '%'; fill.className = 'w-bar-fill ' + (lead ? 'train' : 'new'); val.textContent = String(v); };
+    }
+    var set = [bar('1 过拟合要小'), bar('2 成绩不虚高'), bar('3 总体风险准')];
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var p = +sp.input.value, phi = +sf.input.value, r2 = +sr.input.value, n = need(p, phi, r2), top = Math.max.apply(null, n), lead = n.indexOf(top);
+      sp.show(); sf.show(); sr.show();
+      n.forEach(function (v, k) { set[k](v, top, k === lead); });
+      status.textContent = '至少需要 ' + top + ' 位病人,其中约 ' + Math.round(top * phi) + ' 个事件(每个参数 ' + (top * phi / p).toFixed(1) + ' 个事件)。要求最高的是准则 ' + (lead + 1) + '。';
+    }
+    [sp, sf, sr].forEach(function (sl) { sl.input.addEventListener('input', update); });
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

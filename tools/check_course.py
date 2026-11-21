@@ -21,7 +21,7 @@ import sys
 import time
 
 # Figures with more than one slider: the values the lesson text tells the reader to try, slider by slider.
-SEVERAL_SLIDERS = {'fitline': ['-2.1', '1.4'], 'sigmoid': ['2.5', '0.7']}
+SEVERAL_SLIDERS = {'fitline': ['-2.1', '1.4'], 'sigmoid': ['2.5', '0.7'], 'samplesize': ['1', '0.18', '0.05']}
 
 from playwright.sync_api import sync_playwright
 
