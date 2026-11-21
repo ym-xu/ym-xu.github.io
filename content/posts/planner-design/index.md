@@ -2,7 +2,7 @@
 title: "Planner design"
 date: 2025-10-07
 summary: "Hierarchical + leaf embeddings for navigation, not naive top-k retrieval."
-tags: ["planner", "rag"]
+tags: ["Planning", "RAG"]
 ---
 
 我们会给"层次节点 + 叶子节点"都建 embedding（分层、分模态），不是只嵌入中间节点，也不是只嵌入叶子。

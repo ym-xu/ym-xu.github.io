@@ -1,0 +1,26 @@
+# The tag vocabulary. Posts, projects and bookmarks use these exact spellings and
+# nothing else: the build stops on any other tag (layouts/partials/tags-check.html),
+# because a second spelling of a tag ("rag" next to "RAG") becomes a second name for
+# the same tag page, and Hugo then picks one of the two at random on every build.
+#
+# Each tag is written the way it is usually written: acronyms in capitals, words
+# capitalised, the field's own term rather than a private shorthand ("Planning", not
+# "planner"). To add a tag, add a line here. One tag per line, no quotes.
+# scripts/bookmark.sh reads this list too.
+- Agents
+- AI
+- Clinical ML
+- Context Engineering
+- Document Understanding
+- Interactive
+- Multimodal
+- NLP
+- Planning
+- Production
+- RAG
+- Reading
+- Teaching
+- Thesis
+- Thinking
+- VLM
+- Writing

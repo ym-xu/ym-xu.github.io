@@ -2,7 +2,7 @@
 title: "DocLens"
 date: 2025-08-14
 summary: "A layout-aware observer for structured document understanding."
-tags: ["documents", "vlm"]
+tags: ["Document Understanding", "VLM"]
 ---
 
 DocLens is a layout-aware observer: instead of flattening a PDF to text, it preserves page index and bounding boxes so downstream reasoning can point back to exactly where evidence lives.

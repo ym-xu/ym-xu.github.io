@@ -8,5 +8,7 @@
     · <time datetime="{{ .Date.Format "2006-01-02" }}">saved {{ .Date.Format "Jan 2, 2006" }}</time>
   </p>
   {{ with .Content }}<div class="clip-take"><span class="clip-h">My take.</span> {{ . }}</div>{{ end }}
-  {{ with .Params.tags }}<p class="card-foot">{{ range $i, $t := . }}{{ if $i }} · {{ end }}<a href="{{ (print "/tags/" $t | urlize | relURL) }}">{{ $t }}</a>{{ end }}</p>{{ end }}
+  {{- /* Bookmarks are not rendered as pages, so Hugo leaves them out of the tag pages:
+         a tag is a link only when a post or project also uses it. */}}
+  {{ with .Params.tags }}<p class="card-foot">{{ range $i, $t := . }}{{ if $i }} · {{ end }}{{ with site.GetPage (print "/tags/" ($t | urlize)) }}<a href="{{ .RelPermalink }}">{{ $t }}</a>{{ else }}{{ $t }}{{ end }}{{ end }}</p>{{ end }}
 </article>

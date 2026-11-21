@@ -1,0 +1,13 @@
+{{- /* Tags are a fixed vocabulary (data/tags.yaml). Any other tag, including a known
+       one in another case, stops the build with the file and the tag named.
+       Called once per build, through partialCached in head.html. */ -}}
+{{- $vocab := site.Data.tags -}}
+{{- range $page := site.RegularPages -}}
+  {{- range $tag := $page.Params.tags -}}
+    {{- if not (in $vocab $tag) -}}
+      {{- $hint := "Use a tag from that list, or add this one to it." -}}
+      {{- range $vocab }}{{ if eq (lower .) (lower $tag) }}{{ $hint = printf "Write it as %q." . }}{{ end }}{{ end -}}
+      {{- errorf "%s: tag %q is not in data/tags.yaml. %s" $page.File.Path $tag $hint -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

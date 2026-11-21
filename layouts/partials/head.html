@@ -1,3 +1,4 @@
+{{- partialCached "tags-check.html" site -}}
 {{- $title := cond .IsHome site.Title (printf "%s — %s" .Title site.Title) -}}
 {{- $desc := "" -}}
 {{- with .Description }}{{ $desc = . }}{{ else }}{{ with .Params.summary }}{{ $desc = . }}{{ else }}{{ with site.Params.description }}{{ $desc = . }}{{ end }}{{ end }}{{ end -}}

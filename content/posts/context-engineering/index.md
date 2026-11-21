@@ -2,7 +2,7 @@
 title: "Context engineering"
 date: 2025-09-21
 summary: "Notes on shaping the context window as a first-class design surface."
-tags: ["context", "agents"]
+tags: ["Context Engineering", "Agents"]
 ---
 
 Context engineering treats the prompt window as a budget to be allocated, not a bucket to be filled. Every token competes; the planner decides what earns a slot.
