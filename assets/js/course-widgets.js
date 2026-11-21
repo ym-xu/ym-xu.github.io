@@ -21,6 +21,7 @@
 //   rsquared           turn a line through the mean point: R² from 0 up to its best value and down below 0
 //   threshold          move the cut-off on predicted probabilities: sensitivity against specificity, one point of the ROC curve
 //   calib              a calibration plot under four kinds of stated probabilities: right, too high, too extreme, too timid
+//   netbenefit         the threshold probability against the net benefit of three strategies: by the model, everyone, no one
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1132,9 +1133,13 @@
   // 40 patients with a predicted probability each: 12 had the event, 28 did not. One slider: the cut-off.
   // Above: the patients along the probability axis, the cut-off as a line. Below: the ROC curve with the
   // point of this cut-off. Readout: sensitivity and specificity.
-  function thresholdFig(root) {
+  function probScene() {                                                  // the same 40 patients in "threshold" and "netbenefit"
     var rng = mulberry32(17), pts = [], i;
     for (i = 0; i < 40; i++) { var ev = i < 12, z = (ev ? 0.7 : -1.5) + 1.15 * normal(rng); pts.push({ ev: ev, p: Math.round(100 / (1 + Math.exp(-z))) / 100 }); }
+    return pts;
+  }
+  function thresholdFig(root) {
+    var pts = probScene(), i;
     var evs = pts.filter(function (q) { return q.ev; }), nos = pts.filter(function (q) { return !q.ev; });
     function at(t) {
       var tp = evs.filter(function (q) { return q.p >= t; }).length, tn = nos.filter(function (q) { return q.p < t; }).length;
@@ -1275,7 +1280,72 @@
     show(0);
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig };
+  // ---------- figure 16: net benefit ----------
+  // The 40 patients of "threshold" (12 would benefit from a new plan, 28 would not). One slider: the threshold
+  // probability, which is also the price of a wasted plan (pt / (1 - pt) useful plans). The plot is the decision
+  // curve of three strategies with the current threshold marked; the bars are their net benefit there.
+  function netBenefitFig(root) {
+    var pts = probScene(), n = pts.length, nev = pts.filter(function (q) { return q.ev; }).length;
+    function model(t) {
+      var tp = pts.filter(function (q) { return q.ev && q.p >= t; }).length, fp = pts.filter(function (q) { return !q.ev && q.p >= t; }).length;
+      return { tp: tp, fp: fp, nb: tp / n - fp / n * t / (1 - t) };
+    }
+    function all(t) { return nev / n - (n - nev) / n * t / (1 - t); }
+    var w = 360, hgt = 250, m = { l: 40, r: 10, t: 10, b: 38 }, X0 = 0, X1 = 0.65, Y0 = -0.1, Y1 = 0.34;
+    function px(v) { return m.l + (v - X0) / (X1 - X0) * (w - m.l - m.r); }
+    function py(v) { return m.t + (Y1 - v) / (Y1 - Y0) * (hgt - m.t - m.b); }
+    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hgt, role: 'img', 'aria-label': '决策曲线: 三种做法在各个阈值概率下的净获益' }, root);
+    var id = 'w-clip-' + (++uid), cp = el('clipPath', { id: id }, el('defs', {}, svg));
+    el('rect', { x: m.l, y: m.t, width: w - m.l - m.r, height: hgt - m.t - m.b }, cp);
+    [-0.1, 0, 0.1, 0.2, 0.3].forEach(function (v) {
+      el('line', { x1: m.l, x2: w - m.r, y1: py(v), y2: py(v), 'class': 'w-grid' }, svg);
+      el('text', { x: m.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, minus(v.toFixed(1)));
+    });
+    [0, 0.2, 0.4, 0.6].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: hgt - m.b, y2: hgt - m.b + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: hgt - m.b + 16, 'text-anchor': 'middle' }, svg, v.toFixed(1));
+    });
+    el('line', { x1: m.l, x2: w - m.r, y1: hgt - m.b, y2: hgt - m.b, 'class': 'w-axis' }, svg);
+    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: hgt - m.b, 'class': 'w-axis' }, svg);
+    el('text', { x: (m.l + w - m.r) / 2, y: hgt - 4, 'text-anchor': 'middle' }, svg, '阈值概率');
+    el('text', { x: m.l + 5, y: m.t + 10 }, svg, '净获益');
+    var plot = el('g', { 'clip-path': 'url(#' + id + ')' }, svg), dA = '', dM = '', k;
+    for (k = 1; k <= 64; k++) { var t = k / 100; dA += (k > 1 ? 'L' : 'M') + px(t).toFixed(1) + ' ' + py(all(t)).toFixed(1); dM += (k > 1 ? 'L' : 'M') + px(t).toFixed(1) + ' ' + py(model(t).nb).toFixed(1); }
+    el('line', { x1: px(X0), x2: px(X1), y1: py(0), y2: py(0), 'class': 'w-zero' }, plot);
+    el('path', { d: dA, 'class': 'w-curve thin' }, plot);
+    el('path', { d: dM, 'class': 'w-curve' }, plot);
+    var mark = el('line', { y1: m.t, y2: hgt - m.b, 'class': 'w-mean' }, plot), dotM = el('circle', { r: 5, 'class': 'w-pt' }, plot), dotA = el('circle', { r: 4, 'class': 'w-pt no' }, plot);
+    legend(root, [['line', '按模型'], ['thin', '全都做'], ['zero', '都不做(净获益是 0)'], ['dash', '现在的阈值概率']]);
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0.05; input.max = 0.6; input.step = 0.05; input.value = 0.2;
+    input.setAttribute('aria-label', '阈值概率');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '净获益(每位病人)');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.max(0, Math.min(100, v / 0.32 * 100)).toFixed(1) + '%'; val.textContent = minus(v.toFixed(3)); };
+    }
+    var setM = bar('按模型', 'train'), setA = bar('全都做', 'new'), setN = bar('都不做', 'new');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var t = Math.round(+input.value * 100) / 100, a = model(t), price = t / (1 - t), nbAll = all(t);
+      mark.setAttribute('x1', px(t)); mark.setAttribute('x2', px(t));
+      dotM.setAttribute('cx', px(t)); dotM.setAttribute('cy', py(a.nb));
+      dotA.setAttribute('cx', px(t)); dotA.setAttribute('cy', py(Math.max(Y0, nbAll)));
+      cap.textContent = '阈值概率 ' + t.toFixed(2) + ': 白做 1 次计划,抵掉 ' + price.toFixed(2) + ' 次有用的';
+      setM(a.nb); setA(nbAll); setN(0);
+      status.textContent = '按模型: 做 ' + (a.tp + a.fp) + ' 次计划,' + a.tp + ' 次有用,' + a.fp + ' 次白做。全都做: 40 次,' + nev + ' 次有用,' + (n - nev) + ' 次白做。'
+        + (a.nb > nbAll + 1e-9 && a.nb > 1e-9 ? '按模型最好。' : nbAll > a.nb + 1e-9 && nbAll > 0 ? '全都做最好。' : Math.abs(a.nb - nbAll) < 1e-9 && a.nb > 0 ? '按模型和全都做一样。' : '都不做最好。');
+    }
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

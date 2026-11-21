@@ -616,6 +616,7 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-pt.new { fill: none; stroke: var(--muted); stroke-width: 1; opacity: .75; }
 .widget .w-pt.no { fill: var(--bg); stroke: var(--link); stroke-width: 1.4; }
 .widget .w-curve { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linejoin: round; }
+.widget .w-curve.thin { stroke: var(--muted); stroke-width: 1.2; }
 .widget .w-res { stroke: var(--link); stroke-width: 1.5; }
 .widget .w-coef { fill: var(--muted); opacity: .6; }
 .widget .w-coef.real { fill: var(--link); opacity: 1; }
@@ -641,6 +642,8 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-key.line { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 2px solid var(--fg); }
 .widget .w-key.res { width: 0; height: 1em; border-radius: 0; background: none; border-left: 1.5px solid var(--link); }
 .widget .w-key.dash { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 1.5px dashed var(--link); }
+.widget .w-key.thin { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 1.2px solid var(--muted); }
+.widget .w-key.zero { width: 1.3em; height: 0; border-radius: 0; background: none; border-top: 1px dotted var(--muted); }
 .widget .w-key.hres { width: 1em; height: 0; border-radius: 0; background: none; border-top: 1.5px solid var(--link); }
 .widget .w-ctl { display: block; margin: .5rem 0 .7rem; font-size: .95rem; }
 .widget .w-ctl input[type="range"] { display: block; width: 100%; height: 32px; margin: .15rem 0 0; accent-color: var(--link); }
