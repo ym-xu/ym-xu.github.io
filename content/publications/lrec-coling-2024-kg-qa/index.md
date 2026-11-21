@@ -5,7 +5,6 @@ lastmod: 2026-11-21
 authors: "Benno Kruit, Yiming Xu, Jan-Christoph Kalo"
 venue: "LREC-COLING"
 year: 2024
-badge: "Oral"
 summary: "A retriever that adds passages found through a knowledge-graph lookup to dense text retrieval. It improves open-domain question answering on entity-centric questions, where dense retrievers fall short on rare entities, but barely changes the results on general questions."
 links:
   pdf: "https://aclanthology.org/2024.lrec-main.1225.pdf"
@@ -89,11 +88,11 @@ Adding a knowledge-graph lookup to an existing retriever and reader is simple, a
 
 ## Slides, poster and video
 
-The LREC-COLING 2024 proceedings host the material from the conference:
+The paper was presented in a poster session at LREC-COLING 2024 in Turin, on 23 May 2024. The proceedings host the material from the conference:
 
 - [Slides](https://www.lrec-conf.org/proceedings/lrec-coling-2024/media/slides/2406.pdf) (PDF, 11 slides)
 - [Poster](https://www.lrec-conf.org/proceedings/lrec-coling-2024/media/posters/2406.pdf) (PDF)
-- [Video of the talk](https://www.lrec-conf.org/proceedings/lrec-coling-2024/media/videos/2406.mp4) (MP4, 50 MB)
+- [Video](https://www.lrec-conf.org/proceedings/lrec-coling-2024/media/videos/2406.mp4) (MP4, 50 MB)
 - [Supplementary material](https://aclanthology.org/attachments/2024.lrec-main.1225.OptionalSupplementaryMaterial.zip) with the code, on the ACL Anthology
 
 ## Citation
