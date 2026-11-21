@@ -14,6 +14,7 @@
 //   fitline            set a straight line by hand (height and slope) and watch the squared error
 //   sigmoid            set an S-shaped probability curve by hand (midpoint and steepness) and watch the penalty
 //   signif             more patients: the P value of a weak predictor shrinks, the prediction error does not
+//   leak               variables chosen before cross-validation: pure noise looks predictive
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -734,7 +735,90 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif };
+  // ---------- figure 9: variables chosen before cross-validation ----------
+  // 60 simulated patients, an outcome that is pure noise, and up to 1000 candidate variables that are noise too.
+  // The 5 candidates most correlated with the outcome go into a linear model, checked by 5-fold cross-validation.
+  // "Leaky": the 5 are chosen once, using all 60 patients, and only the fitting is cross-validated.
+  // "Honest": the choosing is redone inside every round, without the held-out patients.
+  // One slider: the number of candidates. Nothing can be predicted, so the honest error cannot beat the mean.
+  function leakScene(seed, mulberry32, normal) {
+    var N = 60, K = 5, PMAX = 1000, KEEP = 5, rng = mulberry32(seed), y = [], X = [], i, j;
+    for (i = 0; i < N; i++) y.push(Math.round((-2.1 + 2.2 * normal(rng)) * 10) / 10);
+    for (j = 0; j < PMAX; j++) { var col = new Float64Array(N); for (i = 0; i < N; i++) col[i] = normal(rng); X.push(col); }
+    var fold = []; for (i = 0; i < N; i++) fold.push(i % K);              // the patients come in random order already
+    function pick(p, rows) {                                              // the KEEP candidates most correlated with y among rows
+      var n = rows.length, my = 0, sy = 0, out = [];
+      rows.forEach(function (r) { my += y[r] / n; });
+      rows.forEach(function (r) { sy += (y[r] - my) * (y[r] - my); });
+      for (var c = 0; c < p; c++) {
+        var mx = 0, sxx = 0, sxy = 0;
+        rows.forEach(function (r) { mx += X[c][r] / n; });
+        rows.forEach(function (r) { var d = X[c][r] - mx; sxx += d * d; sxy += d * (y[r] - my); });
+        out.push({ c: c, r: Math.abs(sxy / Math.sqrt(sxx * sy)) });
+      }
+      out.sort(function (a, b) { return b.r - a.r; });
+      return out.slice(0, KEEP).map(function (o) { return o.c; });
+    }
+    function fit(cols, rows) {                                            // least squares with an intercept, by the normal equations
+      var m = cols.length + 1, A = [], b = [], r, s, t;
+      for (r = 0; r < m; r++) { A.push(new Float64Array(m)); b.push(0); }
+      rows.forEach(function (row) {
+        var v = [1]; cols.forEach(function (c) { v.push(X[c][row]); });
+        for (r = 0; r < m; r++) { b[r] += v[r] * y[row]; for (s = 0; s < m; s++) A[r][s] += v[r] * v[s]; }
+      });
+      for (r = 0; r < m; r++) {                                           // Gaussian elimination
+        var piv = r; for (s = r + 1; s < m; s++) if (Math.abs(A[s][r]) > Math.abs(A[piv][r])) piv = s;
+        t = A[r]; A[r] = A[piv]; A[piv] = t; t = b[r]; b[r] = b[piv]; b[piv] = t;
+        for (s = r + 1; s < m; s++) { var f = A[s][r] / A[r][r]; b[s] -= f * b[r]; for (t = r; t < m; t++) A[s][t] -= f * A[r][t]; }
+      }
+      var w = new Float64Array(m);
+      for (r = m - 1; r >= 0; r--) { var acc = b[r]; for (s = r + 1; s < m; s++) acc -= A[r][s] * w[s]; w[r] = acc / A[r][r]; }
+      return function (row) { var v = w[0]; cols.forEach(function (c, k) { v += w[k + 1] * X[c][row]; }); return v; };
+    }
+    function run(p) {
+      var all = [], leaky = 0, honest = 0, base = 0;
+      for (i = 0; i < N; i++) all.push(i);
+      var chosen = pick(p, all);                                          // the leak: chosen with every patient, also the held-out ones
+      for (var k = 0; k < K; k++) {
+        var train = all.filter(function (r) { return fold[r] !== k; }), test = all.filter(function (r) { return fold[r] === k; });
+        var mean = 0; train.forEach(function (r) { mean += y[r] / train.length; });
+        var fl = fit(chosen, train), fh = fit(pick(p, train), train);
+        test.forEach(function (r) { base += Math.abs(y[r] - mean) / N; leaky += Math.abs(y[r] - fl(r)) / N; honest += Math.abs(y[r] - fh(r)) / N; });
+      }
+      return { base: base, leaky: leaky, honest: honest };
+    }
+    return { run: run, sizes: [10, 30, 100, 300, 1000] };
+  }
+  function leak(root) {
+    var sc = leakScene(33, mulberry32, normal);
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0; input.max = sc.sizes.length - 1; input.step = 1; input.value = 0;
+    input.setAttribute('aria-label', '候选变量的个数');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '5 折交叉验证的平均误差(60 位病人;结局和所有候选变量都是随机数)');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / 2.6 * 100).toFixed(1) + '%'; val.textContent = gy(v); };
+    }
+    var setBase = bar('都猜平均值', 'new'), setLeaky = bar('先挑变量,再验证', 'train'), setHonest = bar('挑变量也放进验证', 'cv');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var p = sc.sizes[+input.value], r = sc.run(p);
+      cap.textContent = '候选变量: ' + p + ' 个(从中挑 5 个)';
+      setBase(r.base); setLeaky(r.leaky); setHonest(r.honest);
+      status.textContent = r.leaky < r.base
+        ? '先挑变量再验证,看起来比"都猜平均值"准了 ' + (r.base - r.leaky).toFixed(2) + ' Gy。这些变量是随机数,这个"准"是假的。'
+        : '候选变量还少,挑出来的 5 个和结局碰巧相关得不多,假象还不明显。';
+    }
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
