@@ -2756,7 +2756,151 @@
     }
   };
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene), leastsq: staged(lineScene) };
+  // --- scene: logistic regression, how the S-shaped curve is fitted step by step (stat-ml lesson 2) ---
+  // The 40 simulated patients of the figure "sigmoid". Above: probability against the excess dose, each
+  // patient's stick reaching from what happened (1 or 0) to what the model said. Below, on the same x axis:
+  // the same model drawn as log-odds, where it is a straight line. Fitted by Newton's method, starting from
+  // "the same probability for everyone"; every iteration is one step the reader can see.
+  var mleScene = {
+    label: '分步图: 逻辑回归怎样一步一步找到那条 S 形曲线',
+    height: 338,
+    tiles: ['挪了几步', '平均罚分', '这一步'],
+    build: function (api) {
+      var svg = api.svg, kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, rng = mulberry32(16), pts = [], i, NEWX = 2.0;
+      while (pts.length < 40) {                       // the same patients as in the figure "sigmoid"
+        var x0 = Math.round((0.2 + 11.8 * Math.pow(rng(), 1.3)) * 10) / 10;
+        pts.push({ x: x0, y: rng() < 1 / (1 + Math.exp(-(1.2 - 0.65 * x0))) ? 1 : 0 });
+      }
+      var n = pts.length;
+
+      // --- the algorithm ---
+      function prob(b, x) { return 1 / (1 + Math.exp(-(b[0] + b[1] * x))); }
+      function penalty(b, q) { var p = Math.min(1 - 1e-9, Math.max(1e-9, prob(b, q.x))); return -Math.log(q.y ? p : 1 - p); }
+      function loss(b) { var t = 0; pts.forEach(function (q) { t += penalty(b, q); }); return t / n; }
+      var rate = pts.filter(function (q) { return q.y; }).length / n, path = [[Math.log(rate / (1 - rate)), 0]];
+      for (i = 0; i < 12; i++) {                      // Newton's method: where the penalty would be lowest if it were a bowl; go there; look again
+        var b = path[i], g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+        pts.forEach(function (q) {
+          var p = prob(b, q.x), w = p * (1 - p);
+          g0 += q.y - p; g1 += (q.y - p) * q.x; h00 += w; h01 += w * q.x; h11 += w * q.x * q.x;
+        });
+        var det = h00 * h11 - h01 * h01, nb = [b[0] + (h11 * g0 - h01 * g1) / det, b[1] + (h00 * g1 - h01 * g0) / det];
+        path.push(nb);
+        if (Math.abs(loss(b) - loss(nb)) < 1e-4) break;
+      }
+      var K = path.length - 1, last = path[K], worst = pts.reduce(function (a, q) { return penalty(path[0], q) > penalty(path[0], a) ? q : a; });
+      api.facts({ patients: n, events: Math.round(rate * n), rate: rate, steps: K, path: path.map(function (b) { return [b[0], b[1], loss(b)]; }),
+        worstAtStart: penalty(path[0], worst), midpoint: -last[0] / last[1], oddsRatio: Math.exp(last[1]), guess: [last[0] + last[1] * NEWX, prob(last, NEWX)] });
+
+      // --- above: probability ---
+      var PH = 230, PM = { l: 36, r: 10, t: 12, b: 34 }, XMAX = 12.5;
+      function px(x) { return PM.l + x / XMAX * (W - PM.l - PM.r); }
+      function py(p) { return PM.t + (1 - p) * (PH - PM.t - PM.b); }
+      [0, 0.5, 1].forEach(function (v) {
+        el('line', { x1: PM.l, x2: W - PM.r, y1: py(v), y2: py(v), 'class': v === 0.5 ? 'w-zero' : 'w-grid' }, svg);
+        T(svg, PM.l - 5, py(v) + 4, v === 0.5 ? '50%' : v ? '100%' : '0', '', 'end');
+      });
+      [0, 2, 4, 6, 8, 10, 12].forEach(function (v) {
+        el('line', { x1: px(v), x2: px(v), y1: PH - PM.b, y2: PH - PM.b + 4, 'class': 'w-axis' }, svg);
+        T(svg, px(v), PH - PM.b + 16, String(v), '', 'middle');
+      });
+      el('line', { x1: PM.l, x2: W - PM.r, y1: PH - PM.b, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+      el('line', { x1: PM.l, x2: PM.l, y1: PM.t, y2: PH - PM.b, 'class': 'w-axis' }, svg);
+      T(svg, (PM.l + W - PM.r) / 2, PH - 3, '5 mm 计划超过 68 Gy 多少 (Gy)', '', 'middle');
+      var mid = el('line', { y1: PM.t, y2: 332, 'class': 'w-mean' }, svg);
+      var sticks = pts.map(function (q) { return el('line', { x1: px(q.x), x2: px(q.x), y1: py(q.y), y2: py(q.y), 'class': 'w-res s-res' }, svg); });
+      var curve = el('path', { 'class': 'w-curve' }, svg);
+      pts.forEach(function (q) { el('circle', { cx: px(q.x), cy: py(q.y), r: 3.4, 'class': 'w-pt' + (q.y ? '' : ' no') }, svg); });
+      var flag = el('g', {}, svg), flagRing = el('circle', { r: 6.5, 'class': 's-ring' }, flag), flagText = T(flag, 0, 0, '', 's-v s-n s-small s-halo');
+      var probe = el('g', {}, svg), probeLine = el('line', { x1: px(NEWX), x2: px(NEWX), y1: py(0), 'class': 's-scan' }, probe), probeDot = el('circle', { cx: px(NEWX), r: 5, 'class': 's-token' }, probe);
+      var probeText = T(probe, px(NEWX) + 8, 0, '', 's-v s-n s-small s-halo');
+
+      // --- below: the same model as log-odds ---
+      var lower = kit.layer('lower');
+      function ly(v) { return 291 - Math.max(-6.4, Math.min(6.4, v)) * 6.2; }
+      T(lower, PM.l + 4, 250, '同一个模型,画成 log-odds: 一条直线', 's-k');
+      [-4, 0, 4].forEach(function (v) {
+        el('line', { x1: PM.l, x2: W - PM.r, y1: ly(v), y2: ly(v), 'class': v ? 'w-grid' : 'w-zero' }, lower);
+        T(lower, PM.l - 5, ly(v) + 3.5, (v > 0 ? '+' : '') + minus(v), '', 'end');
+      });
+      var straight = el('line', { x1: px(0), x2: px(XMAX), 'class': 's-line' }, lower), eq = T(lower, W - PM.r - 2, 264, '', 's-v s-n s-small s-halo', 'end');
+      var probe2 = el('circle', { cx: px(NEWX), r: 4, 'class': 's-token' }, lower);
+
+      function model(b, stick) {                     // the curve, the line, the sticks (at a share of their length)
+        var d = '', k, x;
+        for (k = 0; k <= 250; k++) { x = XMAX * k / 250; d += (k ? 'L' : 'M') + px(x).toFixed(1) + ' ' + py(prob(b, x)).toFixed(1); }
+        curve.setAttribute('d', d);
+        sticks.forEach(function (s, j) { s.setAttribute('y2', lerp(py(pts[j].y), py(prob(b, pts[j].x)), stick == null ? 1 : stick)); });
+        straight.setAttribute('y1', ly(b[0])); straight.setAttribute('y2', ly(b[0] + b[1] * XMAX));
+        eq.textContent = 'log-odds = ' + num(b[0]) + (b[1] < 0 ? ' − ' : ' + ') + Math.abs(b[1]).toFixed(2) + ' × 超出';
+        var m = Math.abs(b[1]) > 1e-6 ? -b[0] / b[1] : -1;
+        if (m > 0 && m < XMAX) { mid.setAttribute('x1', px(m)); mid.setAttribute('x2', px(m)); fade(mid, 1); } else fade(mid, 0);
+      }
+      function between(k, u) { var a = path[k], c = path[Math.min(K, k + 1)]; return [lerp(a[0], c[0], u), lerp(a[1], c[1], u)]; }
+      function tiles(k, b) { api.tile(0, k + ' 步'); api.tile(1, loss(b).toFixed(2), null, loss(b) / loss(path[0])); }
+      function reset(layers) { kit.show(layers); fade(flag, 0); fade(probe, 0); fade(probe2, 0); }
+
+      var steps = [
+        function () {                                 // 1 the patients
+          reset([]);
+          curve.setAttribute('d', ''); fade(mid, 0); sticks.forEach(function (s, j) { s.setAttribute('y2', py(pts[j].y)); });
+          api.tile(0, '—'); api.tile(1, '—'); api.tile(2, Math.round(rate * n) + ' / ' + n, '降下来的病人');
+        },
+        function () {                                 // 2 the same probability for everyone
+          reset(['lower']);
+          model(path[0], 0); tiles(0, path[0]); api.tile(1, '—'); api.tile(2, (rate * 100).toFixed(0) + '%', '对谁都说');
+          api.tween(400, 900, function (u) { model(path[0], E(u)); });
+          api.at(1300, function () { tiles(0, path[0]); });
+        },
+        function () {                                 // 3 the penalty of one patient
+          reset(['lower']);
+          model(path[0]); tiles(0, path[0]); api.tile(2, penalty(path[0], worst).toFixed(2), '罚得最重的一位');
+          flagRing.setAttribute('cx', px(worst.x)); flagRing.setAttribute('cy', py(worst.y));
+          flagText.setAttribute('x', px(worst.x) + 10); flagText.setAttribute('y', py(worst.y) + (worst.y ? 16 : -8));
+          flagText.textContent = '罚 ' + penalty(path[0], worst).toFixed(2);
+          api.tween(300, 400, function (u) { fade(flag, u); });
+        },
+        function () {                                 // 4 one step
+          reset(['lower']);
+          model(path[0]); tiles(0, path[0]); api.tile(2, '—', '平均罚分降了');
+          api.tween(500, 1400, function (u) { model(between(0, E(u))); });
+          api.at(1900, function () { tiles(1, path[1]); api.tile(2, (loss(path[0]) - loss(path[1])).toFixed(2), '平均罚分降了'); });
+        },
+        function () {                                 // 5 more steps, until nothing changes
+          reset(['lower']);
+          model(path[1]); tiles(1, path[1]); api.tile(2, '—', '这一步降了');
+          function show(k) { model(path[k]); tiles(k, path[k]); api.tile(2, k ? (loss(path[k - 1]) - loss(path[k])).toFixed(4) : '—', '这一步降了'); }
+          for (var k = 1; k < K; k++) {
+            (function (k) {
+              api.tween(400 + (k - 1) * 1000, 800, function (u) { model(between(k, E(u))); });
+              api.at(1200 + (k - 1) * 1000, function () { show(k + 1); });
+            })(k);
+          }
+          api.at(1300 + (K - 1) * 1000, function () {
+            show(K);
+            api.control({ label: '自己拖: 第 ' + K + ' 步之后', min: 0, max: K, value: K, oninput: function (v, say) { show(v); say('自己拖: 第 ' + v + ' 步之后'); } });
+          });
+        },
+        function () {                                 // 6 the fitted curve
+          reset(['lower']);
+          model(last); tiles(K, last); api.tile(2, Math.exp(last[1]).toFixed(2), '每多超 1 Gy,odds 乘以');
+        },
+        function () {                                 // 7 a new patient
+          reset(['lower']);
+          model(last); tiles(K, last); api.tile(2, '—', '新病人的概率');
+          var p = prob(last, NEWX), z = last[0] + last[1] * NEWX;
+          probe2.setAttribute('cy', ly(z)); probeText.textContent = (p * 100).toFixed(0) + '%';
+          probeLine.setAttribute('y2', py(0)); probeDot.setAttribute('cy', py(0)); probeText.setAttribute('y', py(0)); fade(probe, 1);
+          api.tween(300, 300, function (u) { fade(probe2, u); });
+          api.tween(700, 800, function (u) { var y = lerp(py(0), py(p), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); probeText.setAttribute('y', y - 8); });
+          api.at(1500, function () { fade(probe2, 1); api.tile(2, (p * 100).toFixed(0) + '%', '新病人的概率'); });
+        }
+      ];
+      return function (k) { steps[k](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene), leastsq: staged(lineScene), mle: staged(mleScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
