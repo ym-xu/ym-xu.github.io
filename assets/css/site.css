@@ -391,6 +391,14 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .content blockquote > :last-child { margin-bottom: 0; }
 .content :not(pre) > code { background: var(--surface-hover); padding: .06em .32em; border-radius: var(--radius-sm); font-size: .9em; }
 
+/* Articles (posts, projects, publications): running text has its own measure, about 80 characters
+   to a line at this size. Figures, tables and code keep the full width of the sheet. Not below
+   721px, where the text is 16px and the sheet is the screen. */
+@media (min-width: 721px) {
+  body:is(.section-posts, .section-projects, .section-publications).kind-page :is(.toc, .content > :is(p, ul, ol, blockquote, h2, h3, h4)) { max-width: 42.5rem; margin-inline: auto; }
+  body:is(.section-posts, .section-projects, .section-publications).kind-page .content > :is(p, ul, ol, blockquote) { font-size: 1.125rem; }
+}
+
 .pager { display: flex; justify-content: space-between; gap: 1rem; margin: 2.5rem 0 0; padding-top: 1rem; border-top: .5px solid var(--border); font-style: italic; }
 .pager .next { margin-left: auto; text-align: right; }
 
