@@ -74,6 +74,19 @@ def main():
             for wi, w in enumerate(page.locator('.widget[data-widget]').all()):
                 w.scroll_into_view_if_needed()
                 name = w.get_attribute('data-widget')
+                if 'stage' in (w.get_attribute('class') or ''):
+                    # a stepped diagram: every step at its end state, its tiles and its status line
+                    w.evaluate("el => el.setAttribute('data-still', '1')")
+                    w.locator('.stage-again').tap()
+                    while True:
+                        tiles = ' | '.join(x.inner_text().replace('\n', ' ') for x in w.locator('.stage-tile').all())
+                        print(f'  图 {wi + 1} ({name}) {w.locator(".w-status").inner_text()}: {tiles}')
+                        nxt = w.locator('.stage-next')
+                        if nxt.is_disabled():
+                            break
+                        nxt.tap()
+                        page.wait_for_timeout(60)
+                    continue
                 rng = w.locator('input[type=range]')
                 bars = lambda: ' | '.join(x.inner_text().replace('\n', ' ') for x in w.locator('.w-bar').all())
                 move = "(el, v) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles: true})); }"

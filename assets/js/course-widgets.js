@@ -23,6 +23,7 @@
 //   calib              a calibration plot under four kinds of stated probabilities: right, too high, too extreme, too timid
 //   netbenefit         the threshold probability against the net benefit of three strategies: by the model, everyone, no one
 //   samplesize         the three criteria of Riley et al. for a yes/no outcome: parameters, event proportion, expected R²
+//   models             a stepped diagram (class "widget stage", the steps' text inside): one new patient through six models
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1386,12 +1387,475 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig };
+  // ---------- stepped diagrams ----------
+  // One drawing that changes step by step, with the text of each step under it: the reader taps
+  // "下一步", the drawing plays that step, the numbers on top fill in. Used where a lesson walks
+  // through how something works, instead of exploring one dial.
+  // Markup:  <div class="widget stage" data-widget="models">
+  //            <div class="stage-step" data-label="线性回归"> Markdown of this step </div> …
+  //          </div>
+  // Without JavaScript the steps read as plain paragraphs, one after another. With the attribute
+  // data-still (or the system setting "reduce motion") every step jumps to its end state.
+  function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function num(v, d) { return minus(v.toFixed(d == null ? 2 : d)); }
+
+  function stage(root, scene) {
+    var texts = [].slice.call(root.querySelectorAll('.stage-step')), n = texts.length, first = texts[0];
+    var cur = 0, timers = [], frames = [], seen = false;
+    var fig = h('div', 'stage-fig'); root.insertBefore(fig, first);
+    var tileBox = h('div', 'stage-tiles', fig);
+    var tiles = scene.tiles.map(function (label) {
+      var t = h('div', 'stage-tile', tileBox);
+      return { label: label, k: h('span', 'stage-tile-k', t, label), v: h('span', 'stage-tile-v', t, '—') };
+    });
+    var svg = el('svg', { viewBox: '0 0 360 ' + scene.height, role: 'img', 'aria-label': scene.label }, fig);
+    var prog = h('div', 'stage-progress'); root.insertBefore(prog, first);
+    var segs = texts.map(function () { return h('i', '', prog); });
+    var nav = h('div', 'stage-nav'); root.insertBefore(nav, first);
+    var back = button(nav, '← 上一步', 'stage-back'), again = button(nav, '↻', 'stage-again'), next = button(nav, '', 'primary stage-next');
+    again.setAttribute('aria-label', '重播这一步'); again.title = '重播这一步';
+    var status = h('p', 'w-status stage-status'); root.insertBefore(status, first);
+    status.setAttribute('aria-live', 'polite');
+    var body = h('div', 'stage-text'); root.insertBefore(body, first);
+    texts.forEach(function (t) { body.appendChild(t); });
+
+    // What a scene gets: the drawing, the tiles, and a clock. "at" and "tween" are cancelled when
+    // the reader moves on; a tween calls fn with 0 … 1 and never sets a starting state by itself.
+    var api = {
+      svg: svg, instant: false,
+      tile: function (i, value, label) { tiles[i].v.textContent = value; tiles[i].k.textContent = label || tiles[i].label; },
+      at: function (ms, fn) { if (api.instant) fn(); else timers.push(setTimeout(fn, ms)); },
+      tween: function (ms, dur, fn) {
+        if (api.instant) { fn(1); return; }
+        timers.push(setTimeout(function () {
+          var t0 = null;
+          function frame(now) {
+            if (t0 === null) t0 = now;
+            var t = Math.min(1, (now - t0) / dur);
+            fn(t);
+            if (t < 1) frames.push(requestAnimationFrame(frame));
+          }
+          frames.push(requestAnimationFrame(frame));
+        }, ms));
+      }
+    };
+    var enter = scene.build(api);
+    function still() {
+      return root.hasAttribute('data-still') || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+    function go(i, quiet) {
+      timers.forEach(clearTimeout); frames.forEach(cancelAnimationFrame); timers = []; frames = [];
+      cur = Math.max(0, Math.min(n - 1, i));
+      api.instant = !!quiet || still();
+      tiles.forEach(function (t, k) { api.tile(k, '—'); });
+      enter(cur);
+      texts.forEach(function (t, k) { t.classList.toggle('on', k === cur); });
+      segs.forEach(function (s, k) { s.className = k < cur ? 'done' : k === cur ? 'now' : ''; });
+      back.disabled = cur === 0;
+      next.disabled = cur === n - 1;
+      next.textContent = cur === n - 1 ? '已是最后一步' : '下一步: ' + texts[cur + 1].getAttribute('data-label') + ' →';
+      status.textContent = '第 ' + (cur + 1) + ' 步 / 共 ' + n + ' 步 · ' + texts[cur].getAttribute('data-label');
+    }
+    // the text box keeps the height of the longest step, so the page below does not jump
+    function fit() {
+      var max = 0;
+      texts.forEach(function (t) { t.classList.add('on'); max = Math.max(max, t.offsetHeight); });
+      texts.forEach(function (t, k) { t.classList.toggle('on', k === cur); });
+      body.style.minHeight = max + 'px';
+    }
+    back.addEventListener('click', function () { go(cur - 1); });
+    next.addEventListener('click', function () { go(cur + 1); });
+    again.addEventListener('click', function () { go(cur); });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' && cur < n - 1) { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft' && cur > 0) { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+    fit();
+    window.addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+    // the first step plays once, when the drawing first comes into view
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (!seen && entries[0].isIntersecting) { seen = true; io.disconnect(); if (cur === 0) go(0); }
+      }, { threshold: 0.6 });
+      io.observe(fig);
+    }
+  }
+  function staged(scene) {
+    var make = function (root) { stage(root, scene); };
+    make.keep = true;                     // the steps' text is in the page: do not empty the box
+    return make;
+  }
+
+  // --- scene: one new patient through six models (stat-ml lesson 15) ---
+  // Every number is printed by the lesson's own code: 196 simulated patients, three predictors,
+  // outcome Δ (volume plan); the patient has wall 3.0 mm, applicator 30 mm, 3 fractions.
+  // FOREST: what each of the 300 trees of the random forest predicts for this patient.
+  // BOOST: the prediction of the gradient boosting model after 1, 2, … 100 small trees.
+  var FOREST = [-5.89,-5.45,-4.88,-3.95,-3.71,-5.19,-3.91,-5.09,-5.36,-6.96,-4.25,-4.91,-5.21,-5.08,-4.93,-4.56,-5.18,-4.6,-4.75,-6.2,-4.3,-3.71,-4.56,-4.42,-3.71,-4.96,-5.95,-5.18,-4.65,-4.62,-5.55,-5.65,-4.69,-5.37,-5.69,-5.51,-4.66,-5.26,-4.25,-4.84,-4.67,-4.38,-4.49,-6.02,-5.13,-5.29,-3.67,-4.72,-5.56,-4.04,-5.73,-4.66,-3.95,-4.63,-4.97,-4.81,-4.63,-3.64,-5.31,-4.68,-4.8,-4.27,-4.97,-4.9,-5.65,-5.64,-5.78,-4.02,-4.9,-2.85,-5.37,-5.5,-4.42,-4.15,-5.34,-5.07,-4.08,-4.63,-5.65,-4.65,-4.71,-5.23,-4.11,-4.69,-5.15,-4.82,-4.68,-5.2,-4.69,-4.16,-4.14,-6.12,-4.21,-4.54,-5.55,-4.48,-5.52,-4.61,-2.75,-5.23,-4.32,-4.96,-5.34,-6.98,-3.35,-7.23,-4.83,-4.39,-4.54,-4.65,-5.03,-4.45,-4.9,-5.9,-4.68,-3.71,-5.41,-6.54,-4.8,-3.51,-5.64,-4.73,-5.41,-5.37,-5.63,-4.53,-3.15,-5.02,-5.92,-4.89,-4.02,-5.93,-4.08,-4.45,-6.33,-5.35,-5.31,-6.33,-3.23,-4.15,-5.48,-4.32,-5.66,-5.56,-4.2,-4.24,-4.5,-5.14,-4.59,-5.26,-4.55,-5.72,-5.42,-6.19,-5.5,-5.12,-3.78,-4.22,-3.99,-4.69,-4.08,-2.95,-4.87,-4.9,-4.64,-5.19,-4.33,-5.58,-4.91,-6.37,-5.98,-4.0,-4.64,-4.01,-5.11,-6.33,-5.63,-5.71,-4.81,-4.2,-4.46,-5.08,-5.48,-5.76,-5.39,-3.76,-2.78,-4.96,-4.78,-4.74,-4.65,-6.25,-4.44,-4.53,-4.96,-6.08,-5.71,-5.53,-4.97,-5.12,-3.94,-3.9,-4.72,-5.62,-4.09,-5.17,-5.69,-4.45,-4.65,-3.06,-4.36,-4.0,-3.08,-4.69,-4.22,-4.71,-4.55,-4.62,-5.28,-3.96,-4.27,-4.34,-4.81,-3.93,-4.21,-4.35,-4.15,-6.12,-5.87,-4.05,-4.77,-5.34,-4.42,-4.91,-5.18,-4.38,-3.06,-4.61,-5.27,-4.75,-3.73,-3.62,-6.16,-6.15,-5.02,-5.05,-5.16,-5.76,-5.44,-4.68,-4.55,-3.67,-4.31,-5.65,-4.91,-4.0,-6.08,-3.7,-5.8,-4.79,-4.37,-4.97,-5.17,-3.99,-3.86,-3.95,-6.26,-4.85,-5.06,-5.44,-4.56,-5.66,-5.36,-5.52,-5.16,-5.83,-4.65,-4.19,-4.03,-3.27,-4.9,-4.44,-4.82,-4.27,-5.46,-5.66,-5.37,-5.2,-3.74,-5.42,-5.06,-6.48,-5.08,-7.08,-6.14,-4.2,-5.24,-3.86,-4.81,-5.28];
+  var BOOST = [-2.239,-2.384,-2.521,-2.67,-2.795,-2.93,-3.043,-3.166,-3.283,-3.38,-3.486,-3.587,-3.671,-3.762,-3.849,-3.921,-4.008,-4.067,-4.111,-4.189,-4.221,-4.279,-4.309,-4.378,-4.406,-4.465,-4.491,-4.54,-4.598,-4.621,-4.662,-4.715,-4.736,-4.786,-4.804,-4.823,-4.84,-4.821,-4.839,-4.872,-4.854,-4.876,-4.86,-4.857,-4.871,-4.868,-4.882,-4.879,-4.865,-4.892,-4.905,-4.893,-4.895,-4.907,-4.904,-4.905,-4.894,-4.916,-4.91,-4.921,-4.922,-4.922,-4.923,-4.913,-4.926,-4.92,-4.926,-4.918,-4.918,-4.938,-4.93,-4.93,-4.941,-4.946,-4.947,-4.939,-4.94,-4.945,-4.946,-4.948,-4.948,-4.941,-4.946,-4.947,-4.94,-4.937,-4.949,-4.943,-4.943,-4.947,-4.963,-4.963,-4.962,-4.972,-4.973,-4.975,-4.975,-4.976,-4.975,-4.976];
+  var modelsScene = {
+    label: '分步图: 同一位新病人依次经过六种模型,每种模型怎样算出预测值',
+    height: 300,
+    tiles: ['模型', '这位病人的预测', '新病人身上的误差'],
+    build: function (api) {
+      var svg = api.svg, L = {}, E = easeInOut, MEAN = -2.0867;
+      function X(v) { return 30 + (v + 8) * 37.5; }                // the Δ axis: −8 … 0 Gy
+      function XP(p) { return 30 + p * 300; }                      // the probability axis
+      function T(parent, x, y, s, cls, anchor) { return el('text', { x: x, y: y, 'class': cls || '', 'text-anchor': anchor || 'start' }, parent, s); }
+      function layer(name) { return (L[name] = el('g', { 'class': 'stage-layer' }, svg)); }
+      function show(names) { for (var k in L) L[k].setAttribute('class', 'stage-layer' + (names.indexOf(k) >= 0 ? ' on' : '')); }
+      function fade(node, v) { node.style.opacity = v; }
+      function widthOf(s) { var w = 0; for (var i = 0; i < s.length; i++) w += s.charCodeAt(i) > 255 ? 11.4 : 6.6; return w; }
+
+      // the machine: a panel with the model's name on its edge
+      var panel = el('rect', { x: 10, y: 52, width: 340, height: 154, rx: 12, 'class': 's-panel' }, svg);
+
+      // --- what is inside the panel, one layer per step ---
+      var ask = layer('ask');
+      el('rect', { x: 118, y: 100, width: 124, height: 44, rx: 10, 'class': 's-node hot' }, ask);
+      T(ask, 180, 127, '模型', 's-big2', 'middle');
+      T(ask, 180, 172, '一条规则: 三个数进去,一个预测出来', 's-t', 'middle');
+      T(ask, 180, 246, '?', 's-q', 'middle');
+
+      var base = layer('base');
+      T(base, 180, 96, '不看这位病人的任何信息', 's-t', 'middle');
+      var baseNum = T(base, 180, 140, '', 's-big', 'middle');
+      T(base, 180, 170, '196 位建模病人的平均值', '', 'middle');
+
+      // rows of "variable, how it differs, contribution": used by the straight line and by LASSO
+      function rows(parent, items) {
+        el('line', { x1: 268, x2: 268, y1: 78, y2: 168, 'class': 'w-zero' }, parent);
+        return items.map(function (it, k) {
+          var y = 92 + k * 32, g = el('g', {}, parent);
+          T(g, 24, y, it[0], 's-v');
+          var note = T(g, 24, y + 14, it[1], 's-k');
+          var ghost = el('rect', { y: y - 10, height: 12, rx: 2, 'class': 's-bar ghost' }, g);
+          var bar = el('rect', { y: y - 10, height: 12, rx: 2, 'class': 's-bar' }, g);
+          var val = T(g, 338, y, '', 's-v s-n', 'end');
+          function size(node, v) { var w = Math.max(0.8, Math.abs(v) * 70); node.setAttribute('x', 268 - w); node.setAttribute('width', w); }
+          return { g: g, note: note, set: function (v) { size(bar, v); val.textContent = num(v); }, ghost: function (v) { size(ghost, v); fade(ghost, v == null ? 0 : 1); } };
+        });
+      }
+      var lin = layer('lin');
+      T(lin, 338, 72, '和平均的病人比,加或减多少 (Gy)', 's-k', 'end');
+      var LIN = [['壁厚', '比平均薄 0.69 mm,每 mm 1.57 Gy', -1.0891], ['直径', '比平均小 0.05 mm,每 mm 0.17 Gy', -0.0085], ['近距离次数', '比平均多 0.55 次,每次 −1.21 Gy', -0.6581]];
+      var linRows = rows(lin, LIN), linSum = el('g', {}, lin);
+      T(linSum, 24, 196, '从平均值 −2.09 出发,加上这三项', 's-t');
+      T(linSum, 338, 196, '−3.84 Gy', 's-v s-n', 'end');
+
+      var lasso = layer('lasso');
+      T(lasso, 338, 72, '约束强度 alpha = 0.2;虚线框是没加约束时', 's-k', 'end');
+      var LAS = [['壁厚', '系数 1.57 → 1.40', -1.0891, -0.9734], ['直径', '系数 0.17 → 0.11', -0.0085, -0.0055], ['近距离次数', '系数 −1.21 → −0.80', -0.6581, -0.4348]];
+      var lasRows = rows(lasso, LAS), lasSum = el('g', {}, lasso);
+      T(lasSum, 24, 196, '三项都往 0 收了一点', 's-t');
+      T(lasSum, 338, 196, '−3.50 Gy', 's-v s-n', 'end');
+
+      var tree = layer('tree');
+      function edge(a, b, word) {
+        var ln = el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], 'class': 's-edge' }, tree);
+        T(tree, (a[0] + b[0]) / 2 + (b[0] < a[0] ? -9 : 9), (a[1] + b[1]) / 2 + 1, word, 's-k', 'middle');
+        return ln;
+      }
+      function node(cx, cy, w, s, leaf) {
+        var r = el('rect', { x: cx - w / 2, y: cy - 12, width: w, height: 24, rx: leaf ? 12 : 6, 'class': 's-node' }, tree);
+        T(tree, cx, cy + 4, s, leaf ? 's-v s-n' : 's-t', 'middle');
+        return r;
+      }
+      var eRootL = edge([150, 102], [98, 122], '是'), eRootR = edge([210, 102], [262, 122], '否');
+      var eLL = edge([80, 146], [52, 170], '是'), eLR = edge([116, 146], [136, 170], '否');
+      edge([244, 146], [224, 170], '是'); edge([280, 146], [308, 170], '否');
+      var nRoot = node(180, 90, 132, '壁厚 ≤ 3.35 mm?'), nLeft = node(98, 134, 108, '近距离做 2 次?');
+      node(262, 134, 122, '壁厚 ≤ 5.10 mm?');
+      node(52, 182, 60, '−2.69', true);
+      var nHit = node(136, 182, 60, '−5.13', true);
+      node(224, 182, 60, '−1.34', true); node(308, 182, 60, '+1.40', true);
+      var treeParts = [nRoot, nLeft, nHit, eRootL, eLR];
+
+      var forest = layer('forest'), minis = [];
+      FOREST.forEach(function (v, i) {
+        var x = 27 + (i % 30) * 10.3, y = 76 + Math.floor(i / 30) * 10.6;
+        minis.push(el('path', { d: 'M' + (x + 3.5) + ' ' + y + 'l-3.5 6.5m3.5 -6.5l3.5 6.5', 'class': 's-mini' }, forest));
+      });
+      var forestNote = T(forest, 24, 198, '', 's-t');
+
+      var boost = layer('boost');
+      T(boost, 24, 78, '新预测 = 旧预测 + 0.05 × 这棵小树的修正', 's-t');
+      var boostCount = T(boost, 338, 78, '', 's-v s-n', 'end');
+      function BX(k) { return 46 + k * 2.86; }
+      function BY(v) { return 98 + (-2 - v) * 24; }
+      [[MEAN, '−2.09'], [-4.976, '−4.98']].forEach(function (g) {
+        el('line', { x1: 46, x2: 332, y1: BY(g[0]), y2: BY(g[0]), 'class': 'w-zero' }, boost);
+        T(boost, 42, BY(g[0]) + 3.5, g[1], 's-n', 'end');
+      });
+      T(boost, 46, 196, '第 1 棵', '', 'start'); T(boost, 332, 196, '第 100 棵', '', 'end');
+      var boostLine = el('polyline', { 'class': 's-line', points: '' }, boost), boostHead = el('circle', { r: 4, 'class': 's-token' }, boost);
+
+      var logit = layer('logit');
+      var LOG = [['7.24', '起点'], ['− 0.83 × 2.0', '超出'], ['− 1.59 × 3.0', '壁厚']].map(function (it, k) {
+        var g = el('g', {}, logit);
+        T(g, 24, 94 + k * 21, it[0], 's-t s-n'); T(g, 142, 94 + k * 21, it[1], 's-k', 'end');
+        return g;
+      });
+      var logSum = el('g', {}, logit);
+      el('line', { x1: 24, x2: 142, y1: 144, y2: 144, 'class': 'w-axis' }, logSum);
+      T(logSum, 24, 163, '= 0.81', 's-v s-n'); T(logSum, 24, 179, '加起来的数', 's-k');
+      function SX(v) { return 176 + (v + 6) * 13; }
+      function SY(p) { return 180 - p * 92; }
+      function sig(v) { return 1 / (1 + Math.exp(-v)); }
+      el('line', { x1: 176, x2: 332, y1: 180, y2: 180, 'class': 'w-axis' }, logit);
+      el('line', { x1: 176, x2: 176, y1: 88, y2: 180, 'class': 'w-axis' }, logit);
+      T(logit, 172, 183, '0', 's-n', 'end'); T(logit, 172, 92, '1', 's-n', 'end');
+      T(logit, 176, 193, '−6', 's-n', 'middle'); T(logit, SX(0), 193, '0', 's-n', 'middle'); T(logit, 332, 193, '6', 's-n', 'middle');
+      T(logit, 328, 84, '概率', 's-k', 'end');
+      var sPts = [];
+      for (var sv = -6; sv <= 6.001; sv += 0.25) sPts.push(SX(sv).toFixed(1) + ',' + SY(sig(sv)).toFixed(1));
+      el('polyline', { 'class': 's-line', points: sPts.join(' ') }, logit);
+      var logGuide = el('g', {}, logit);
+      el('line', { x1: SX(0.807), x2: SX(0.807), y1: 180, y2: SY(0.691), 'class': 'w-mean' }, logGuide);
+      el('line', { x1: 176, x2: SX(0.807), y1: SY(0.691), y2: SY(0.691), 'class': 'w-mean' }, logGuide);
+      T(logGuide, 181, SY(0.691) - 5, '0.69', 's-v s-n');
+      var logDot = el('circle', { r: 4.5, 'class': 's-token' }, logit);
+
+      var six = layer('six');
+      var SIX = [['都猜平均值', -2.09], ['线性回归', -3.84], ['LASSO', -3.50], ['一棵树', -5.13], ['随机森林', -4.86], ['梯度提升', -4.98]];
+      var sixRows = SIX.map(function (it, k) {
+        var y = 86 + k * 19.5, g = el('g', {}, six);
+        el('line', { x1: 92, x2: 292, y1: y - 4, y2: y - 4, 'class': 'w-grid' }, g);
+        T(g, 24, y, it[0], 's-t');
+        el('circle', { cx: X(it[1]), cy: y - 4, r: 4.5, 'class': 's-dot' }, g);
+        T(g, 338, y, num(it[1]), 's-v s-n', 'end');
+        return g;
+      });
+      var truth = el('line', { x1: X(-3.84), x2: X(-3.84), y1: 70, y2: 70, 'class': 's-truth' }, six);
+      var truthNote = T(six, X(-3.84) + 6, 201, '生成数据的公式: 平均 −3.84', 's-k');
+
+      var bars = layer('bars');
+      var BARS = [['线性回归', 1.73], ['LASSO', 1.74], ['梯度提升', 1.78], ['随机森林', 1.83], ['一棵树', 1.92], ['都猜平均值', 2.28]];
+      var barRows = BARS.map(function (it, k) {
+        var y = 92 + k * 29, g = el('g', {}, bars);
+        T(g, 24, y, it[0], 's-t');
+        var r = el('rect', { x: 100, y: y - 10, height: 12, rx: 2, 'class': 's-bar' + (k === 0 ? '' : k === 5 ? ' dim' : ' mid') }, g);
+        T(g, 338, y, it[1].toFixed(2), 's-v s-n', 'end');
+        return { g: g, set: function (u) { r.setAttribute('width', Math.max(0.5, it[1] * 86 * u)); } };
+      });
+      T(bars, 180, 276, '4900 位新病人身上的平均误差 (Gy),越短越好', '', 'middle');
+
+      // --- the patient's numbers, on top ---
+      T(svg, 10, 12, '一位新病人', 's-k');
+      var chips = [0, 1, 2].map(function () {
+        var g = el('g', { 'class': 's-chip-g' }, svg), stub = el('line', { y1: 40, y2: 52, 'class': 's-stub' }, g);
+        var r = el('rect', { y: 18, height: 22, rx: 11, 'class': 's-chip' }, g), tx = el('text', { y: 33, 'text-anchor': 'middle' }, g);
+        var k = el('tspan', { 'class': 's-k' }, tx), v = el('tspan', { 'class': 's-v s-n', dx: 4 }, tx), c = { cx: 0 };
+        c.set = function (x, w, label, value) {
+          c.cx = x + w / 2;
+          r.setAttribute('x', x); r.setAttribute('width', w); tx.setAttribute('x', c.cx);
+          stub.setAttribute('x1', c.cx); stub.setAttribute('x2', c.cx);
+          k.textContent = label; v.textContent = value; g.setAttribute('class', 's-chip-g');
+        };
+        c.off = function () { g.setAttribute('class', 's-chip-g off'); };
+        c.hide = function () { g.setAttribute('class', 's-chip-g gone'); };
+        return c;
+      });
+      var tabBox = el('rect', { x: 22, y: 43, height: 18, rx: 9, 'class': 's-tab-box' }, svg), tab = T(svg, 31, 56, '', 's-tab');
+      function setTab(s) { tab.textContent = s; tabBox.setAttribute('width', widthOf(s) + 18); }
+
+      // --- the answer, below: an axis with one pin, and a small mark for every model seen so far ---
+      function makeAxis(name, ticks, where, title) {
+        var g = layer(name);
+        el('line', { x1: 30, x2: 330, y1: 264, y2: 264, 'class': 'w-axis' }, g);
+        ticks.forEach(function (tk) {
+          el('line', { x1: where(tk[0]), x2: where(tk[0]), y1: 264, y2: 268, 'class': 'w-axis' }, g);
+          T(g, where(tk[0]), 280, tk[1], 's-n', 'middle');
+        });
+        T(g, 180, 294, title, '', 'middle');
+        var extra = el('g', {}, g), trail = el('line', { y1: 264, y2: 264, 'class': 's-trail' }, g);
+        var pin = el('g', { 'class': 's-pin' }, g);
+        el('line', { x1: 0, x2: 0, y1: 237, y2: 264, 'class': 's-pin-stem' }, pin);
+        el('circle', { cx: 0, cy: 232, r: 5, 'class': 's-pin-dot' }, pin);
+        var label = T(pin, 0, 221, '', 's-pin-label s-n', 'middle');
+        return {
+          g: g, extra: extra,
+          pin: function (v, s) { pin.setAttribute('transform', 'translate(' + where(v).toFixed(1) + ' 0)'); label.textContent = s; fade(pin, 1); },
+          trail: function (a, b) { trail.setAttribute('x1', where(a)); trail.setAttribute('x2', where(b)); fade(trail, 1); },
+          clear: function () { fade(pin, 0); fade(trail, 0); }
+        };
+      }
+      var axis = makeAxis('axis', [[-8, '−8'], [-6, '−6'], [-4, '−4'], [-2, '−2'], [0, '0']], X, '这位病人的预测 Δ (Gy)');
+      var paxis = makeAxis('paxis', [[0, '0%'], [0.25, '25%'], [0.5, '50%'], [0.75, '75%'], [1, '100%']], XP, '降到 68 Gy 以下的概率');
+      var histBars = [], histG = el('g', {}, axis.extra);
+      for (var b = 0; b < 18; b++) histBars.push(el('rect', { x: X(-7.25 + b * 0.25) + 0.5, width: 8.4, y: 264, height: 0, 'class': 's-hist' }, histG));
+      var ORDER = [-2.09, -3.84, -3.50, -5.13, -4.86, -4.98];
+      var marks = ORDER.map(function (v) { return el('circle', { cx: X(v), cy: 264, r: 3.4, 'class': 's-mark' }, axis.extra); });
+
+      var tokens = [0, 1, 2, 3].map(function () { return el('circle', { r: 4, 'class': 's-token' }, svg); });
+      function fly(k, a, c, ms, dur) {
+        api.tween(ms, dur, function (u) {
+          var e = E(u), tk = tokens[k];
+          tk.setAttribute('cx', lerp(a[0], c[0], e)); tk.setAttribute('cy', lerp(a[1], c[1], e));
+          fade(tk, u < 1 ? 1 : 0);
+        });
+      }
+      function hot(node, on) { node.setAttribute('class', node.getAttribute('class').replace(/ (hot|hit)/g, '') + (on ? ' ' + on : '')); }
+
+      // the state every step starts from; "seen" models already have their mark on the axis
+      function reset(seen, name, layers) {
+        chips[0].set(10, 108, '壁厚', '3.0 mm'); chips[1].set(126, 108, '直径', '30 mm'); chips[2].set(242, 108, '近距离', '3 次');
+        panel.setAttribute('height', 154);
+        setTab(name);
+        show(layers);
+        marks.forEach(function (m, i) { fade(m, i < seen ? 1 : 0); });
+        axis.clear(); paxis.clear(); fade(histG, 0);
+        tokens.forEach(function (tk) { fade(tk, 0); });
+      }
+      function land(ms, value, text, error) {          // the answer arrives on the axis
+        api.at(ms, function () { axis.pin(value, text); api.tile(1, text + ' Gy'); api.tile(2, error); });
+      }
+
+      var steps = [
+        function () {                                   // 1 the question
+          reset(0, '模型', ['ask', 'axis']);
+          api.tile(0, '?'); api.tile(1, '? Gy');
+          [0, 1, 2].forEach(function (k) { fly(k, [chips[k].cx, 40], [180, 104], 200 + k * 180, 620); });
+          fly(3, [180, 144], [180, 232], 1300, 620);
+        },
+        function () {                                   // 2 the baseline
+          reset(0, '基线', ['base', 'axis']);
+          chips.forEach(function (c) { c.off(); });
+          api.tile(0, '基线');
+          baseNum.textContent = '0.00 Gy';
+          api.tween(250, 700, function (u) { baseNum.textContent = num(MEAN * E(u)) + ' Gy'; });
+          fly(3, [180, 176], [X(MEAN), 232], 1000, 500);
+          land(1500, MEAN, '−2.09', '2.28 Gy');
+        },
+        function () {                                   // 3 the straight line
+          reset(1, '线性回归', ['lin', 'axis']);
+          api.tile(0, '线性回归');
+          var at = MEAN;
+          linRows.forEach(function (r, k) { fade(r.g, 0); r.set(0); r.ghost(null); });
+          fade(linSum, 0);
+          axis.pin(MEAN, '−2.09'); axis.trail(MEAN, MEAN);
+          linRows.forEach(function (r, k) {
+            var from = at, to = at + LIN[k][2];
+            at = to;
+            fly(k, [chips[k].cx, 40], [chips[k].cx, 70], 150 + k * 800, 300);
+            api.tween(350 + k * 800, 600, function (u) {
+              var e = E(u), v = lerp(from, to, e);
+              fade(r.g, Math.min(1, u * 3)); r.set(LIN[k][2] * e);
+              if (u === 1) r.set(LIN[k][2]);
+              axis.pin(v, num(v)); axis.trail(MEAN, v);
+            });
+          });
+          api.tween(2750, 300, function (u) { fade(linSum, u); });
+          land(2750, -3.8424, '−3.84', '1.73 Gy');
+        },
+        function () {                                   // 4 the same formula, coefficients pulled towards 0
+          reset(2, 'LASSO', ['lasso', 'axis']);
+          api.tile(0, 'LASSO');
+          lasRows.forEach(function (r, k) { r.set(LAS[k][2]); r.ghost(LAS[k][2]); });
+          fade(lasSum, 0);
+          axis.pin(-3.8424, '−3.84');
+          api.tween(600, 1000, function (u) {
+            var e = E(u), v = lerp(-3.8424, -3.5004, e);
+            lasRows.forEach(function (r, k) { r.set(lerp(LAS[k][2], LAS[k][3], e)); });
+            axis.pin(v, num(v));
+          });
+          api.tween(1650, 300, function (u) { fade(lasSum, u); });
+          land(1650, -3.5004, '−3.50', '1.74 Gy');
+        },
+        function () {                                   // 5 one tree
+          reset(3, '一棵树', ['tree', 'axis']);
+          api.tile(0, '一棵树');
+          treeParts.forEach(function (p) { hot(p, ''); });
+          fly(0, [180, 40], [180, 78], 200, 380);
+          api.at(580, function () { hot(nRoot, 'hot'); });
+          api.at(780, function () { hot(eRootL, 'hot'); });
+          fly(0, [150, 102], [98, 122], 780, 420);
+          api.at(1200, function () { hot(nLeft, 'hot'); });
+          api.at(1400, function () { hot(eLR, 'hot'); });
+          fly(0, [116, 146], [136, 170], 1400, 420);
+          api.at(1820, function () { hot(nHit, 'hit'); });
+          fly(0, [136, 194], [X(-5.13), 232], 2000, 400);
+          land(2400, -5.13, '−5.13', '1.92 Gy');
+        },
+        function () {                                   // 6 three hundred trees, averaged
+          reset(4, '随机森林', ['forest', 'axis']);
+          api.tile(0, '随机森林');
+          fade(histG, 1);
+          var shown = -1;
+          function grow(k) {                            // the first k trees have answered
+            if (k === shown) return;
+            var counts = [], sum = 0, i;
+            for (i = 0; i < 18; i++) counts.push(0);
+            for (i = 0; i < k; i++) { sum += FOREST[i]; counts[Math.min(17, Math.max(0, Math.floor((FOREST[i] + 7.25) / 0.25)))]++; }
+            minis.forEach(function (m, j) { m.setAttribute('class', 's-mini' + (j < k ? ' on' : '')); });
+            histBars.forEach(function (r, j) { r.setAttribute('height', counts[j] * 0.56); r.setAttribute('y', 264 - counts[j] * 0.56); });
+            forestNote.textContent = k ? '已经问了 ' + k + ' 棵,平均 ' + num(sum / k) + ' Gy' : '300 棵树,每棵用重新抽的一批病人长成';
+            if (k) { axis.pin(sum / k, num(sum / k)); api.tile(1, num(sum / k) + ' Gy'); }
+            shown = k;
+          }
+          grow(0);
+          api.tween(500, 3000, function (u) { grow(Math.round(300 * u)); });
+          api.at(3500, function () { api.tile(2, '1.83 Gy'); });
+        },
+        function () {                                   // 7 a hundred small trees, one after another
+          reset(5, '梯度提升', ['boost', 'axis']);
+          api.tile(0, '梯度提升');
+          function upto(k) {
+            var pts = [BX(0) + ',' + BY(MEAN)], v = MEAN, i;
+            for (i = 1; i <= k; i++) { v = BOOST[i - 1]; pts.push(BX(i).toFixed(1) + ',' + BY(v).toFixed(1)); }
+            boostLine.setAttribute('points', pts.join(' '));
+            boostHead.setAttribute('cx', BX(k)); boostHead.setAttribute('cy', BY(v));
+            boostCount.textContent = k ? '第 ' + k + ' 棵' : '还没有树';
+            axis.pin(v, num(v)); axis.trail(MEAN, v); api.tile(1, num(v) + ' Gy');
+          }
+          upto(0);
+          api.tween(500, 3000, function (u) { upto(Math.round(100 * u)); });
+          api.at(3500, function () { api.tile(2, '1.78 Gy'); });
+        },
+        function () {                                   // 8 a yes/no outcome: the sum goes through an S-shaped curve
+          reset(6, '逻辑回归', ['logit', 'paxis']);
+          chips[1].set(126, 224, '5 mm 计划超出 68 Gy', '2.0 Gy'); chips[2].hide();
+          api.tile(0, '逻辑回归'); api.tile(1, '—', '这位病人的概率'); api.tile(2, '—', '新病人的 AUC');
+          LOG.forEach(function (g, k) { fade(g, 0); api.tween(200 + k * 350, 250, function (u) { fade(g, u); }); });
+          fade(logSum, 0); fade(logGuide, 0); fade(logDot, 0);
+          api.tween(1250, 250, function (u) { fade(logSum, u); });
+          api.tween(1700, 900, function (u) {
+            var v = lerp(-6, 0.807, E(u));
+            logDot.setAttribute('cx', SX(v)); logDot.setAttribute('cy', SY(sig(v))); fade(logDot, 1);
+          });
+          api.tween(2600, 300, function (u) { fade(logGuide, u); });
+          api.at(2900, function () { paxis.pin(0.691, '69%'); api.tile(1, '69%', '这位病人的概率'); api.tile(2, '0.91', '新病人的 AUC'); });
+        },
+        function () {                                   // 9 six answers for one patient
+          reset(6, '同一位病人', ['six', 'axis']);
+          api.tile(0, '六个模型'); api.tile(1, '—', '最多相差'); api.tile(2, '—', '生成数据的公式');
+          sixRows.forEach(function (g, k) { fade(g, 0); api.tween(150 + k * 170, 250, function (u) { fade(g, u); }); });
+          truth.setAttribute('y2', 70); fade(truthNote, 0);
+          api.tween(1400, 500, function (u) { truth.setAttribute('y2', lerp(70, 264, E(u))); fade(truthNote, u); });
+          api.at(1400, function () { api.tile(1, '3.0 Gy', '最多相差'); api.tile(2, '−3.84 Gy', '生成数据的公式'); });
+        },
+        function () {                                   // 10 4900 new patients
+          reset(6, '新病人', ['bars']);
+          chips.forEach(function (c) { c.off(); });
+          api.tile(0, '线性回归', '误差最小的'); api.tile(1, '4900 位', '新病人'); api.tile(2, '—');
+          barRows.forEach(function (r, k) { r.set(0); api.tween(350 + k * 130, 500, function (u) { r.set(E(u)); }); });
+          api.tween(0, 350, function (u) { panel.setAttribute('height', lerp(154, 238, E(u))); });
+          api.at(1500, function () { api.tile(2, '1.73 Gy'); });
+        }
+      ];
+      return function (i) { steps[i](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
       if (!make || root.getAttribute('data-ready')) return;
-      root.textContent = '';
+      if (!make.keep) root.textContent = '';
       root.setAttribute('data-ready', '1');
       make(root);
     });

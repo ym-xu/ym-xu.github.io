@@ -667,6 +667,73 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-btn.primary { color: var(--btn-fg, var(--bg)); background: var(--btn-bg, var(--link)); }
 .widget .w-btn:disabled { opacity: .45; cursor: default; }
 .content .widget .w-status { margin: .45rem 0 0; min-height: 4.6em; font-size: .93rem; line-height: 1.5; }
+/* stepped diagrams (course-widgets.js, "stage"): a drawing that changes step by step, its text under it */
+.content .widget.stage { max-width: 640px; margin: 1.4rem auto 1.6rem; }
+.widget.stage { --s-ink: var(--candy-deep, var(--link)); --s-soft: color-mix(in oklab, var(--candy, var(--link)) 24%, var(--bg)); }
+.stage-fig { padding: .6rem .6rem .35rem; border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--bg); box-shadow: 0 1px 0 var(--border); }
+.stage-tiles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.25fr); gap: 6px; margin-bottom: .45rem; }
+.stage-tile { min-width: 0; padding: .32rem .55rem .36rem; border-radius: var(--radius-sm); background: var(--surface); }
+.stage-tile-k { display: block; font-size: .72rem; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-tile-v { display: block; font-size: 1rem; line-height: 1.35; font-weight: 700; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+.content .widget.stage svg { max-width: 600px; }
+.widget.stage text { font-variant-numeric: lining-nums; }
+.stage-layer { opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility 0s linear .25s; }
+.stage-layer.on { opacity: 1; visibility: visible; transition: opacity .35s ease .05s; }
+.widget.stage .s-panel { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+.widget.stage .s-tab-box { fill: var(--candy, var(--link)); }
+.widget.stage .s-tab { fill: var(--candy-ink, var(--bg)); font-size: 11px; font-weight: 700; }
+.widget.stage .s-chip { fill: var(--bg); stroke: var(--candy-line, var(--border)); stroke-width: 1.2; }
+.widget.stage .s-chip-g { transition: opacity .3s ease; }
+.widget.stage .s-chip-g.off { opacity: .32; }
+.widget.stage .s-chip-g.gone { opacity: 0; }
+.widget.stage .s-stub { stroke: var(--candy-line, var(--border)); stroke-width: 1.2; }
+.widget.stage .s-k { fill: var(--muted); font-size: 10px; }
+.widget.stage .s-t { fill: var(--fg); font-size: 11.5px; }
+.widget.stage .s-v { fill: var(--fg); font-size: 11.5px; font-weight: 700; }
+.widget.stage .s-n { font-variant-numeric: lining-nums tabular-nums; }
+.widget.stage .s-big { fill: var(--fg); font-size: 28px; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.widget.stage .s-big2 { fill: var(--fg); font-size: 16px; font-weight: 700; }
+.widget.stage .s-q { fill: var(--muted); font-size: 20px; font-weight: 700; }
+.widget.stage .s-bar { fill: var(--s-ink); }
+.widget.stage .s-bar.mid { fill: color-mix(in oklab, var(--s-ink) 50%, var(--bg)); }
+.widget.stage .s-bar.dim { fill: var(--muted); opacity: .45; }
+.widget.stage .s-bar.ghost { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 2; }
+.widget.stage .s-node { fill: var(--bg); stroke: var(--border); stroke-width: 1.2; transition: fill .25s ease, stroke .25s ease; }
+.widget.stage .s-node.hot { fill: var(--s-soft); stroke: var(--s-ink); }
+.widget.stage .s-node.hit { fill: var(--candy, var(--link)); stroke: var(--s-ink); stroke-width: 1.6; }
+.widget.stage .s-node.hit + text { fill: var(--candy-ink, var(--fg)); }
+.widget.stage .s-edge { stroke: var(--border); stroke-width: 1.4; transition: stroke .25s ease; }
+.widget.stage .s-edge.hot { stroke: var(--s-ink); stroke-width: 2.2; }
+.widget.stage .s-mini { fill: none; stroke: var(--muted); stroke-width: 1.1; stroke-linecap: round; opacity: .28; }
+.widget.stage .s-mini.on { stroke: var(--s-ink); opacity: 1; }
+.widget.stage .s-hist { fill: var(--s-ink); opacity: .45; }
+.widget.stage .s-line { fill: none; stroke: var(--fg); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.widget.stage .s-token { fill: var(--s-ink); stroke: var(--bg); stroke-width: 1.5; }
+.widget.stage .s-dot { fill: var(--link); }
+.widget.stage .s-mark { fill: var(--bg); stroke: var(--muted); stroke-width: 1.3; }
+.widget.stage .s-trail { stroke: var(--s-ink); stroke-width: 5; stroke-linecap: round; opacity: .4; }
+.widget.stage .s-truth { stroke: var(--w-bad); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.widget.stage .s-pin-stem { stroke: var(--link); stroke-width: 1.6; }
+.widget.stage .s-pin-dot { fill: var(--link); stroke: var(--bg); stroke-width: 1.5; }
+.widget.stage .s-pin-label { fill: var(--fg); font-size: 12.5px; font-weight: 700; }
+.stage-progress { display: flex; gap: 3px; margin: .6rem 0 .55rem; }
+.stage-progress i { flex: 1 1 0; height: 4px; border-radius: 2px; background: var(--border); transition: background .25s ease; }
+.stage-progress i.done { background: var(--candy, var(--link)); }
+.stage-progress i.now { background: var(--link); }
+.stage-nav { display: flex; gap: .5rem; }
+.widget .stage-nav .w-btn { flex: 0 0 auto; white-space: nowrap; }
+.widget .stage-nav .stage-next { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.widget .stage-nav .stage-again { width: 44px; padding: 0; font-size: 1.15rem; line-height: 1; }
+.content .widget .stage-status { min-height: 0; margin: .9rem 0 .1rem; font-size: .8rem; color: var(--muted); letter-spacing: .02em; }
+.stage-step { display: none; }
+.stage-step.on { display: block; }
+.content .stage-step .stage-h { margin: 0 0 .4rem; font-size: 1.1rem; font-weight: 700; line-height: 1.35; }
+.content .stage-step p { margin: .4rem 0; }
+.content .stage-step > :last-child { margin-bottom: 0; }
+/* without JavaScript, and on paper: every step, one after another */
+.widget.stage:not([data-ready]) .stage-step { display: block; margin: 0 0 1rem; }
+@media print { .stage-step { display: block; margin: 0 0 1rem; } .stage-nav, .stage-progress, .stage-status { display: none; } .stage-text { min-height: 0 !important; } }
+@media (prefers-reduced-motion: reduce) { .stage-layer, .stage-layer.on { transition: none; } }
 /* Course page: text and syllabus on the left, "我的进度" on the right, where a lesson has its table of contents. */
 .course-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 0 2.4rem; align-items: start; }
 .course-layout > .course-intro { grid-column: 1; grid-row: 1; min-width: 0; }

@@ -410,4 +410,4 @@ print(f"约 {events3:.0f} 个事件: 校准斜率中位数 {slope3:.2f}(最低 {
 - Riley RD, Ensor J, Snell KIE, 等. Calculating the sample size required for developing a clinical prediction model. *BMJ* 2020;368:m441。面向临床研究者的讲解,有逐步的算例。
 - Riley RD, Snell KIE, Ensor J, 等. Minimum sample size for developing a multivariable prediction model: PART II - binary and time-to-event outcomes. *Stat Med* 2019;38(7):1276–1296。三条准则的出处。这一课的函数照 R 包 `pmsampsize` 的算法写。
 
-**下一课**: 最后一课把十三课的内容串起来: 一篇预测模型的论文该报告什么(TRIPOD+AI),审稿人常问什么,并用模拟队列从头到尾走一遍。
+**下一课**: 第 14 课把前面十三课的内容串起来: 一篇预测模型的论文该报告什么(TRIPOD+AI),审稿人常问什么,并用模拟队列从头到尾走一遍。
