@@ -17,19 +17,19 @@ objectives:
   - "把是/否的变量写成 0 和 1 放进模型"
 ---
 
-Python 课第 6 课算过相关系数: 平均壁厚和 Δ(换成体积优化以后阴道 D2cc 的变化)的 Pearson 相关系数是 0.62。壁越厚,D2cc 降得越少。相关系数回答的是"有没有关系,关系有多紧"。
+Python 课第 6 课算过相关系数: 平均壁厚和 Δ(换成 Volume 以后阴道 D2cc 的变化)的 Pearson 相关系数是 0.62。壁越厚,D2cc 降得越少。相关系数回答的是"有没有关系,关系有多紧"。
 
-在门诊,问题是另一个样子: 眼前这位患者平均壁厚 3.0 mm,如果把 5 mm 计划换成体积优化,D2cc 大概会变多少 Gy?0.62 给不出这个数。要回答它,需要一条能把"壁厚"换算成"Δ"的公式。这样的公式就是一个**模型**(model),最简单的一种是**线性回归**(linear regression)。
+在门诊,问题是另一个样子: 眼前这位患者平均壁厚 3.0 mm,如果把 5 mm 计划换成 Volume,D2cc 大概会变多少 Gy?0.62 给不出这个数。要回答它,需要一条能把"壁厚"换算成"Δ"的公式。这样的公式就是一个**模型**(model),最简单的一种是**线性回归**(linear regression)。
 
 线性回归的输出你在统计软件里见过: 系数、标准误、P 值。这一课先不看 P 值,只把这条线本身拆开: 它是怎么找出来的,系数怎么读,怎么拿它做预测。P 值和区间留到第 3 课。
 
 > 🔬 这门课后面的每一种模型(逻辑回归、LASSO、树),都是在这一课的三件事上做改动: 公式长什么样,用什么尺子量"好",怎么找到最好的那一组数。这一课把这三件事看清楚,后面就只是在换零件。
 
-**练习怎么做**: 讲解里预测的是**体积优化**计划的 Δ。练习都换成**图形优化**计划: 每讲完一步,你就对图形优化把这一步再做一遍。5 道练习做完,图形优化的模型就是你自己建的。
+**练习怎么做**: 讲解里预测的是 **Volume** 计划的 Δ。练习都换成 **Graphical** 计划: 每讲完一步,你就对 Graphical 把这一步再做一遍。5 道练习做完,Graphical 的模型就是你自己建的。
 
 ## 0. 准备: 模拟队列和要预测的量
 
-这门课用和 Python 课相同的模拟队列(数字都是编的,[源码](/python/cohort.py))。要预测的量叫 `delta`: 换成体积优化计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
+这门课用和 Python 课相同的模拟队列(数字都是编的,[源码](/python/cohort.py))。要预测的量叫 `delta`: 换成 Volume 计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
 
 ```python
 import numpy as np
@@ -248,9 +248,9 @@ print(f"截距 {model.intercept_:.2f},斜率 {model.coef_[0]:.2f}")
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的直线**
+**练习 1 · 轮到你: Graphical 的直线**
 
-先算出图形优化的 Δ(`delta_gra`),再用上面的公式算它的斜率和截距,存进 `b1_gra` 和 `b0_gra`。
+先算出 Graphical 的 Δ(`delta_gra`),再用上面的公式算它的斜率和截距,存进 `b1_gra` 和 `b0_gra`。
 
 ```python
 df["delta_gra"] = df["d2cc_gra"] - df["d2cc_5mm"]
@@ -264,17 +264,17 @@ print(f"预测 Δ = {b0_gra:.2f} + {b1_gra:.2f} × 壁厚")
 ```pycheck
 need("b1_gra", "b0_gra")
 if close(b1_gra, 1.622, 0.005):
-    fail("这是体积优化的斜率 1.62。第一个空要用图形优化的平均值: yg.mean()。")
+    fail("这是 Volume 的斜率 1.62。第一个空要用 Graphical 的平均值: yg.mean()。")
 if close(b1_gra, 1.809, 0.005) and close(b0_gra, 3.18, 0.02):
     fail("斜率对了。截距的公式是 yg.mean() − b1_gra × x.mean(): 检查第二个空填的是不是 b1_gra。")
 if close(b1_gra, 1.809, 0.005) and close(b0_gra, -10.18, 0.02):
-    ok("对了: 预测 Δ = −10.18 + 1.81 × 壁厚。图形优化的斜率比体积优化的(1.62)大一点: 壁厚每厚 1 mm,少降 1.81 Gy。")
+    ok("对了: 预测 Δ = −10.18 + 1.81 × 壁厚。Graphical 的斜率比 Volume 的(1.62)大一点: 壁厚每厚 1 mm,少降 1.81 Gy。")
 fail(f"现在斜率是 {b1_gra:.2f}、截距是 {b0_gra:.2f},应该是 1.81 和 −10.18。第一个空是 yg.mean(),第二个空是 b1_gra。")
 ```
 
 <details><summary>提示</summary>
 
-和上面体积优化的两行一样,只是把 `y` 换成 `yg`: 第一个空是 `yg.mean()`,第二个空是刚算出的斜率 `b1_gra`。
+和上面 Volume 的两行一样,只是把 `y` 换成 `yg`: 第一个空是 `yg.mean()`,第二个空是刚算出的斜率 `b1_gra`。
 
 </details>
 
@@ -304,7 +304,7 @@ new_patient = pd.DataFrame({"wall_mean": [3.0]})          # 新患者也要放�
 print(f"model.predict: {model.predict(new_patient)[0]:.2f} Gy")
 ```
 
-两种算法都是 −3.21 Gy: 预测换成体积优化后,这位患者的 D2cc 降 3.2 Gy 左右。`predict` 做的就是"代进公式"这一步。
+两种算法都是 −3.21 Gy: 预测换成 Volume 后,这位患者的 D2cc 降 3.2 Gy 左右。`predict` 做的就是"代进公式"这一步。
 
 预测值不是实际值。队列里第一位患者(P001)的壁厚正好也是 3.0 mm,实际降了 4.0 Gy。实际值减预测值,−4.0 − (−3.21) = −0.79 Gy,叫这位患者的**残差**(residual)。它就是前面说的误差,只是专指"用拟合好的模型算出来的误差"。
 
@@ -338,9 +338,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的预测和残差**
+**练习 2 · 轮到你: Graphical 的预测和残差**
 
-用练习 1 的 `b0_gra`、`b1_gra`: 壁厚 3.0 mm 的患者,图形优化的预测 Δ 是多少?存进 `pred_gra`。队列里第一位患者(P001,壁厚 3.0 mm)的残差是多少?存进 `resid_first`。
+用练习 1 的 `b0_gra`、`b1_gra`: 壁厚 3.0 mm 的患者,Graphical 的预测 Δ 是多少?存进 `pred_gra`。队列里第一位患者(P001,壁厚 3.0 mm)的残差是多少?存进 `resid_first`。
 
 ```python
 pred_gra = b0_gra + b1_gra * ___
@@ -351,13 +351,13 @@ print(f"预测 {pred_gra:.2f} Gy;P001 实际 {yg.iloc[0]:.1f} Gy,残差 {resid_f
 ```pycheck
 need("pred_gra", "resid_first")
 if close(pred_gra, -3.21, 0.02):
-    fail("这是体积优化的预测值。要用图形优化的 b0_gra 和 b1_gra。")
+    fail("这是 Volume 的预测值。要用 Graphical 的 b0_gra 和 b1_gra。")
 if not close(pred_gra, -4.76, 0.02):
     fail(f"pred_gra 现在是 {pred_gra:.2f},应该是 −4.76: b0_gra + b1_gra × 3.0。")
 if close(resid_first, -6.86, 0.02):
     fail("符号反了: 残差是实际值减预测值,yg.iloc[0] − pred_gra。")
 if close(resid_first, 6.86, 0.02):
-    ok("对了: 预测降 4.76 Gy,这位患者实际却升了 2.1 Gy,残差 +6.86 Gy。同样是壁厚 3.0 mm,体积优化只差 0.79 Gy。一条线说的是'这样的患者平均会怎样',落到某一位患者身上,可以差得很远。")
+    ok("对了: 预测降 4.76 Gy,这位患者实际却升了 2.1 Gy,残差 +6.86 Gy。同样是壁厚 3.0 mm,Volume 只差 0.79 Gy。一条线说的是'这样的患者平均会怎样',落到某一位患者身上,可以差得很远。")
 fail(f"resid_first 现在是 {resid_first:.2f},应该是 6.86: 实际值 yg.iloc[0] 减去预测值 pred_gra。")
 ```
 
@@ -421,9 +421,9 @@ print(f"做 2 次: {p[0]:.2f} Gy;做 3 次: {p[1]:.2f} Gy;相差 {p[1] - p[0]:.2
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化的三变量模型**
+**练习 3 · 轮到你: Graphical 的三变量模型**
 
-用同样的三个变量预测图形优化的 Δ(`yg`),模型存进 `model3_gra`。然后取出近距离次数的系数,存进 `coef_fx`。
+用同样的三个变量预测 Graphical 的 Δ(`yg`),模型存进 `model3_gra`。然后取出近距离次数的系数,存进 `coef_fx`。
 
 ```python
 model3_gra = LinearRegression().fit(X, ___)
@@ -434,13 +434,13 @@ print(f"截距 {model3_gra.intercept_:.2f},系数 {model3_gra.coef_.round(2)},�
 ```pycheck
 need("model3_gra", "coef_fx")
 if close(coef_fx, -1.206, 0.005):
-    fail("这是体积优化的模型。fit 的第二个参数要换成图形优化的 yg。")
+    fail("这是 Volume 的模型。fit 的第二个参数要换成 Graphical 的 yg。")
 if close(coef_fx, 1.761, 0.005):
     fail("这是壁厚的系数(第 0 个)。X 的三列依次是壁厚、直径、次数,次数是第 2 个。")
 if close(coef_fx, -0.069, 0.005):
     fail("这是直径的系数(第 1 个)。次数是第 2 个。")
 if close(coef_fx, -1.81, 0.005):
-    ok("对了: 预测 Δ = −3.50 + 1.76 × 壁厚 − 0.07 × 直径 − 1.81 × 次数。壁厚和直径相同的患者,多做一次近距离,图形优化的 D2cc 多降 1.81 Gy。")
+    ok("对了: 预测 Δ = −3.50 + 1.76 × 壁厚 − 0.07 × 直径 − 1.81 × 次数。壁厚和直径相同的患者,多做一次近距离,Graphical 的 D2cc 多降 1.81 Gy。")
 fail(f"coef_fx 现在是 {coef_fx:.2f},应该是 −1.81。")
 ```
 
@@ -488,9 +488,9 @@ print(f"预测 Δ = {model_e.intercept_:.2f} {model_e.coef_[0]:+.2f} × 壁厚 {
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化里外照射的系数**
+**练习 4 · 轮到你: Graphical 里外照射的系数**
 
-用壁厚、直径和 `ebrt` 预测图形优化的 Δ,取出 `ebrt` 的系数,存进 `coef_ebrt`。
+用壁厚、直径和 `ebrt` 预测 Graphical 的 Δ,取出 `ebrt` 的系数,存进 `coef_ebrt`。
 
 ```python
 model_e_gra = LinearRegression().fit(df[["wall_mean", "diameter", ___]], yg)
@@ -501,13 +501,13 @@ print(f"外照射的系数: {coef_ebrt:.2f}")
 ```pycheck
 need("coef_ebrt")
 if close(coef_ebrt, 1.206, 0.005):
-    fail("这是体积优化的系数。fit 的第二个参数应该是 yg(起始代码里已经是),检查有没有改动。")
+    fail("这是 Volume 的系数。fit 的第二个参数应该是 yg(起始代码里已经是),检查有没有改动。")
 if close(coef_ebrt, -1.81, 0.005):
     fail('符号是负的: 放进去的是 n_fx(次数),不是 ebrt。第一个空填 "ebrt"。')
 if close(coef_ebrt, 1.761, 0.005) or close(coef_ebrt, -0.069, 0.005):
     fail("取错了位置。三列依次是壁厚、直径、ebrt,ebrt 是第 2 个(从 0 开始数)。")
 if close(coef_ebrt, 1.81, 0.005):
-    ok("对了: +1.81。壁厚和直径相同时,做了外照射的患者,图形优化的 Δ 平均高 1.81 Gy。它和练习 3 里次数的系数 −1.81 是同一件事的两种写法。")
+    ok("对了: +1.81。壁厚和直径相同时,做了外照射的患者,Graphical 的 Δ 平均高 1.81 Gy。它和练习 3 里次数的系数 −1.81 是同一件事的两种写法。")
 fail(f"coef_ebrt 现在是 {coef_ebrt:.2f},应该是 1.81。")
 ```
 
@@ -529,11 +529,11 @@ print(f"外照射的系数: {coef_ebrt:.2f}")
 
 </div>
 
-最后给图形优化的模型打个分,和基线比一比。
+最后给 Graphical 的模型打个分,和基线比一比。
 
 <div class="exercise">
 
-**练习 5 · 轮到你: 图形优化的模型准了多少**
+**练习 5 · 轮到你: Graphical 的模型准了多少**
 
 算练习 3 的三变量模型(`model3_gra`)在这 196 位患者身上的平均绝对误差,存进 `mae_gra`。再算基线模型(都猜平均值)的,存进 `mae_base`。
 
@@ -553,7 +553,7 @@ if close(mae_gra, 474.3, 1):
 if close(mae_gra, 2.51, 0.006):
     fail("这是只用壁厚的那条线的成绩。predict 里要给三列的表 X。")
 if close(mae_gra, 2.42, 0.006) and close(mae_base, 3.0, 0.01):
-    ok("对了: 基线 3.00 Gy,三变量模型 2.42 Gy。图形优化比体积优化难预测: 同样的三个变量,体积优化的平均误差是 1.67 Gy。记住这两个数都是在建模患者身上算的,第 4 课会重新算一遍诚实的版本。")
+    ok("对了: 基线 3.00 Gy,三变量模型 2.42 Gy。Graphical 比 Volume 难预测: 同样的三个变量,Volume 的平均误差是 1.67 Gy。记住这两个数都是在建模患者身上算的,第 4 课会重新算一遍诚实的版本。")
 fail(f"mae_gra 现在是 {mae_gra:.2f},应该是 2.42: predict 里是 X,最后取 mean()。")
 ```
 
@@ -616,7 +616,7 @@ print(f"基线 {mae_base:.2f} Gy,三变量模型 {mae_gra:.2f} Gy")
 
 方法部分可以这样写(变量换成你实际用的):
 
-> The change in vaginal D2cc after re-optimisation (Δ, Gy) was modelled by ordinary least-squares linear regression with mean vaginal wall thickness, applicator diameter and number of brachytherapy fractions as predictors. Coefficients are reported as the change in Δ per unit increase of each predictor with the other predictors held constant.
+> The change in vaginal D2cc from the 5 mm plan to the Volume plan (Δ, Gy) was modelled by ordinary least-squares linear regression with mean vaginal wall thickness, applicator diameter and number of brachytherapy fractions as predictors. Coefficients are reported as the change in Δ per unit increase of each predictor with the other predictors held constant.
 
 **审稿人可能问**: 为什么假定是直线关系?
 

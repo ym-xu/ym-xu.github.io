@@ -24,11 +24,11 @@ objectives:
 
 > 🔬 预测模型论文的结果部分,几乎每个数字(误差、AUC、校准、决策曲线)都来自交叉验证。审稿人第一件要确认的事,也是"这些数是不是在模型没见过的患者身上算的"。
 
-**练习怎么做**: 讲解里预测的是**体积优化**计划的 Δ。练习都换成**图形优化**计划: 每讲完一步,你就对图形优化把这一步再做一遍。5 道练习做完,图形优化的全套结果就是你自己算出来的。
+**练习怎么做**: 讲解里预测的是 **Volume** 计划的 Δ。练习都换成 **Graphical** 计划: 每讲完一步,你就对 Graphical 把这一步再做一遍。5 道练习做完,Graphical 的全套结果就是你自己算出来的。
 
 ## 0. 准备: 模拟队列和要预测的量
 
-和前几课一样,用课程的模拟队列(数字都是编的,[源码](/python/cohort.py))。要预测的量叫 `delta`: 换成体积优化计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
+和前几课一样,用课程的模拟队列(数字都是编的,[源码](/python/cohort.py))。要预测的量叫 `delta`: 换成 Volume 计划后,阴道 D2cc 比 5 mm 计划变了多少 Gy,负数表示降低。
 
 ```python
 import numpy as np
@@ -168,12 +168,12 @@ print(f"50 列随机数里,系数绝对值超过 0.1 的有 {(z.abs() > 0.1).sum
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的训练误差**
+**练习 1 · 轮到你: Graphical 的训练误差**
 
-把结局换成图形优化计划的 Δ(`d2cc_gra` 减 `d2cc_5mm`),存进 `y_gra`。用同样的两张变量表各建一个模型,算它们在训练集上的 MAE,存进 `train_a` 和 `train_b`。
+把结局换成 Graphical 计划的 Δ(`d2cc_gra` 减 `d2cc_5mm`),存进 `y_gra`。用同样的两张变量表各建一个模型,算它们在训练集上的 MAE,存进 `train_a` 和 `train_b`。
 
 ```python
-y_gra = df[___] - df["d2cc_5mm"]             # 图形优化计划的 Δ
+y_gra = df[___] - df["d2cc_5mm"]             # Graphical 计划的 Δ
 fit_a = LinearRegression().fit(X_a, y_gra)
 fit_b = LinearRegression().fit(X_b, y_gra)
 train_a = mean_absolute_error(y_gra, fit_a.predict(X_a))
@@ -188,13 +188,13 @@ if not hasattr(y_gra, "__len__") or len(y_gra) != len(expected):
     fail("y_gra 应该是每位患者一个数,一共 196 个。")
 if not close(abs(y_gra - expected).max(), 0, 1e-9):
     if close(abs(y_gra - y).max(), 0, 1e-9):
-        fail("y_gra 现在还是体积优化的 Δ: 第一处要填图形优化那一列的列名 \"d2cc_gra\"。")
-    fail("y_gra 不对: 它应该是图形优化计划的 D2cc 减 5 mm 计划的 D2cc。")
+        fail("y_gra 现在还是 Volume 的 Δ: 第一处要填 Graphical 那一列的列名 \"d2cc_gra\"。")
+    fail("y_gra 不对: 它应该是 Graphical 计划的 D2cc 减 5 mm 计划的 D2cc。")
 if not close(train_a, 2.42, 0.006):
     fail(f"train_a 现在是 {train_a:.2f},应该是 2.42。")
 if not close(train_b, 2.13, 0.006):
     fail(f"train_b 现在是 {train_b:.2f},应该是 2.13: 模型 B 预测时要用它自己的变量表 X_b。")
-ok("对了: 在建模患者身上,模型 A 2.42 Gy,模型 B 2.13 Gy,B 又显得更好。图形优化的 Δ 本身变化更大,所以两个误差都比体积优化的(1.67 和 1.39 Gy)大。")
+ok("对了: 在建模患者身上,模型 A 2.42 Gy,模型 B 2.13 Gy,B 又显得更好。Graphical 的 Δ 本身变化更大,所以两个误差都比 Volume 的(1.67 和 1.39 Gy)大。")
 ```
 
 <details><summary>提示</summary>
@@ -206,7 +206,7 @@ ok("对了: 在建模患者身上,模型 A 2.42 Gy,模型 B 2.13 Gy,B 又显得�
 <details><summary>参考答案</summary>
 
 ```python
-y_gra = df["d2cc_gra"] - df["d2cc_5mm"]      # 图形优化计划的 Δ
+y_gra = df["d2cc_gra"] - df["d2cc_5mm"]      # Graphical 计划的 Δ
 fit_a = LinearRegression().fit(X_a, y_gra)
 fit_b = LinearRegression().fit(X_b, y_gra)
 train_a = mean_absolute_error(y_gra, fit_a.predict(X_a))
@@ -337,9 +337,9 @@ print(f"平均 {-scores.mean():.2f} Gy")
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的 5 折交叉验证**
+**练习 2 · 轮到你: Graphical 的 5 折交叉验证**
 
-用上面写好的 `cv_mae`,对图形优化的 Δ(`y_gra`)算模型 A 和模型 B 的交叉验证 MAE,存进 `cv_a` 和 `cv_b`。
+用上面写好的 `cv_mae`,对 Graphical 的 Δ(`y_gra`)算模型 A 和模型 B 的交叉验证 MAE,存进 `cv_a` 和 `cv_b`。
 
 ```python
 cv_a, errors_a = cv_mae(X_a, ___)
@@ -352,7 +352,7 @@ need("cv_a", "cv_b")
 if close(cv_a, 2.46, 0.006) and close(cv_b, 2.97, 0.006):
     ok("对了: 交叉验证下,模型 A 2.46 Gy,模型 B 2.97 Gy。训练集上 B 显得更好(2.13 比 2.42),交叉验证把顺序反了过来。在 4900 位新患者身上,它们是 2.55 和 2.86 Gy: 确实是 A 更好。")
 if close(cv_a, 1.73, 0.006):
-    fail("cv_a 现在是体积优化的结果(1.73): 第二个参数要传 y_gra。")
+    fail("cv_a 现在是 Volume 的结果(1.73): 第二个参数要传 y_gra。")
 if close(cv_b, 2.46, 0.006):
     fail("cv_b 现在和模型 A 的一样: 模型 B 的变量表是 X_b。")
 fail(f"现在 cv_a = {cv_a:.2f},cv_b = {cv_b:.2f},应该是 2.46 和 2.97。cv_mae 的两个参数依次是变量表和结局。")
@@ -447,16 +447,16 @@ for name, X in [("模型 A", X_a), ("模型 B", X_b)]:
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,重复 10 次**
+**练习 3 · 轮到你: Graphical,重复 10 次**
 
-用上面定义好的 `rkf`(5 折重复 10 次),对图形优化的 Δ 算模型 A 的成绩: 10 次重复的平均存进 `rep_mean`,10 次之间的标准差存进 `rep_sd`。
+用上面定义好的 `rkf`(5 折重复 10 次),对 Graphical 的 Δ 算模型 A 的成绩: 10 次重复的平均存进 `rep_mean`,10 次之间的标准差存进 `rep_sd`。
 
 ```python
 scores = -cross_val_score(LinearRegression(), X_a, y_gra, cv=___, scoring="neg_mean_absolute_error")
 per_repeat = scores.reshape(10, 5).mean(axis=1)     # 10 次重复各自的成绩
 rep_mean = per_repeat.mean()
 rep_sd = ___
-print(f"图形优化,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
+print(f"Graphical,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
 ```
 
 ```pycheck
@@ -483,7 +483,7 @@ scores = -cross_val_score(LinearRegression(), X_a, y_gra, cv=rkf, scoring="neg_m
 per_repeat = scores.reshape(10, 5).mean(axis=1)     # 10 次重复各自的成绩
 rep_mean = per_repeat.mean()
 rep_sd = per_repeat.std(ddof=1)
-print(f"图形优化,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
+print(f"Graphical,模型 A: 平均 {rep_mean:.2f} Gy,标准差 {rep_sd:.2f}")
 ```
 
 </details>
@@ -563,9 +563,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化的 out-of-fold 预测**
+**练习 4 · 轮到你: Graphical 的 out-of-fold 预测**
 
-用 `oof_predict` 给每位患者算一个图形优化 Δ 的 out-of-fold 预测值(模型 A),存进 `oof_gra`;再算它的 MAE 比练习 1 的训练误差 `train_a` 多多少,存进 `gap_gra`。
+用 `oof_predict` 给每位患者算一个 Graphical Δ 的 out-of-fold 预测值(模型 A),存进 `oof_gra`;再算它的 MAE 比练习 1 的训练误差 `train_a` 多多少,存进 `gap_gra`。
 
 ```python
 oof_gra = oof_predict(X_a, ___)
@@ -578,9 +578,9 @@ need("oof_gra", "gap_gra")
 if len(oof_gra) != len(y_gra):
     fail("oof_gra 应该是每位患者一个预测值,一共 196 个。")
 if close(gap_gra, 0.05, 0.006):
-    ok("对了: 图形优化的 out-of-fold MAE 是 2.47 Gy,只比训练误差多 0.05 Gy(模型 B 在体积优化上多了 0.5 Gy 还多)。模型 A 只有 3 个变量,能记住的偶然很少。这 196 个预测值,第 11、12 课的校准和决策曲线会用到。")
+    ok("对了: Graphical 的 out-of-fold MAE 是 2.47 Gy,只比训练误差多 0.05 Gy(模型 B 在 Volume 上多了 0.5 Gy 还多)。模型 A 只有 3 个变量,能记住的偶然很少。这 196 个预测值,第 11、12 课的校准和决策曲线会用到。")
 if close(mean_absolute_error(y_gra, oof_gra), 2.78, 0.01):
-    fail("oof_predict 的第二个参数填成了体积优化的 y: 要预测的是 y_gra。")
+    fail("oof_predict 的第二个参数填成了 Volume 的 y: 要预测的是 y_gra。")
 fail(f"现在 gap_gra = {gap_gra:.2f},应该是 0.05。检查 oof_predict 的第二个参数。")
 ```
 
@@ -608,7 +608,7 @@ print(f"out-of-fold MAE {mean_absolute_error(y_gra, oof_gra):.2f} Gy,比训练�
 
 <div class="frame">
 
-**背景**: 预测模型常常预测一个是/否的结局,比如"换成体积优化后,阴道 D2cc 从 68 Gy 以上降到 68 Gy 以下"。这样的事件往往不多,随机分成 5 份时,有的份可能事件很多,有的很少。
+**背景**: 预测模型常常预测一个是/否的结局,比如"换成 Volume 后,阴道 D2cc 从 68 Gy 以上降到 68 Gy 以下"。这样的事件往往不多,随机分成 5 份时,有的份可能事件很多,有的很少。
 
 **目标**: 让每一份里的事件数差不多,每一轮考试的难度相近。
 
@@ -649,9 +649,9 @@ for name, cv in [("普通 5 折", KFold(n_splits=5, shuffle=True, random_state=3
 
 <div class="exercise">
 
-**练习 5 · 轮到你: 图形优化的分层**
+**练习 5 · 轮到你: Graphical 的分层**
 
-换成图形优化计划: 5 mm 计划 ≥ 68 Gy、图形优化计划 < 68 Gy 的算一个事件。补全代码,用分层 5 折(`random_state=0`)数出每一份的事件数,存进 `counts_gra`。
+换成 Graphical 计划: 5 mm 计划 ≥ 68 Gy、Graphical 计划 < 68 Gy 的算一个事件。补全代码,用分层 5 折(`random_state=0`)数出每一份的事件数,存进 `counts_gra`。
 
 ```python
 event_gra = ((df["d2cc_5mm"] >= 68) & (df["d2cc_gra"] < ___)).astype(int)
@@ -663,12 +663,12 @@ print("事件数:", event_gra.sum(), " 每一份:", counts_gra)
 ```pycheck
 need("event_gra", "counts_gra")
 if int(event_gra.sum()) != 51:
-    fail(f"现在有 {int(event_gra.sum())} 个事件,应该是 51 个。检查定义: 5 mm 计划 ≥ 68 Gy,图形优化计划 < 68 Gy。")
+    fail(f"现在有 {int(event_gra.sum())} 个事件,应该是 51 个。检查定义: 5 mm 计划 ≥ 68 Gy,Graphical 计划 < 68 Gy。")
 if sum(counts_gra) != 51:
     fail("每一份的事件数加起来应该等于事件总数 51。")
 if max(counts_gra) - min(counts_gra) > 1:
     fail(f"每一份是 {counts_gra},差得有点多: split 的第二个参数要传 event_gra,分层才会按它来分。")
-ok(f"对了: 51 位患者换成图形优化后降到 68 Gy 以下(体积优化是 34 位),分层后每一份是 {counts_gra}。到这里,图形优化的这一套你都亲手算过了。")
+ok(f"对了: 51 位患者换成 Graphical 后降到 68 Gy 以下(Volume 是 34 位),分层后每一份是 {counts_gra}。到这里,Graphical 的这一套你都亲手算过了。")
 ```
 
 <details><summary>提示</summary>

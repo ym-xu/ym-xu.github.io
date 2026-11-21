@@ -23,7 +23,7 @@ objectives:
 
 > 🔬 图里的文字都用英文: 论文的图本来就要英文,而且浏览器里的 Python 没有中文字体。
 
-**练习怎么做**: 讲解里画的是**体积优化**计划和阴道 D2cc;练习换成**图形优化**计划和靶区 D90。每道练习都会检查你画出来的图。
+**练习怎么做**: 讲解里画的是 **Volume** 计划和阴道 D2cc;练习换成 **Graphical** 计划和靶区 D90。每道练习都会检查你画出来的图。
 
 ## 0. 准备
 
@@ -64,9 +64,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的 Δ**
+**练习 1 · 轮到你: Graphical 的 Δ**
 
-画出图形优化计划的 Δ(`delta_gra`)的直方图,20 段,并在 0 的位置加一条竖的虚线,标出"没有变化"。`ax.axvline(x)` 在横轴的 x 处画一条竖线。
+画出 Graphical 计划的 Δ(`delta_gra`)的直方图,20 段,并在 0 的位置加一条竖的虚线,标出"没有变化"。`ax.axvline(x)` 在横轴的 x 处画一条竖线。
 
 ```python
 fig, ax = plt.subplots()
@@ -86,7 +86,7 @@ total = sum(p.get_height() for p in bars)
 if abs(total - 200) > 0.5:
     fail(f"柱子加起来应该是 200 位患者,现在是 {total:.0f}。")
 if abs(min(p.get_x() for p in bars) - df["delta_gra"].min()) > 0.01:
-    fail('画的不是图形优化的 Δ: 第一处填 "delta_gra"。')
+    fail('画的不是 Graphical 的 Δ: 第一处填 "delta_gra"。')
 if not any(len(l.get_xdata()) == 2 and l.get_xdata()[0] == 0 and l.get_xdata()[1] == 0 for l in ax.lines):
     fail('还缺 0 那里的竖线: ax.axvline(0, ...)。')
 ok("对了。大多数患者在 0 的左边(D2cc 降低了),左边拖着一条长尾,有 10 位患者降了 10 Gy 以上;也有 31 位患者在 0 的右边: 换了计划,D2cc 反而升高了。只看中位数 −3.4 Gy,这两件事都看不到。")
@@ -133,7 +133,7 @@ plt.show()
 
 - `alpha=0.6` 让柱子半透明,两组重叠的地方都看得见。
 - `label="..."` 给每一组起名字,`ax.legend()` 把它们列成**图例**(legend)。
-- `ax.axvline(68, ...)` 画一条**参考线**,就像化验单上的参考范围。读图的人一眼能看到: 换成体积优化后,整个分布往左移了一点,68 Gy 左边的人多了。
+- `ax.axvline(68, ...)` 画一条**参考线**,就像化验单上的参考范围。读图的人一眼能看到: 换成 Volume 后,整个分布往左移了一点,68 Gy 左边的人多了。
 - 两组用**同样的分段**(`bins=bins`)。如果让两组各自分段,柱子的宽度和位置不一样,就没法比。
 
 论文里的图一般不在图上写标题,标题和说明写在图下面的图注(figure legend)里。
@@ -158,7 +158,7 @@ plt.show()
 - 上下两根"须"伸到离箱沿不超过 1.5 倍箱高的最远的患者;
 - 再远的患者单独画成圆点,常被叫作离群值(outlier)。它们是提醒你去看一眼的患者,不是可以随手删掉的患者。
 
-图上能看到: 从 5 mm 到体积优化再到图形优化,中位数一路下降(71.0、69.3、67.4 Gy),图形优化的中位数已经落在 68 Gy 线的下面;同时箱子越拉越长,也就是患者之间的差别越来越大。
+图上能看到: 从 5 mm 到 Volume 再到 Graphical,中位数一路下降(71.0、69.3、67.4 Gy),Graphical 的中位数已经落在 68 Gy 线的下面;同时箱子越拉越长,也就是患者之间的差别越来越大。
 
 <div class="quiz">
 <p><b>想一想</b>: 箱线图的箱子中间那条线是什么?箱子里装着多少患者?</p>
@@ -171,7 +171,7 @@ plt.show()
 
 **练习 2 · 轮到你: 三套计划的 D90**
 
-只看外照射加近距离的患者(已经筛好,放在 `ebrt` 里),画出三套计划的靶区 D90 的箱线图,顺序是 5 mm、体积优化、图形优化。
+只看外照射加近距离的患者(已经筛好,放在 `ebrt` 里),画出三套计划的靶区 D90 的箱线图,顺序是 5 mm、Volume、Graphical。
 
 ```python
 ebrt = df[df["arm"] == "EBRT+VCB"]
@@ -219,7 +219,7 @@ plt.show()
 
 ## 4. 散点图: 两个量的关系
 
-阴道壁的厚度,和换成体积优化后 D2cc 的变化有什么关系?两个连续的量之间的关系,用**散点图**(scatter plot): 一位患者一个点,横轴是一个量,纵轴是另一个量。
+阴道壁的厚度,和换成 Volume 后 D2cc 的变化有什么关系?两个连续的量之间的关系,用**散点图**(scatter plot): 一位患者一个点,横轴是一个量,纵轴是另一个量。
 
 ```python
 fig, ax = plt.subplots()
@@ -256,9 +256,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 壁厚和图形优化的 Δ**
+**练习 3 · 轮到你: 壁厚和 Graphical 的 Δ**
 
-画散点图: 横轴是平均壁厚(`wall_mean`),纵轴是图形优化的 Δ(`delta_gra`),两种治疗方式用不同的颜色,带图例。
+画散点图: 横轴是平均壁厚(`wall_mean`),纵轴是 Graphical 的 Δ(`delta_gra`),两种治疗方式用不同的颜色,带图例。
 
 ```python
 fig, ax = plt.subplots()
@@ -285,10 +285,10 @@ if close(np.nansum(xy[:, 0]), df["delta_gra"].sum(), 0.5) and close(np.nansum(xy
 if not close(np.nansum(xy[:, 0]), df["wall_mean"].sum(), 0.5):
     fail('横轴应该是平均壁厚: 第一处填 "wall_mean"。')
 if not close(np.nansum(xy[:, 1]), df["delta_gra"].sum(), 0.5):
-    fail('纵轴应该是图形优化的 Δ: 第二处填 "delta_gra"。')
+    fail('纵轴应该是 Graphical 的 Δ: 第二处填 "delta_gra"。')
 if ax.get_legend() is None:
     fail("还缺图例: ax.legend()。")
-ok("对了。和体积优化一样,壁越薄降得越多;单纯近距离的患者(近距离做了 3 次)散得更开,降得也更多。")
+ok("对了。和 Volume 一样,壁越薄降得越多;单纯近距离的患者(近距离做了 3 次)散得更开,降得也更多。")
 ```
 
 <details><summary>提示</summary>
@@ -331,11 +331,11 @@ plt.show()
 
 `df.head(30).iterrows()` 一行一行地取出前 30 位患者(`row` 就是第 1 课的"一位患者一个字典");`ax.plot(横轴的值, 纵轴的值)` 把这位患者的三个点连成线。
 
-每条线是一位患者。大多数线往右下走,但不是全部: 有的患者换成图形优化后反而升高;穿过 68 Gy 虚线的那些线,就是换了计划以后从虚线上面到了虚线下面(或者反过来)的患者。**成对的数据,画图时把"对"画出来**: 这和第 3 课说的"在宽表里两列相减"是同一个道理,第 6 课的配对检验用的也是它。
+每条线是一位患者。大多数线往右下走,但不是全部: 有的患者换成 Graphical 后反而升高;穿过 68 Gy 虚线的那些线,就是换了计划以后从虚线上面到了虚线下面(或者反过来)的患者。**成对的数据,画图时把"对"画出来**: 这和第 3 课说的"在宽表里两列相减"是同一个道理,第 6 课的配对检验用的也是它。
 
 ## 6. 一张图里放几个小图
 
-把体积优化和图形优化的 Δ 上下排在一起,共用横轴,方便比较:
+把 Volume 和 Graphical 的 Δ 上下排在一起,共用横轴,方便比较:
 
 ```python
 fig, axes = plt.subplots(2, 1, figsize=(4.5, 5.5), sharex=True)
@@ -351,7 +351,7 @@ plt.show()
 
 `plt.subplots(2, 1)` 给出 2 行 1 列的小图,`axes[0]` 是上面那个,`axes[1]` 是下面那个;`figsize=(宽, 高)` 的单位是英寸;`sharex=True` 让两个小图用同一个横轴;`plt.tight_layout()` 自动调整间距,免得文字叠在一起。
 
-共用横轴以后一眼能看出: 图形优化的分布整体更靠左,也更宽。**要比较的图,用同样的坐标范围**;各画各的范围,读图的人会被柱子的样子骗到。
+共用横轴以后一眼能看出: Graphical 的分布整体更靠左,也更宽。**要比较的图,用同样的坐标范围**;各画各的范围,读图的人会被柱子的样子骗到。
 
 ## 7. 导出论文用的图
 
@@ -480,7 +480,7 @@ plt.show()
 
 图注要让读者不看正文也能读懂这张图: 画的是什么、每个符号代表什么、有多少患者。
 
-> **Figure 1.** Change in vaginal D2cc (total EQD2) after volume-based optimisation compared with the 5 mm prescription, plotted against mean vaginal wall thickness. Each point is one patient (n = 196 with wall measurements); the horizontal line marks no change.
+> **Figure 1.** Change in vaginal D2cc (total EQD2) with the Volume plan compared with the 5 mm prescription, plotted against mean vaginal wall thickness. Each point is one patient (n = 196 with wall measurements); the horizontal line marks no change.
 
 箱线图的图注要说明箱子和须的含义,因为不同的软件画法不一样:
 

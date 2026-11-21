@@ -19,7 +19,7 @@ objectives:
 
 前面八课评价模型,用的一直是同一把尺子: 预测值和实际值平均差多少 Gy(MAE)。它好懂,但回答不了一个问题: **1.7 Gy 算好还是算差?**
 
-体积优化的模型平均差 1.70 Gy,图形优化的平均差 2.46 Gy。能说前一个模型更好吗? 不一定: 图形优化的 Δ 本身就变化得更大,更难猜。评价一个预测连续结局的模型,要同时回答三个问题:
+Volume 的模型平均差 1.70 Gy,Graphical 的平均差 2.46 Gy。能说前一个模型更好吗? 不一定: Graphical 的 Δ 本身就变化得更大,更难猜。评价一个预测连续结局的模型,要同时回答三个问题:
 
 1. 平均差多少(带单位,临床能读)?
 2. 和"不用模型"相比,好了多少(不带单位,能跨结局比较)?
@@ -27,7 +27,7 @@ objectives:
 
 这一课一个一个讲。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备
 
@@ -131,9 +131,9 @@ R² = 0.45: 和都猜平均值相比,模型把误差平方和减少了 45%。还
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的 RMSE 和 R²**
+**练习 1 · 轮到你: Graphical 的 RMSE 和 R²**
 
-对图形优化的 Δ,用留出时的预测值算 RMSE(`rmse_g`)和 R²(`r2_g`)。R² 要自己按定义算,不用 `r2_score`。
+对 Graphical 的 Δ,用留出时的预测值算 RMSE(`rmse_g`)和 R²(`r2_g`)。R² 要自己按定义算,不用 `r2_score`。
 
 ```python
 yg = df["delta_gra"]
@@ -147,9 +147,9 @@ print(f"RMSE {rmse_g:.2f} Gy,R² {r2_g:.2f}")
 ```pycheck
 need("rmse_g", "r2_g")
 if close(r2_g, 0.453, 0.004):
-    fail("这是体积优化的结果。结局要用 yg(起始代码里已经是),检查有没有改动。")
+    fail("这是 Volume 的结果。结局要用 yg(起始代码里已经是),检查有没有改动。")
 if close(rmse_g, 3.112, 0.004) and close(r2_g, 0.311, 0.004):
-    ok("对了: RMSE 3.11 Gy,R² 0.31。图形优化的 MAE(2.46 Gy)比体积优化(1.70 Gy)大了四成多;R² 是 0.31 对 0.45。两把尺子都说图形优化更难预测,但 R² 已经扣掉了'图形优化的 Δ 本来就变化更大'这一层。")
+    ok("对了: RMSE 3.11 Gy,R² 0.31。Graphical 的 MAE(2.46 Gy)比 Volume(1.70 Gy)大了四成多;R² 是 0.31 对 0.45。两把尺子都说 Graphical 更难预测,但 R² 已经扣掉了'Graphical 的 Δ 本来就变化更大'这一层。")
 fail(f"现在是 RMSE {rmse_g:.3f}、R² {r2_g:.3f},应该是 3.112 和 0.311。两个空都是 mean。")
 ```
 
@@ -217,9 +217,9 @@ print(f"线性回归: 相关系数的平方 {r ** 2:.2f},R² {r2_score(y, oof):.
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化,不限深度的树**
+**练习 2 · 轮到你: Graphical,不限深度的树**
 
-对图形优化的 Δ,算不限深度的树在建模患者身上的 R²(`r2_train_g`)和留出时的 R²(`r2_oof_g`)。
+对 Graphical 的 Δ,算不限深度的树在建模患者身上的 R²(`r2_train_g`)和留出时的 R²(`r2_oof_g`)。
 
 ```python
 tree_g = DecisionTreeRegressor(random_state=0)
@@ -232,7 +232,7 @@ print(f"建模患者身上 {r2_train_g:.2f},留出时 {r2_oof_g:.2f}")
 ```pycheck
 need("r2_train_g", "r2_oof_g")
 if close(r2_oof_g, 0.135, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if close(r2_train_g, 0.778, 0.004) and close(r2_oof_g, -0.270, 0.004):
     ok("对了: 建模患者身上 0.78,留出时 −0.27。同一棵树,一个数说它解释了 78% 的变异,另一个数说它比都猜平均值还差 27%。后一个才是它对新患者的本事。")
 fail(f"现在是 {r2_train_g:.3f} 和 {r2_oof_g:.3f},应该是 0.778 和 −0.270。第二个空是 predict。")
@@ -339,9 +339,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化的校准斜率**
+**练习 3 · 轮到你: Graphical 的校准斜率**
 
-对图形优化的 Δ,算线性回归的校准斜率(`slope_g`)和不限深度的树的校准斜率(`slope_tree_g`)。`oof_g` 和 `oof_tg` 是前两个练习里算好的。
+对 Graphical 的 Δ,算线性回归的校准斜率(`slope_g`)和不限深度的树的校准斜率(`slope_tree_g`)。`oof_g` 和 `oof_tg` 是前两个练习里算好的。
 
 ```python
 slope_g = calibration_slope(yg, ___)
@@ -352,9 +352,9 @@ print(f"线性回归 {slope_g:.2f},不限深度的树 {slope_tree_g:.2f}")
 ```pycheck
 need("slope_g", "slope_tree_g")
 if close(slope_g, 0.970, 0.004):
-    fail("这是体积优化的结果。第一个空是图形优化的留出预测 oof_g。")
+    fail("这是 Volume 的结果。第一个空是 Graphical 的留出预测 oof_g。")
 if close(slope_g, 0.945, 0.004) and close(slope_tree_g, 0.364, 0.004):
-    ok("对了: 线性回归 0.95,树 0.36。树说两位患者相差 10 Gy 的时候,实际平均只差 3.6 Gy。它在图形优化上的 R² 是负的(练习 2),原因就在这里: 说得太极端,错得比都猜平均值还多。")
+    ok("对了: 线性回归 0.95,树 0.36。树说两位患者相差 10 Gy 的时候,实际平均只差 3.6 Gy。它在 Graphical 上的 R² 是负的(练习 2),原因就在这里: 说得太极端,错得比都猜平均值还多。")
 fail(f"现在是 {slope_g:.3f} 和 {slope_tree_g:.3f},应该是 0.945 和 0.364。第一个空是 oof_g,第二个空是 yg。")
 ```
 
@@ -378,11 +378,11 @@ print(f"线性回归 {slope_g:.2f},不限深度的树 {slope_tree_g:.2f}")
 
 ## 4. 一个队列,好几个结局
 
-换一种计划方案,变的不只是阴道的 D2cc,靶区的 D90 也在变;而且有两种优化方案。这个队列一共有四个可以预测的 Δ。同样三个变量,各建一个模型:
+换一种计划方案,变的不只是阴道的 D2cc,靶区的 D90 也在变;而且可以换成 Volume,也可以换成 Graphical。这个队列一共有四个可以预测的 Δ。同样三个变量,各建一个模型:
 
 ```python
-outcomes = {"阴道 D2cc,体积优化": "delta", "阴道 D2cc,图形优化": "delta_gra",
-            "靶区 D90,体积优化": "delta_d90", "靶区 D90,图形优化": "delta_d90_gra"}
+outcomes = {"阴道 D2cc,Volume": "delta", "阴道 D2cc,Graphical": "delta_gra",
+            "靶区 D90,Volume": "delta_d90", "靶区 D90,Graphical": "delta_d90_gra"}
 rows = []
 for name, column in outcomes.items():
     pred = out_of_fold(LinearRegression(), cols, column)
@@ -390,7 +390,7 @@ for name, column in outcomes.items():
 print(pd.DataFrame(rows).round(2).to_string(index=False))
 ```
 
-只看 MAE,靶区 D90(体积优化)的模型是 1.06 Gy,比阴道 D2cc(体积优化)的 1.70 Gy 好得多。但 D90 的 Δ 本来就变化得小(标准差 1.82 Gy 对 2.83 Gy),猜平均值也错不了多少。看 R²: 0.52 对 0.45,只好一点。
+只看 MAE,靶区 D90(Volume)的模型是 1.06 Gy,比阴道 D2cc(Volume)的 1.70 Gy 好得多。但 D90 的 Δ 本来就变化得小(标准差 1.82 Gy 对 2.83 Gy),猜平均值也错不了多少。看 R²: 0.52 对 0.45,只好一点。
 
 两把尺子各有各的用处:
 
@@ -402,8 +402,8 @@ print(pd.DataFrame(rows).round(2).to_string(index=False))
 ```python
 together = LinearRegression().fit(df[cols], df[["delta", "delta_gra"]])     # 一次给两个结局
 alone = LinearRegression().fit(df[cols], df["delta_gra"])
-print("一起拟合,图形优化的系数:", together.coef_[1].round(2))
-print("单独拟合,图形优化的系数:", alone.coef_.round(2))
+print("一起拟合,Graphical 的系数:", together.coef_[1].round(2))
+print("单独拟合,Graphical 的系数:", alone.coef_.round(2))
 ```
 
 系数一模一样。所以做法很简单: 每个结局一个模型,各有各的基线,各报各的成绩。
@@ -421,21 +421,21 @@ print(residuals.corr().round(2))
 
 ```python
 with_vol = out_of_fold(LinearRegression(), cols + ["delta"], "delta_gra")
-print(f"把体积优化的 Δ 也当作变量: 图形优化的 R² {r2_score(df['delta_gra'], with_vol):.2f}")
+print(f"把 Volume 的 Δ 也当作变量: Graphical 的 R² {r2_score(df['delta_gra'], with_vol):.2f}")
 ```
 
 <div class="quiz">
-<p><b>想一想</b>: 加上体积优化的 Δ 以后,图形优化的 R² 从 0.31 升到了 0.48。这个模型能用吗?</p>
+<p><b>想一想</b>: 加上 Volume 的 Δ 以后,Graphical 的 R² 从 0.31 升到了 0.48。这个模型能用吗?</p>
 <button class="quiz-opt" data-why="成绩确实是在留出的患者身上算的,没有泄漏患者。问题在另一个地方: 用模型的那一刻,这个变量手里有没有。">能: 成绩是交叉验证算的,没有问题</button>
-<button class="quiz-opt" data-correct data-why="第 5 课的规矩: 模型只能用预测那一刻已经知道的东西。如果体积优化的计划总是先做,它的 Δ 到时候是现成的,可以用;如果模型的目的正是在做任何优化之前就判断值不值得做,到时候还没有这个数,用了它就是泄漏。写论文时要写明预测是在哪一刻做的。">要看用模型的那一刻,体积优化的计划做出来了没有</button>
+<button class="quiz-opt" data-correct data-why="第 5 课的规矩: 模型只能用预测那一刻已经知道的东西。如果 Volume 的计划总是先做,它的 Δ 到时候是现成的,可以用;如果模型的目的正是在做 Volume 或 Graphical 计划之前就判断值不值得做,到时候还没有这个数,用了它就是泄漏。写论文时要写明预测是在哪一刻做的。">要看用模型的那一刻,Volume 的计划做出来了没有</button>
 <button class="quiz-opt" data-why="相关的变量可以放进同一个模型(第 6、8 课)。这里的问题不是相关,而是预测那一刻这个变量有没有。">不能: 两个结局相关,不能互相预测</button>
 </div>
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化,在新患者身上对答案**
+**练习 4 · 轮到你: Graphical,在新患者身上对答案**
 
-用全部 196 位患者拟合图形优化的线性回归,在 4900 位新患者身上算 R²(`r2_new_g`)和校准斜率(`slope_new_g`)。
+用全部 196 位患者拟合 Graphical 的线性回归,在 4900 位新患者身上算 R²(`r2_new_g`)和校准斜率(`slope_new_g`)。
 
 ```python
 final_g = LinearRegression().fit(df[cols], df["delta_gra"])
@@ -448,7 +448,7 @@ print(f"新患者: R² {r2_new_g:.2f},校准斜率 {slope_new_g:.2f}")
 ```pycheck
 need("r2_new_g", "slope_new_g")
 if close(r2_new_g, 0.425, 0.004):
-    fail('这是体积优化的结果。模型和结局都要用 "delta_gra"。')
+    fail('这是 Volume 的结果。模型和结局都要用 "delta_gra"。')
 if close(r2_new_g, 0.328, 0.004) and close(slope_new_g, 1.023, 0.004):
     ok("对了: 新患者身上 R² 0.33,校准斜率 1.02。交叉验证给的是 0.31 和 0.95: 都和新患者身上的数差不多,这正是交叉验证的用处。")
 fail(f'现在是 R² {r2_new_g:.3f}、斜率 {slope_new_g:.3f},应该是 0.328 和 1.023。第一个空是 cols,第二个空是 "delta_gra"。')
@@ -478,7 +478,7 @@ print(f"新患者: R² {r2_new_g:.2f},校准斜率 {slope_new_g:.2f}")
 
 把这一课合起来,一个预测连续结局的模型,至少报告这几样,而且都在留出的患者身上算:
 
-| 报告什么 | 回答的问题 | 这一课的例子(体积优化) |
+| 报告什么 | 回答的问题 | 这一课的例子(Volume) |
 |---|---|---|
 | MAE(可加 RMSE) | 预测值平均差多少 | 1.70 Gy(RMSE 2.09 Gy) |
 | 基线的 MAE | 不用模型差多少 | 2.25 Gy |

@@ -28,7 +28,7 @@ objectives:
 
 > 🔬 第 7 课的结论是: 在这个队列上线性回归就够了。这一课故意用随机森林,不是因为它更好,而是因为它没有系数可读,正好用来练习怎么问一个"黑箱"。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备: 7 个变量,分成三组
 
@@ -120,9 +120,9 @@ print(f"只去掉 wall_mean: {cv_mae(forest(), rest):.2f} Gy,多了 {cv_mae(fore
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化,去掉壁厚组**
+**练习 1 · 轮到你: Graphical,去掉壁厚组**
 
-对图形优化的 Δ,算全部 7 个变量时的交叉验证误差(`full_g`)和去掉壁厚组以后的(`no_wall_g`)。
+对 Graphical 的 Δ,算全部 7 个变量时的交叉验证误差(`full_g`)和去掉壁厚组以后的(`no_wall_g`)。
 
 ```python
 full_g = cv_mae(forest(), cols, "delta_gra")
@@ -134,13 +134,13 @@ print(f"全部 {full_g:.2f} Gy,去掉壁厚组 {no_wall_g:.2f} Gy,多了 {no_wal
 ```pycheck
 need("full_g", "no_wall_g")
 if close(no_wall_g, 2.160, 0.004):
-    fail('这是体积优化的结果。cv_mae 的第三个参数要是 "delta_gra"。')
+    fail('这是 Volume 的结果。cv_mae 的第三个参数要是 "delta_gra"。')
 if close(no_wall_g, 2.499, 0.004):
     fail("两个数一样: 第二个空要给去掉壁厚以后剩下的变量 rest,不是 cols。")
 if close(no_wall_g, 2.633, 0.004):
     fail('这是去掉治疗组的结果。第一个空填 "壁厚"。')
 if close(full_g, 2.499, 0.004) and close(no_wall_g, 3.002, 0.004):
-    ok("对了: 2.50 Gy 涨到 3.00 Gy,多了 0.50 Gy。3.00 Gy 就是都猜平均值的水平(第 1 课的练习里,基线也是 3.00 Gy): 没有壁厚的信息,剩下的 4 个变量在图形优化上几乎什么也预测不了。")
+    ok("对了: 2.50 Gy 涨到 3.00 Gy,多了 0.50 Gy。3.00 Gy 就是都猜平均值的水平(第 1 课的练习里,基线也是 3.00 Gy): 没有壁厚的信息,剩下的 4 个变量在 Graphical 上几乎什么也预测不了。")
 fail(f"现在是 {full_g:.3f} 和 {no_wall_g:.3f},应该是 2.499 和 3.002。")
 ```
 
@@ -269,9 +269,9 @@ print(pd.Series(all_fit.feature_importances_, index=cols).round(2))
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化,打乱 20 次**
+**练习 2 · 轮到你: Graphical,打乱 20 次**
 
-对图形优化的 Δ,在第 1 折留出的 40 位患者身上把平均壁厚打乱 20 次,每次记下误差多了多少。平均值存进 `mean_gain_g`。
+对 Graphical 的 Δ,在第 1 折留出的 40 位患者身上把平均壁厚打乱 20 次,每次记下误差多了多少。平均值存进 `mean_gain_g`。
 
 ```python
 model_g = forest().fit(train[cols], train["delta_gra"])
@@ -292,7 +292,7 @@ need("gains_g", "mean_gain_g")
 if len(gains_g) != 20:
     fail(f"gains_g 里应该有 20 个数,现在是 {len(gains_g)} 个。")
 if close(mean_gain_g, 0.735, 0.004):
-    fail('这是体积优化的结果。模型和误差都要用 "delta_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。模型和误差都要用 "delta_gra"(起始代码里已经是),检查有没有改动。')
 if close(gains_g[0], 0.895, 0.004) and close(mean_gain_g, 0.478, 0.004):
     ok("对了: 第 1 次打乱多了 0.90 Gy,20 次平均只有 0.48 Gy。40 位患者打乱一次,结果可以差出将近一倍: 只打乱一次就报告,是在报告运气。")
 fail(f'现在第 1 次是 {gains_g[0]:.3f}、平均是 {mean_gain_g:.3f},应该是 0.895 和 0.478。第一个空是 "wall_mean",第二个空是 base_g。')
@@ -326,9 +326,9 @@ print(f"第 1 次打乱: 多了 {gains_g[0]:.2f} Gy;20 次平均: 多了 {mean_g
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,7 个变量的置换重要性**
+**练习 3 · 轮到你: Graphical,7 个变量的置换重要性**
 
-用 `importance_cv` 算图形优化的 Δ 的置换重要性(`imp_g`),并把最重要的两个变量的名字存进 `top_two`。
+用 `importance_cv` 算 Graphical 的 Δ 的置换重要性(`imp_g`),并把最重要的两个变量的名字存进 `top_two`。
 
 ```python
 imp_g = importance_cv(cols, ___)
@@ -340,9 +340,9 @@ print("最重要的两个:", top_two)
 ```pycheck
 need("imp_g", "top_two")
 if close(imp_g["wall_mean"], 0.700, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if list(top_two) == ["wall_mean", "n_fx"] and close(imp_g["wall_mean"], 0.845, 0.004) and close(imp_g["n_fx"], 0.312, 0.004):
-    ok("对了: 平均壁厚 0.85 Gy,次数 0.31 Gy,其余都在 0 附近(负数是打乱的运气,读成 0)。直径在体积优化里还有一点分量,在图形优化里没有: 和第 3 课读系数时看到的一致。")
+    ok("对了: 平均壁厚 0.85 Gy,次数 0.31 Gy,其余都在 0 附近(负数是打乱的运气,读成 0)。直径在 Volume 里还有一点分量,在 Graphical 里没有: 和第 3 课读系数时看到的一致。")
 if len(top_two) == 2 and top_two[0] != "wall_mean":
     fail("排在最前面的应该是 wall_mean: 从大到小排,第二个空是 False。")
 fail(f"wall_mean 现在是 {imp_g['wall_mean']:.3f},应该是 0.845;最重要的两个应该是 wall_mean 和 n_fx。")
@@ -440,9 +440,9 @@ for k in (2, 3):
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化,壁厚从 2 mm 到 6 mm**
+**练习 4 · 轮到你: Graphical,壁厚从 2 mm 到 6 mm**
 
-对图形优化的 Δ 拟合一片森林,算平均壁厚为 2 mm 和 6 mm 时的平均预测值(`pd_g`),以及两者相差多少(`rise_g`)。
+对 Graphical 的 Δ 拟合一片森林,算平均壁厚为 2 mm 和 6 mm 时的平均预测值(`pd_g`),以及两者相差多少(`rise_g`)。
 
 ```python
 model_pg = forest().fit(df[cols], df[___])
@@ -454,9 +454,9 @@ print(f"2 mm: {pd_g[0]} Gy;6 mm: {pd_g[1]} Gy;相差 {rise_g:.2f} Gy")
 ```pycheck
 need("pd_g", "rise_g")
 if close(rise_g, 5.52, 0.02):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if close(pd_g[0], -5.69, 0.02) and close(rise_g, 6.50, 0.02):
-    ok("对了: 2 mm 时平均预测 −5.69 Gy,6 mm 时 0.81 Gy,相差 6.50 Gy。体积优化是 5.52 Gy: 图形优化的 Δ 随壁厚变得更快。")
+    ok("对了: 2 mm 时平均预测 −5.69 Gy,6 mm 时 0.81 Gy,相差 6.50 Gy。Volume 是 5.52 Gy: Graphical 的 Δ 随壁厚变得更快。")
 fail(f"现在 2 mm 是 {pd_g[0]}、相差 {rise_g:.2f},应该是 −5.69 和 6.50。第二个空是 1(6 mm 是第二个值)。")
 ```
 

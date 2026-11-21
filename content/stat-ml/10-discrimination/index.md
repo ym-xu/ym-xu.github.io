@@ -17,7 +17,7 @@ objectives:
   - "说明 AUC 不管概率准不准,而且随患者的范围变化"
 ---
 
-第 2 课的逻辑回归给每位患者一个概率: 换成体积优化以后,她的阴道 D2cc 降到 68 Gy 以下的概率是多少。第 9 课的尺子(MAE、R²)量的是"差多少 Gy",用不到概率上。
+第 2 课的逻辑回归给每位患者一个概率: 换成 Volume 以后,她的阴道 D2cc 降到 68 Gy 以下的概率是多少。第 9 课的尺子(MAE、R²)量的是"差多少 Gy",用不到概率上。
 
 评价一个给概率的模型,要问三件事,各占一课:
 
@@ -25,7 +25,7 @@ objectives:
 - **校准**(calibration): 模型说 30%,这样的患者里是不是真有三成降了? 第 11 课。
 - **有没有用**: 按模型的概率做决定,比不用模型更好吗? 第 12 课。
 
-**练习怎么做**: 讲解用**体积优化**后是否降到 68 Gy 以下(`event`),练习换成**图形优化**(`event_gra`)。
+**练习怎么做**: 讲解用 **Volume** 后是否降到 68 Gy 以下(`event`),练习换成 **Graphical**(`event_gra`)。
 
 ## 0. 准备
 
@@ -41,7 +41,7 @@ def prepare(d):
     d = d.dropna()
     hi = d[d["d2cc_5mm"] >= 68].copy()                    # 5 mm 计划达到或超过 68 Gy 的患者(第 2 课)
     hi["excess"] = hi["d2cc_5mm"] - 68                    # 超出 68 Gy 多少
-    hi["event"] = (hi["d2cc_vol"] < 68).astype(int)       # 换成体积优化后降到 68 Gy 以下: 是 1,否 0
+    hi["event"] = (hi["d2cc_vol"] < 68).astype(int)       # 换成 Volume 后降到 68 Gy 以下: 是 1,否 0
     hi["event_gra"] = (hi["d2cc_gra"] < 68).astype(int)
     return hi
 
@@ -115,9 +115,9 @@ print(f"模型的准确率 {(tp + tn) / len(y):.0%};对谁都说'不会降',准�
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化,阈值 0.5**
+**练习 1 · 轮到你: Graphical,阈值 0.5**
 
-对图形优化的结局,算阈值 0.5 时的灵敏度(`sens_g`)和特异度(`spec_g`)。
+对 Graphical 的结局,算阈值 0.5 时的灵敏度(`sens_g`)和特异度(`spec_g`)。
 
 ```python
 yg = hi["event_gra"]
@@ -131,9 +131,9 @@ print(f"降了的 {tp + fn} 位里判对 {tp} 位,灵敏度 {sens_g:.0%};没降�
 ```pycheck
 need("sens_g", "spec_g")
 if close(sens_g, 25 / 34, 0.004):
-    fail('这是体积优化的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
 if close(sens_g, 34 / 51, 0.004) and close(spec_g, 79 / 93, 0.004):
-    ok("对了: 51 位降了的患者里判对 34 位,灵敏度 67%;93 位没降的里判对 79 位,特异度 85%。两个数都比体积优化低(74% 和 94%): 图形优化的结局更难分。")
+    ok("对了: 51 位降了的患者里判对 34 位,灵敏度 67%;93 位没降的里判对 79 位,特异度 85%。两个数都比 Volume 低(74% 和 94%): Graphical 的结局更难分。")
 fail(f"现在是灵敏度 {sens_g:.3f}、特异度 {spec_g:.3f},应该是 0.667 和 0.849。灵敏度的分母是真的降了的患者(tp + fn),特异度的分子是 tn。")
 ```
 
@@ -231,9 +231,9 @@ print(f"把所有概率减半: AUC {roc_auc_score(y, p / 2):.3f}")
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的 AUC,一对一对地比**
+**练习 2 · 轮到你: Graphical 的 AUC,一对一对地比**
 
-对图形优化的结局,数出一共多少对(`pairs_g`)、排对了多少对(`right_g`),算出 AUC(`auc_g`)。`yg` 和 `pg` 是练习 1 里的。
+对 Graphical 的结局,数出一共多少对(`pairs_g`)、排对了多少对(`right_g`),算出 AUC(`auc_g`)。`yg` 和 `pg` 是练习 1 里的。
 
 ```python
 pg_event = pg[yg == ___].to_numpy()
@@ -247,11 +247,11 @@ print(f"{pairs_g} 对里排对了 {right_g} 对,AUC = {auc_g:.3f};roc_auc_score:
 ```pycheck
 need("pairs_g", "right_g", "auc_g")
 if pairs_g == 3740:
-    fail("3740 对是体积优化的。用 yg 和 pg(图形优化)。")
+    fail("3740 对是 Volume 的。用 yg 和 pg(Graphical)。")
 if pairs_g == 4743 and right_g == 519:
     fail("排对的意思是降了的那位概率更高: 第二个空是 >,不是 <。")
 if pairs_g == 4743 and right_g == 4224 and close(auc_g, 0.8906, 0.002):
-    ok("对了: 51 × 93 = 4743 对,排对了 4224 对,AUC = 0.891。体积优化是 0.930。")
+    ok("对了: 51 × 93 = 4743 对,排对了 4224 对,AUC = 0.891。Volume 是 0.930。")
 fail(f"现在是 {pairs_g} 对、排对 {right_g} 对,应该是 4743 对和 4224 对。第一个空是 1,第二个空是 >。")
 ```
 
@@ -301,9 +301,9 @@ AUC 0.93,95% 区间 0.88 到 0.97。区间的宽度主要由**事件数**决定,
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,AUC 的 95% 区间**
+**练习 3 · 轮到你: Graphical,AUC 的 95% 区间**
 
-对图形优化的结局,用同样的 bootstrap 算 AUC 的 95% 区间(`low_g`、`high_g`)。
+对 Graphical 的结局,用同样的 bootstrap 算 AUC 的 95% 区间(`low_g`、`high_g`)。
 
 ```python
 rng = np.random.default_rng(0)
@@ -319,9 +319,9 @@ print(f"AUC {roc_auc_score(yg, pg):.2f},95% 区间 {low_g:.2f} 到 {high_g:.2f}"
 ```pycheck
 need("low_g", "high_g")
 if close(low_g, 0.8786, 0.004):
-    fail("这是体积优化的区间。用 yg_np 和 pg_np(起始代码里已经是),检查有没有改动。")
+    fail("这是 Volume 的区间。用 yg_np 和 pg_np(起始代码里已经是),检查有没有改动。")
 if close(low_g, 0.8382, 0.004) and close(high_g, 0.9384, 0.004):
-    ok("对了: AUC 0.89,95% 区间 0.84 到 0.94。体积优化是 0.93(0.88 到 0.97): 两个区间有一大段重叠,只凭这批患者,还不能说模型在体积优化上区分得更好。")
+    ok("对了: AUC 0.89,95% 区间 0.84 到 0.94。Volume 是 0.93(0.88 到 0.97): 两个区间有一大段重叠,只凭这批患者,还不能说模型在 Volume 上区分得更好。")
 fail(f"现在是 {low_g:.3f} 到 {high_g:.3f},应该是 0.838 到 0.938。前两个空都是 idx,第三个空是 2.5。")
 ```
 
@@ -420,9 +420,9 @@ print(f"建模患者身上 {roc_auc_score(y, final.predict_proba(hi[cols])[:, 1]
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化,在新患者身上对答案**
+**练习 4 · 轮到你: Graphical,在新患者身上对答案**
 
-用全部 144 位患者拟合图形优化的模型,算它在新患者身上的 AUC(`auc_new_g`)。
+用全部 144 位患者拟合 Graphical 的模型,算它在新患者身上的 AUC(`auc_new_g`)。
 
 ```python
 final_g = LogisticRegression(C=1e6).fit(hi[cols], hi["event_gra"])
@@ -434,7 +434,7 @@ print(f"新患者身上的 AUC: {auc_new_g:.2f}")
 ```pycheck
 need("auc_new_g")
 if close(auc_new_g, 0.9096, 0.003):
-    fail('这是体积优化的结果。模型和结局都要用 "event_gra"。')
+    fail('这是 Volume 的结果。模型和结局都要用 "event_gra"。')
 if close(auc_new_g, 1 - 0.8731, 0.003):
     fail("AUC 小于 0.5,是取了'不发生'的概率。predict_proba 的两列依次是不发生、发生: 第一个空是 1。")
 if close(auc_new_g, 0.8731, 0.003):

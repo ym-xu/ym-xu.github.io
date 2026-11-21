@@ -22,7 +22,7 @@ objectives:
 
 > 🔬 逻辑回归的 `C=1e6`(第 2 课)关掉的就是这个约束。这一课讲它为什么默认是开着的。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备: 3 个有用的变量,加 40 个没用的
 
@@ -210,9 +210,9 @@ print("  真变量的系数:", c[real].round(2).tolist(), f";不是 0 的有 {(c
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化,变量多了以后**
+**练习 1 · 轮到你: Graphical,变量多了以后**
 
-对图形优化的 Δ,算最小二乘用 3 个变量和 43 个变量时的交叉验证误差,存进 `cv_real_g`、`cv_many_g`。
+对 Graphical 的 Δ,算最小二乘用 3 个变量和 43 个变量时的交叉验证误差,存进 `cv_real_g`、`cv_many_g`。
 
 ```python
 cv_real_g = cv_mae(ols, real, "delta_gra")
@@ -223,7 +223,7 @@ print(f"3 个变量 {cv_real_g:.2f} Gy,43 个变量 {cv_many_g:.2f} Gy")
 ```pycheck
 need("cv_real_g", "cv_many_g")
 if close(cv_many_g, 1.827, 0.004):
-    fail('这是体积优化的结果。第二个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第二个空填 "delta_gra"。')
 if close(cv_many_g, 2.454, 0.004):
     fail("两个数一样: 第一个空要给 43 个变量的名单 many。")
 if close(cv_real_g, 2.454, 0.004) and close(cv_many_g, 2.687, 0.004):
@@ -251,9 +251,9 @@ print(f"3 个变量 {cv_real_g:.2f} Gy,43 个变量 {cv_many_g:.2f} Gy")
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的 LASSO 留下了谁**
+**练习 2 · 轮到你: Graphical 的 LASSO 留下了谁**
 
-对图形优化的 Δ,拟合 `alpha=0.5` 的 LASSO(43 个变量),数一数有几个系数不是 0(`n_kept`),并把它们的名字存进 `kept`。
+对 Graphical 的 Δ,拟合 `alpha=0.5` 的 LASSO(43 个变量),数一数有几个系数不是 0(`n_kept`),并把它们的名字存进 `kept`。
 
 ```python
 lasso_g = make_pipeline(StandardScaler(), Lasso(alpha=___))
@@ -267,11 +267,11 @@ print(n_kept, kept)
 ```pycheck
 need("n_kept", "kept")
 if n_kept == 4:
-    fail('4 个是体积优化的结果。fit 的结局应该是 D["delta_gra"](起始代码里已经是),检查有没有改动。')
+    fail('4 个是 Volume 的结果。fit 的结局应该是 D["delta_gra"](起始代码里已经是),检查有没有改动。')
 if n_kept == 18:
     fail("18 个是 alpha=0.2 的结果。题目要的是 alpha=0.5。")
 if n_kept == 3 and set(kept) == {"wall_mean", "n_fx", "z22"}:
-    ok("对了: 只剩 3 个: 壁厚、次数,还有一个随机数 z22。直径被压掉了: 第 3 课看到过,图形优化里直径本来就不起作用。LASSO 做对了两件事,做错了一件(z22)。")
+    ok("对了: 只剩 3 个: 壁厚、次数,还有一个随机数 z22。直径被压掉了: 第 3 课看到过,Graphical 里直径本来就不起作用。LASSO 做对了两件事,做错了一件(z22)。")
 fail(f"现在留下了 {n_kept} 个,应该是 3 个。第一个空是 0.5,第二个空是 0。")
 ```
 
@@ -333,9 +333,9 @@ print(f"嵌套交叉验证: {nested:.2f} Gy")
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,选强度并对答案**
+**练习 3 · 轮到你: Graphical,选强度并对答案**
 
-对图形优化的 Δ,用同样的 `search` 选 LASSO 的强度。把选中的强度存进 `alpha_g`,新患者身上的误差存进 `new_g`。
+对 Graphical 的 Δ,用同样的 `search` 选 LASSO 的强度。把选中的强度存进 `alpha_g`,新患者身上的误差存进 `new_g`。
 
 ```python
 search_g = GridSearchCV(make_pipeline(StandardScaler(), Lasso()), grid, cv=cv, scoring="neg_mean_absolute_error")
@@ -348,7 +348,7 @@ print(f"选中 alpha = {alpha_g},新患者 {new_g:.2f} Gy")
 ```pycheck
 need("alpha_g", "new_g")
 if close(new_g, 1.778, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if close(alpha_g, 0.2, 1e-9) and close(new_g, 2.615, 0.004):
     ok("对了: 选中 0.2,新患者身上 2.61 Gy。最小二乘用 43 个变量是 2.87 Gy,只用 3 个真变量是 2.55 Gy: LASSO 把多放 40 个随机数的损失挽回了大半,但没有全部挽回。")
 fail(f'现在是 alpha = {alpha_g}、新患者 {new_g:.3f},应该是 0.2 和 2.615。第二个空是 "lasso__alpha"。')
@@ -389,7 +389,7 @@ print(f"选中 alpha = {alpha_g},新患者 {new_g:.2f} Gy")
 
 ## 6. 什么时候值得用
 
-回头看这一课的几个数(体积优化,新患者身上的平均误差):
+回头看这一课的几个数(Volume,新患者身上的平均误差):
 
 | 做法 | 误差 |
 |---|---|

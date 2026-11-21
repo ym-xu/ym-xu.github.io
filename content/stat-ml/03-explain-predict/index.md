@@ -25,7 +25,7 @@ objectives:
 
 > 🔬 预测模型的论文里最常见的毛病,是拿解释的证据(P 值、OR)去证明预测的结论("这个模型能用于个体化决策")。这一课之后,你应该能一眼看出来。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备: 建模的患者,和一批新患者
 
@@ -111,9 +111,9 @@ bootstrap 给出 1.32 到 1.83,回归表是 1.30 到 1.84。两种算法,几乎�
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的回归表**
+**练习 1 · 轮到你: Graphical 的回归表**
 
-对图形优化的 Δ(`delta_gra`)拟合同样的三变量模型,取出壁厚系数 95% 区间的下限和上限,存进 `lo_gra`、`hi_gra`。
+对 Graphical 的 Δ(`delta_gra`)拟合同样的三变量模型,取出壁厚系数 95% 区间的下限和上限,存进 `lo_gra`、`hi_gra`。
 
 ```python
 fit_gra = sm.OLS(df[___], X).fit()
@@ -125,11 +125,11 @@ print(f"壁厚的系数: 95% 区间 {lo_gra:.2f} 到 {hi_gra:.2f}")
 ```pycheck
 need("fit_gra", "lo_gra", "hi_gra")
 if close(lo_gra, 1.3004, 0.005):
-    fail('这是体积优化的区间。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的区间。第一个空填 "delta_gra"。')
 if close(lo_gra, -0.1919, 0.005) or close(lo_gra, -2.6871, 0.005):
     fail('取的是另一个变量的那一行。第二个空填 "wall_mean"。')
 if close(lo_gra, 1.3593, 0.005) and close(hi_gra, 2.1631, 0.005):
-    ok("对了: 壁厚的系数是 1.76,95% 区间 1.36 到 2.16,离 0 很远。再看直径那一行: 系数 −0.07,区间跨过了 0(P = 0.27)。体积优化里直径是显著的,图形优化里不是。")
+    ok("对了: 壁厚的系数是 1.76,95% 区间 1.36 到 2.16,离 0 很远。再看直径那一行: 系数 −0.07,区间跨过了 0(P = 0.27)。Volume 里直径是显著的,Graphical 里不是。")
 fail(f"现在是 {lo_gra:.2f} 到 {hi_gra:.2f},应该是 1.36 到 2.16。")
 ```
 
@@ -156,7 +156,7 @@ print(f"壁厚的系数: 95% 区间 {lo_gra:.2f} 到 {hi_gra:.2f}")
 
 **练习 2 · 轮到你: 用 bootstrap 再算一遍**
 
-对图形优化,用 bootstrap 算壁厚系数的 95% 区间,存进 `low_g`、`high_g`。
+对 Graphical,用 bootstrap 算壁厚系数的 95% 区间,存进 `low_g`、`high_g`。
 
 ```python
 rng = np.random.default_rng(1)
@@ -172,7 +172,7 @@ print(f"bootstrap: {low_g:.2f} 到 {high_g:.2f}")
 ```pycheck
 need("low_g", "high_g")
 if close(low_g, 1.316, 0.01) and close(high_g, 1.828, 0.01):
-    fail("这是体积优化的区间。拟合时第二个参数要用 yg_np[idx]。")
+    fail("这是 Volume 的区间。拟合时第二个参数要用 yg_np[idx]。")
 if close(low_g, 1.326, 0.02) and close(high_g, 2.19, 0.02):
     ok("对了: 1.33 到 2.19,回归表给的是 1.36 到 2.16。两种算法又对上了。")
 if high_g - low_g < 0.2:
@@ -247,9 +247,9 @@ print(f"壁厚 + 次数 + 直径:   {mae_new(['wall_mean', 'n_fx', 'diameter']):
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,直径帮上忙了吗**
+**练习 3 · 轮到你: Graphical,直径帮上忙了吗**
 
-练习 1 里看到,图形优化时直径不显著(P = 0.27)。用 `mae_new` 算两个模型在新患者身上的平均误差: 壁厚加次数(`mae_two`),再加上直径(`mae_three`)。结局是 `"delta_gra"`。
+练习 1 里看到,Graphical 的模型里直径不显著(P = 0.27)。用 `mae_new` 算两个模型在新患者身上的平均误差: 壁厚加次数(`mae_two`),再加上直径(`mae_three`)。结局是 `"delta_gra"`。
 
 ```python
 mae_two = mae_new(["wall_mean", "n_fx"], ___)
@@ -260,9 +260,9 @@ print(f"壁厚 + 次数: {mae_two:.3f} Gy;再加直径: {mae_three:.3f} Gy")
 ```pycheck
 need("mae_two", "mae_three")
 if close(mae_two, 1.787, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if close(mae_two, 2.541, 0.004) and close(mae_three, 2.548, 0.004):
-    ok("对了: 2.541 Gy 和 2.548 Gy。加上直径,新患者身上的误差没有变小,还大了一点点。直径在图形优化里没有真实的作用,模型却给了它一个系数(−0.07): 这个系数学到的只是这 196 位患者的偶然,到新患者身上就成了噪声。")
+    ok("对了: 2.541 Gy 和 2.548 Gy。加上直径,新患者身上的误差没有变小,还大了一点点。直径在 Graphical 里没有真实的作用,模型却给了它一个系数(−0.07): 这个系数学到的只是这 196 位患者的偶然,到新患者身上就成了噪声。")
 fail(f"现在是 {mae_two:.3f} 和 {mae_three:.3f},应该是 2.541 和 2.548。三个变量是 wall_mean、n_fx、diameter。")
 ```
 
@@ -316,9 +316,9 @@ print(pd.crosstab(df["stage_ia"], df["ebrt"]))
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化里分期的系数**
+**练习 4 · 轮到你: Graphical 里分期的系数**
 
-对图形优化的 Δ 做同样的两步,取出 IA 期的系数: 只放分期时(`ia_alone`),和加上外照射以后(`ia_adjusted`)。
+对 Graphical 的 Δ 做同样的两步,取出 IA 期的系数: 只放分期时(`ia_alone`),和加上外照射以后(`ia_adjusted`)。
 
 ```python
 ia_alone = coef_table(["stage_ia"], "delta_gra").loc["stage_ia", ___]
@@ -329,11 +329,11 @@ print(f"只放分期: {ia_alone:.2f};加上外照射: {ia_adjusted:.2f}")
 ```pycheck
 need("ia_alone", "ia_adjusted")
 if close(ia_alone, -0.67, 0.011):
-    fail('这是体积优化的结果。coef_table 的第二个参数要是 "delta_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。coef_table 的第二个参数要是 "delta_gra"(起始代码里已经是),检查有没有改动。')
 if close(ia_alone, 0.06, 0.011):
     fail('取到的是 P 值那一列。第一个空填 "coef"。')
 if close(ia_alone, -1.0, 0.011) and close(ia_adjusted, -0.05, 0.011):
-    ok("对了: −1.00 变成 −0.05。只放分期时,IA 期的患者图形优化多降 1 Gy(P = 0.06,差一点就'显著'了);调整治疗方式以后,什么也没剩下。")
+    ok("对了: −1.00 变成 −0.05。只放分期时,IA 期的患者 Graphical 多降 1 Gy(P = 0.06,差一点就'显著'了);调整治疗方式以后,什么也没剩下。")
 fail(f'现在是 {ia_alone:.2f} 和 {ia_adjusted:.2f},应该是 −1.00 和 −0.05。第一个空是 "coef",后两个空是 "stage_ia" 和 "ebrt"。')
 ```
 
@@ -370,9 +370,9 @@ print(f"建模的患者: {train_error:.2f} Gy;新患者: {new_error:.2f} Gy")
 
 <div class="exercise">
 
-**练习 5 · 轮到你: 图形优化的模型乐观了多少**
+**练习 5 · 轮到你: Graphical 的模型乐观了多少**
 
-对图形优化的三变量模型,算建模患者身上的平均误差(`train_g`)、新患者身上的(`new_g`),以及两者之差(`gap`)。
+对 Graphical 的三变量模型,算建模患者身上的平均误差(`train_g`)、新患者身上的(`new_g`),以及两者之差(`gap`)。
 
 ```python
 model3_g = LinearRegression().fit(df[cols], df["delta_gra"])
@@ -387,15 +387,15 @@ need("train_g", "new_g", "gap")
 if close(new_g, 2.42, 0.004):
     fail("new_g 和 train_g 一样: 第二个空给的还是建模患者的表。要预测的是新患者: new[cols]。")
 if close(new_g, 1.73, 0.004):
-    fail('这是体积优化的新患者误差。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的新患者误差。第一个空填 "delta_gra"。')
 if close(new_g, 2.548, 0.004) and close(gap, 0.128, 0.006):
-    ok("对了: 2.42 Gy 和 2.55 Gy,相差 0.13 Gy。图形优化的模型比体积优化的(差 0.06 Gy)更乐观: 它里面有一个没有真实作用的变量(直径),结局本身的波动也更大。")
+    ok("对了: 2.42 Gy 和 2.55 Gy,相差 0.13 Gy。Graphical 的模型比 Volume 的(差 0.06 Gy)更乐观: 它里面有一个没有真实作用的变量(直径),结局本身的波动也更大。")
 fail(f'现在新患者的误差是 {new_g:.3f},应该是 2.548。第一个空是 "delta_gra",第二个空是 new[cols]。')
 ```
 
 <details><summary>提示</summary>
 
-和上面体积优化的两行一样,只是换成新患者的表: 结局是 `new["delta_gra"]`,变量是 `new[cols]`。
+和上面 Volume 的两行一样,只是换成新患者的表: 结局是 `new["delta_gra"]`,变量是 `new[cols]`。
 
 </details>
 

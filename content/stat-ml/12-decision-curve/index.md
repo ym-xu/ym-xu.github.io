@@ -19,11 +19,11 @@ objectives:
 
 第 10 课量了区分度(AUC 0.93),第 11 课量了校准(O/E 1.00,斜率 0.93)。两样都好。可是这两个数都没有回答临床上最后要问的那一句: **用这个模型来做决定,患者(和科室)比不用它更好吗?**
 
-这一课的决定是: 对 5 mm 计划达到 68 Gy 的患者,要不要再做一个体积优化的计划? 做了而且降到 68 Gy 以下,这次计划有用;做了没降下来,白做。不做的话,本来能降下来的患者就错过了。
+这一课的决定是: 对 5 mm 计划达到 68 Gy 的患者,要不要再做一个 Volume 的计划? 做了而且降到 68 Gy 以下,这次计划有用;做了没降下来,白做。不做的话,本来能降下来的患者就错过了。
 
 有两种不用模型的做法: **全都做**,和**都不做**。模型要有用,得比这两种都好。
 
-**练习怎么做**: 讲解用**体积优化**(`event`),练习换成**图形优化**(`event_gra`)。
+**练习怎么做**: 讲解用 **Volume**(`event`),练习换成 **Graphical**(`event_gra`)。
 
 ## 0. 准备
 
@@ -52,7 +52,7 @@ def out_of_fold(model, columns, outcome):
 
 y = hi["event"]
 p = out_of_fold(LogisticRegression(C=1e6), cols, "event")
-print(f"{len(hi)} 位患者,其中 {y.sum()} 位做体积优化能降到 68 Gy 以下")
+print(f"{len(hi)} 位患者,其中 {y.sum()} 位做 Volume 能降到 68 Gy 以下")
 ```
 
 ## 1. 三种做法,先数一数
@@ -60,7 +60,7 @@ print(f"{len(hi)} 位患者,其中 {y.sum()} 位做体积优化能降到 68 Gy �
 假定概率达到 0.2 就做(这个 0.2 从哪来,下一节讲):
 
 ```python
-do = p >= 0.2                                             # 按模型: 概率达到 0.2 的患者做体积优化
+do = p >= 0.2                                             # 按模型: 概率达到 0.2 的患者做 Volume
 useful = (do & (y == 1)).sum()                            # 做了,降下来了
 wasted = (do & (y == 0)).sum()                            # 做了,没降下来
 missed = (~do & (y == 1)).sum()                           # 没做,其实能降下来
@@ -95,7 +95,7 @@ print(f"都不做: 做 0 次计划;漏掉 {y.sum()} 位")
 
 **打个比方**: 泌尿科医生问: 前列腺癌的可能性到多少,才值得做穿刺活检? 回答"10%"的医生,愿意做 9 次阴性的活检来找出 1 个癌;回答"30%"的医生更在意不必要的活检。阈值概率不是模型算出来的,是临床判断: 它反映的是漏掉和白做的代价之比。
 
-对这一课的决定: 多做一个体积优化的计划,花的是物理师一两个小时;有用的话,患者的阴道剂量降到了限值以下。白做的代价小、有用的好处大,所以阈值概率应该比较低,比如 10% 到 30%。不同的科室可以有不同的回答,所以后面看的是一段**范围**,不是一个点。
+对这一课的决定: 多做一个 Volume 的计划,花的是物理师一两个小时;有用的话,患者的阴道剂量降到了限值以下。白做的代价小、有用的好处大,所以阈值概率应该比较低,比如 10% 到 30%。不同的科室可以有不同的回答,所以后面看的是一段**范围**,不是一个点。
 
 ## 3. 净获益
 
@@ -153,9 +153,9 @@ print(f"pt = 0.2: 按模型 {net_benefit(y, p, 0.2):.3f},全都做 {net_benefit_
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化,阈值概率 0.2**
+**练习 1 · 轮到你: Graphical,阈值概率 0.2**
 
-对图形优化的结局,算按模型做的净获益(`nb_g`)和全都做的净获益(`nb_all_g`),阈值概率 0.2。
+对 Graphical 的结局,算按模型做的净获益(`nb_g`)和全都做的净获益(`nb_all_g`),阈值概率 0.2。
 
 ```python
 yg = hi["event_gra"]
@@ -168,9 +168,9 @@ print(f"按模型 {nb_g:.3f},全都做 {nb_all_g:.3f},相差 {nb_g - nb_all_g:.3
 ```pycheck
 need("nb_g", "nb_all_g")
 if close(nb_g, 0.151, 0.002):
-    fail('这是体积优化的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
 if close(nb_g, 0.2882, 0.002) and close(nb_all_g, 0.1927, 0.002):
-    ok("对了: 按模型 0.288,全都做 0.193,相差 0.095。图形优化能降下来的患者更多(51 位),所以全都做也有不小的净获益;模型仍然更好: 每 100 位患者多净得 9.5 次有用的计划。")
+    ok("对了: 按模型 0.288,全都做 0.193,相差 0.095。Graphical 能降下来的患者更多(51 位),所以全都做也有不小的净获益;模型仍然更好: 每 100 位患者多净得 9.5 次有用的计划。")
 fail(f"现在是 {nb_g:.3f} 和 {nb_all_g:.3f},应该是 0.288 和 0.193。第一个空是 pg,第二个空是 yg。")
 ```
 
@@ -242,9 +242,9 @@ for t in [0.05, 0.1, 0.2, 0.3]:
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化,阈值概率低一些**
+**练习 2 · 轮到你: Graphical,阈值概率低一些**
 
-如果科室认为白做一次计划几乎没有代价,阈值概率定在 0.1。对图形优化,算按模型和全都做的净获益(`nb10_g`、`nb10_all_g`)。
+如果科室认为白做一次计划几乎没有代价,阈值概率定在 0.1。对 Graphical,算按模型和全都做的净获益(`nb10_g`、`nb10_all_g`)。
 
 ```python
 nb10_g = net_benefit(yg, pg, ___)
@@ -305,7 +305,7 @@ for t in [0.2, 0.3, 0.4, 0.5]:
 两个模型的 AUC 一样,净获益却可以差这么多。净获益把区分度和校准都算了进去: 阈值是按概率的数值划的,数值不准,线就划错了地方。
 
 <div class="quiz">
-<p><b>想一想</b>: 一篇论文画了决策曲线,结论是"模型在阈值概率 0.62 到 0.71 之间有净获益"。这个决定是"要不要多做一个优化计划"。这个结论有多大用处?</p>
+<p><b>想一想</b>: 一篇论文画了决策曲线,结论是"模型在阈值概率 0.62 到 0.71 之间有净获益"。这个决定是"要不要多做一套计划"。这个结论有多大用处?</p>
 <button class="quiz-opt" data-why="有净获益的范围确实存在。但要看这个范围在临床上有没有人会用。">有用: 模型在一段范围内有净获益</button>
 <button class="quiz-opt" data-correct data-why="阈值概率 0.62 的意思是: 白做 1 次计划抵得上 1.6 次有用的。对'多做一个计划'这种代价很小的事,没有人会定这么高的阈值。在临床上合理的范围(比如 0.1 到 0.3)里模型有没有净获益,才是要回答的问题。而且这个范围像是看了曲线以后挑出来的。">用处很小: 没有人会给一件代价很小的事定这么高的阈值</button>
 <button class="quiz-opt" data-why="决策曲线可以用在任何'做或不做'的决定上,包括这一个。问题在阈值的范围。">没用: 决策曲线不适合这种决定</button>
@@ -325,9 +325,9 @@ for t in [0.1, 0.2, 0.3]:
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,在新患者身上对答案**
+**练习 3 · 轮到你: Graphical,在新患者身上对答案**
 
-用全部 144 位患者拟合图形优化的模型,在新患者身上算阈值概率 0.2 时按模型的净获益(`nb_new_g`)和全都做的净获益(`nb_new_all_g`)。
+用全部 144 位患者拟合 Graphical 的模型,在新患者身上算阈值概率 0.2 时按模型的净获益(`nb_new_g`)和全都做的净获益(`nb_new_all_g`)。
 
 ```python
 final_g = LogisticRegression(C=1e6).fit(hi[cols], hi["event_gra"])
@@ -340,7 +340,7 @@ print(f"新患者: 按模型 {nb_new_g:.3f},全都做 {nb_new_all_g:.3f}")
 ```pycheck
 need("nb_new_g", "nb_new_all_g")
 if close(nb_new_g, 0.1744, 0.002):
-    fail('这是体积优化的结果。两个空都填 "event_gra"。')
+    fail('这是 Volume 的结果。两个空都填 "event_gra"。')
 if close(nb_new_g, 0.2970, 0.002) and close(nb_new_all_g, 0.2298, 0.002):
     ok("对了: 新患者身上按模型 0.297,全都做 0.230。交叉验证给的是 0.288 和 0.193: 模型比全都做好,这个结论在新患者身上也成立。")
 fail(f"现在是 {nb_new_g:.3f} 和 {nb_new_all_g:.3f},应该是 0.297 和 0.230。两个空都是 'event_gra'。")
@@ -388,7 +388,7 @@ print(f"新患者: 按模型 {nb_new_g:.3f},全都做 {nb_new_all_g:.3f}")
 
 - **净获益的不确定性**: 和 AUC 一样可以用 bootstrap 给区间。患者少时,两条线之间的差别可能只是运气。
 - **减少了多少不必要的处理**(net reduction in interventions): 净获益的另一种说法,读成"每 100 位患者少白做几次"。
-- **不止两种选择**: 这一课的决定是"做或不做"。在几种方案里挑一种(比如 5 mm、体积优化、图形优化),要比较每种挑法的结果,原理相同,算法更复杂。
+- **不止两种选择**: 这一课的决定是"做或不做"。在几种方案里挑一种(比如 5 mm、Volume、Graphical),要比较每种挑法的结果,原理相同,算法更复杂。
 - **阈值概率不是模型的切点**: 第 10 课说不要挑"最佳阈值"。决策曲线的做法是反过来的: 阈值由临床定,再看模型在那里有没有用。
 - **代价不只是白做**: 真实的决定里还有费用、等待时间、患者的意愿。阈值概率把这些都压进了一个数,所以要给范围。
 
@@ -398,7 +398,7 @@ print(f"新患者: 按模型 {nb_new_g:.3f},全都做 {nb_new_all_g:.3f}")
 
 方法和结果可以这样写(数字换成你自己的):
 
-> Clinical utility was assessed by decision curve analysis on out-of-fold predictions. Because an additional optimised plan costs little relative to the benefit of meeting the dose constraint, threshold probabilities between 0.10 and 0.30 were prespecified as clinically reasonable. Across this range the net benefit of replanning according to the model exceeded that of replanning all patients and of replanning none (at a threshold of 0.20: 0.151 vs 0.045 and 0).
+> Clinical utility was assessed by decision curve analysis on out-of-fold predictions. Because an additional plan costs little relative to the benefit of meeting the dose constraint, threshold probabilities between 0.10 and 0.30 were prespecified as clinically reasonable. Across this range the net benefit of replanning according to the model exceeded that of replanning all patients and of replanning none (at a threshold of 0.20: 0.151 vs 0.045 and 0).
 
 **审稿人可能问**: 阈值概率的范围是怎么定的?
 

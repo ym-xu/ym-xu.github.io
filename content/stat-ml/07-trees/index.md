@@ -25,7 +25,7 @@ objectives:
 
 > 🔬 这一课的结尾可能出乎意料: 在这个队列上,最准的不是它们。先和简单的模型比,是这一课最要紧的一句话。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备
 
@@ -212,9 +212,9 @@ print("训练 %.2f,交叉验证 %.2f,新患者 %.2f Gy" % three_errors(DecisionT
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的第一刀**
+**练习 1 · 轮到你: Graphical 的第一刀**
 
-对图形优化的 Δ,找只看壁厚时最好的一刀: 分叉点存进 `cut_g`,左右两组的预测值存进 `left_g`、`right_g`。
+对 Graphical 的 Δ,找只看壁厚时最好的一刀: 分叉点存进 `cut_g`,左右两组的预测值存进 `left_g`、`right_g`。
 
 ```python
 yg = df["delta_gra"]
@@ -231,9 +231,9 @@ print(f"壁厚 ≤ {cut_g} mm: 左边猜 {left_g:.2f} Gy,右边猜 {right_g:.2f}
 ```pycheck
 need("cut_g", "left_g", "right_g")
 if close(left_g, -3.93, 0.02):
-    fail("这是体积优化的结果。循环里要用 yg(起始代码里已经是),检查有没有改动。")
+    fail("这是 Volume 的结果。循环里要用 yg(起始代码里已经是),检查有没有改动。")
 if close(cut_g, 3.3, 0.001) and close(left_g, -5.64, 0.02) and close(right_g, -2.00, 0.02):
-    ok("对了: 也是壁厚 ≤ 3.3 mm。左边猜 −5.64 Gy,右边猜 −2.00 Gy。图形优化降得更多,两组的差距也更大(3.6 Gy;体积优化是 3.1 Gy)。")
+    ok("对了: 也是壁厚 ≤ 3.3 mm。左边猜 −5.64 Gy,右边猜 −2.00 Gy。Graphical 降得更多,两组的差距也更大(3.6 Gy;Volume 是 3.1 Gy)。")
 fail(f"现在是 ≤ {cut_g} mm,左 {left_g:.2f}、右 {right_g:.2f},应该是 3.3、−5.64、−2.00。第一个空是 cut,第二个空是 sum。")
 ```
 
@@ -403,9 +403,9 @@ print("随机森林: 训练 %.2f,交叉验证 %.2f,新患者 %.2f Gy" % three_er
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的随机森林**
+**练习 2 · 轮到你: Graphical 的随机森林**
 
-对图形优化的 Δ,算同一个随机森林的三个误差,把新患者身上的那个存进 `forest_new_g`。
+对 Graphical 的 Δ,算同一个随机森林的三个误差,把新患者身上的那个存进 `forest_new_g`。
 
 ```python
 forest_g = RandomForestRegressor(n_estimators=300, min_samples_leaf=5, random_state=0)
@@ -417,13 +417,13 @@ print("训练 %.2f,交叉验证 %.2f,新患者 %.2f Gy" % errors_g)
 ```pycheck
 need("forest_new_g")
 if close(forest_new_g, 1.834, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if close(forest_new_g, 2.083, 0.004):
     fail("这是训练误差(第 0 个)。three_errors 交回的三个数依次是训练、交叉验证、新患者,新患者是第 2 个。")
 if close(forest_new_g, 2.466, 0.004):
     fail("这是交叉验证的误差(第 1 个)。新患者是第 2 个。")
 if close(forest_new_g, 2.654, 0.004):
-    ok("对了: 训练 2.08,交叉验证 2.47,新患者 2.65 Gy。线性回归在新患者身上是 2.55 Gy: 图形优化上,随机森林也没有赢过它。")
+    ok("对了: 训练 2.08,交叉验证 2.47,新患者 2.65 Gy。线性回归在新患者身上是 2.55 Gy: Graphical 上,随机森林也没有赢过它。")
 fail(f"forest_new_g 现在是 {forest_new_g:.3f},应该是 2.654。")
 ```
 
@@ -567,9 +567,9 @@ print(f"和自己写的最多相差 {np.abs(boost.predict(new[cols]) - pred_new)
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化的梯度提升**
+**练习 3 · 轮到你: Graphical 的梯度提升**
 
-对图形优化的 Δ,用同样设置的梯度提升,把交叉验证的误差存进 `boost_cv_g`,新患者身上的存进 `boost_new_g`。
+对 Graphical 的 Δ,用同样设置的梯度提升,把交叉验证的误差存进 `boost_cv_g`,新患者身上的存进 `boost_new_g`。
 
 ```python
 boost_g = GradientBoostingRegressor(n_estimators=___, learning_rate=0.05, max_depth=2, random_state=0)
@@ -581,9 +581,9 @@ print("训练 %.2f,交叉验证 %.2f,新患者 %.2f Gy" % errors_b)
 ```pycheck
 need("boost_cv_g", "boost_new_g")
 if close(boost_new_g, 1.784, 0.004):
-    fail('这是体积优化的结果。three_errors 的第二个参数应该是 "delta_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。three_errors 的第二个参数应该是 "delta_gra"(起始代码里已经是),检查有没有改动。')
 if close(boost_cv_g, 2.514, 0.004) and close(boost_new_g, 2.617, 0.004):
-    ok("对了: 交叉验证 2.51,新患者 2.62 Gy。三个模型在图形优化上排下来: 线性回归 2.55,梯度提升 2.62,随机森林 2.65 Gy。")
+    ok("对了: 交叉验证 2.51,新患者 2.62 Gy。三个模型在 Graphical 上排下来: 线性回归 2.55,梯度提升 2.62,随机森林 2.65 Gy。")
 fail(f"现在是交叉验证 {boost_cv_g:.3f}、新患者 {boost_new_g:.3f},应该是 2.514 和 2.617。第一个空是 100,第二个空是 2。")
 ```
 
@@ -608,7 +608,7 @@ print("训练 %.2f,交叉验证 %.2f,新患者 %.2f Gy" % errors_b)
 
 ## 6. 和简单的模型比一比
 
-把这一课的模型排在一起(体积优化,4900 位新患者身上的平均误差):
+把这一课的模型排在一起(Volume,4900 位新患者身上的平均误差):
 
 | 模型 | 新患者身上的误差 |
 |---|---|

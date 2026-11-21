@@ -4,8 +4,8 @@
 不是任何真实研究的结果。每位患者在同一个 CT 上有三套计划:
 
     5mm  在施源器表面下 5 mm 处给处方(传统做法)
-    vol  体积优化
-    gra  手动图形优化
+    vol  Volume
+    gra  Graphical
 
 用法:
 
@@ -29,11 +29,11 @@
     wall_mean   阴道壁厚度的平均值(mm),少数患者缺失
     wall_max    阴道壁厚度的最大值(mm),少数患者缺失
     d2cc_5mm    阴道 D2cc, 外照射加近距离的总 EQD2(Gy, α/β = 3), 5 mm 计划
-    d2cc_vol    同上, 体积优化计划
-    d2cc_gra    同上, 图形优化计划
+    d2cc_vol    同上, Volume 计划
+    d2cc_gra    同上, Graphical 计划
     d90_5mm     靶区 CTV 的 D90, 总 EQD2(Gy, α/β = 10), 5 mm 计划
-    d90_vol     同上, 体积优化计划
-    d90_gra     同上, 图形优化计划
+    d90_vol     同上, Volume 计划
+    d90_gra     同上, Graphical 计划
 
 随访表(make_followup)的列:
 
@@ -72,7 +72,7 @@ def make_cohort(n=200, seed=22):
     d2cc_5mm = np.where(ebrt, 72.0, 69.0) + 0.5 * (30 - diameter) + rng.normal(0, 4.5, n)
     d90_5mm = np.where(ebrt, 60.0, 31.0) + 0.6 * n_fx * (5 - wall_mean) + rng.normal(0, 1.5, n)
 
-    # 换成优化计划后的变化: 壁越薄, 靶区越浅, 优化后剂量降得越多。
+    # 换成 Volume 或 Graphical 计划后的变化: 壁越薄, 靶区越浅, 剂量降得越多。
     # 近距离次数越多, 累计的变化越大。两个剂量指标的随机部分互相相关。
     shared = rng.normal(0, 1, n)
     k = n_fx / 2.5

@@ -234,7 +234,7 @@ print(long.groupby("plan")["d2cc"].median())
 long.groupby(["arm", "plan"])["d2cc"].median().unstack()
 ```
 
-按两个变量分组时,`groupby` 里放一个列表;`unstack()` 把结果排成"行是治疗方式、列是计划"的小表。两组里都是 5 mm 计划的 D2cc 最高,图形优化最低。
+按两个变量分组时,`groupby` 里放一个列表;`unstack()` 把结果排成"行是治疗方式、列是计划"的小表。两组里都是 5 mm 计划的 D2cc 最高,Graphical 最低。
 
 需要的时候,`pivot` 把长表变回宽表:
 
@@ -245,7 +245,7 @@ long.pivot(index="id", columns="plan", values="d2cc").head(3)
 **什么时候用哪一种**: 算同一位患者两套计划的差(比如 `delta_vol`),用宽表,两列相减就行;按计划分组汇总、画图(第 4 课),用长表。两种排法装的是同样的数据,随时可以互相转换。
 
 <div class="quiz">
-<p><b>想一想</b>: 要比较体积优化和 5 mm 两套计划,下面哪种做法保留了"这两个数来自同一位患者"这个信息?</p>
+<p><b>想一想</b>: 要比较 Volume 和 5 mm 两套计划,下面哪种做法保留了"这两个数来自同一位患者"这个信息?</p>
 <button class="quiz-opt" data-correct data-why="每位患者自己和自己比,患者之间的差别(有人整体偏高,有人整体偏低)在相减时抵消了。这叫配对(paired)的比较,第 6 课会用到。">在宽表里两列相减,得到每位患者自己的差</button>
 <button class="quiz-opt" data-why="这样比的是两堆数,丢掉了谁和谁是同一位患者。患者之间本来的差别会混进来,把计划之间的差别盖住。">在长表里把 5mm 的 200 个数和 vol 的 200 个数当成两组患者来比</button>
 <button class="quiz-opt" data-why="两个中位数相减是可以算,但它不等于每位患者的差的中位数,也没有用上配对的信息。">分别算两套计划的中位数,再相减</button>
@@ -275,7 +275,7 @@ try:
 except KeyError:
     fail('d90_med 的行应该是治疗方式,列应该是三套计划: groupby(["arm", "plan"])。')
 if close(a, 30.3, 0.01) and close(b, 61.4, 0.01):
-    ok("对了。两组里都是 5 mm 计划的 D90 最高,图形优化最低: 阴道的剂量降下来,靶区的剂量也跟着降了一些。这是换计划的代价,后面的课会反复看到。")
+    ok("对了。两组里都是 5 mm 计划的 D90 最高,Graphical 最低: 阴道的剂量降下来,靶区的剂量也跟着降了一些。这是换计划的代价,后面的课会反复看到。")
 fail("数值不对。检查 groupby 里是不是 arm 和 plan,算的是不是中位数。")
 ```
 

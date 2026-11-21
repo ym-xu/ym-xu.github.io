@@ -49,6 +49,8 @@ for name in sys.argv[1:]:
                 print(f'{name}:{i + 1}: full-width {ch}'); bad += 1
         if '病人' in line:                                   # the course pages say 患者 (owner's decision, 2026-11-21)
             print(f'{name}:{i + 1}: 病人 (the courses say 患者)'); bad += 1
+        if '体积优化' in line or '图形优化' in line:              # the plans are called Volume and Graphical, without a Chinese name (owner's decision, 2026-11-21)
+            print(f'{name}:{i + 1}: 体积优化/图形优化 (write Volume, Graphical)'); bad += 1
     if changed:
         path.write_text('\n'.join(lines))
 print(f'{bad} problem(s)')

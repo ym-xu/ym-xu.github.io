@@ -17,7 +17,7 @@ objectives:
   - "知道 scikit-learn 默认给系数加了约束,以及怎么关掉"
 ---
 
-第 1 课预测的是"变多少 Gy"。临床上更常问的是"会不会": 这位患者 5 mm 计划的阴道 D2cc 是 71 Gy,超过了 68 Gy;换成体积优化,能不能降到 68 Gy 以下?
+第 1 课预测的是"变多少 Gy"。临床上更常问的是"会不会": 这位患者 5 mm 计划的阴道 D2cc 是 71 Gy,超过了 68 Gy;换成 Volume,能不能降到 68 Gy 以下?
 
 为什么是 68 Gy: 已发表的研究(Qiang 等,*Cancers* 2026;18:2350)里,阴道 D2cc 超过 68 Gy 的 70 位患者中 25 位出现了晚期阴道副作用,不超过的 50 位中只有 9 位。能不能降到这条线以下,是换方案值不值得的一个判断依据。
 
@@ -25,7 +25,7 @@ objectives:
 
 > 🔬 逻辑回归和线性回归只差两处: 公式外面套了一层,把直线弯成 S 形,让结果落在 0 和 1 之间;尺子从"误差平方"换成了"对实际结果给了多大的概率"。其余的,包括系数怎么读、怎么加变量,都和第 1 课一样。
 
-**练习怎么做**: 讲解里预测的是**体积优化**能不能降到 68 Gy 以下。练习都换成**图形优化**: 每讲完一步,你就对图形优化把这一步再做一遍。
+**练习怎么做**: 讲解里预测的是 **Volume** 能不能降到 68 Gy 以下。练习都换成 **Graphical**: 每讲完一步,你就对 Graphical 把这一步再做一遍。
 
 ## 0. 准备: 哪些患者,什么结局
 
@@ -39,7 +39,7 @@ from cohort import make_cohort
 df = make_cohort().dropna()
 hi = df[df["d2cc_5mm"] >= 68].copy()               # 5 mm 计划达到或超过 68 Gy 的患者
 hi["excess"] = hi["d2cc_5mm"] - 68                 # 超出 68 Gy 多少
-hi["event"] = (hi["d2cc_vol"] < 68).astype(int)    # 换成体积优化后降到 68 Gy 以下: 是 1,否 0
+hi["event"] = (hi["d2cc_vol"] < 68).astype(int)    # 换成 Volume 后降到 68 Gy 以下: 是 1,否 0
 print(len(hi), "位患者,其中", hi["event"].sum(), "位降到了 68 Gy 以下")
 hi[["id", "d2cc_5mm", "excess", "d2cc_vol", "event"]].head()
 ```
@@ -80,7 +80,7 @@ xs = np.linspace(0, 15, 50)
 ax.plot(xs, line.intercept_ + line.coef_[0] * xs, color="black")
 ax.axhline(0, color="grey", linewidth=0.8)
 ax.set_xlabel("5 mm plan D2cc above 68 Gy (Gy)")
-ax.set_ylabel("Below 68 Gy after re-optimisation (1 = yes)")
+ax.set_ylabel("Below 68 Gy with the Volume plan (1 = yes)")
 plt.show()
 ```
 
@@ -278,9 +278,9 @@ scikit-learn 给出 log-odds = 1.25 − 0.65 × 超出的剂量,和上面试出�
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 手算图形优化的 OR**
+**练习 1 · 轮到你: 手算 Graphical 的 OR**
 
-换成图形优化: 超出不到 2 Gy 的 27 位患者里,19 位降到了 68 Gy 以下;超出 2 Gy 及以上的 117 位里,32 位降下来了。算两组的 odds(存进 `odds_near`、`odds_far`)和 OR(`or_hand`,近的一组比远的一组)。
+换成 Graphical: 超出不到 2 Gy 的 27 位患者里,19 位降到了 68 Gy 以下;超出 2 Gy 及以上的 117 位里,32 位降下来了。算两组的 odds(存进 `odds_near`、`odds_far`)和 OR(`or_hand`,近的一组比远的一组)。
 
 ```python
 odds_near = 19 / ___          # 超出不到 2 Gy: 19 位降下来了,几位没有?
@@ -355,9 +355,9 @@ print("predict:", model.predict(new))
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的逻辑回归**
+**练习 2 · 轮到你: Graphical 的逻辑回归**
 
-先定义图形优化的结局 `event_gra`,再拟合逻辑回归(记得 `C=1e6`),把每多超出 1 Gy 的 OR 存进 `or_gra`。
+先定义 Graphical 的结局 `event_gra`,再拟合逻辑回归(记得 `C=1e6`),把每多超出 1 Gy 的 OR 存进 `or_gra`。
 
 ```python
 hi["event_gra"] = (hi["d2cc_gra"] < 68).astype(int)
@@ -369,11 +369,11 @@ print(f"log-odds = {model_gra.intercept_[0]:.2f} {model_gra.coef_[0][0]:+.2f} ×
 ```pycheck
 need("model_gra", "or_gra")
 if close(or_gra, 0.5238, 0.002):
-    fail('这是体积优化的 OR。第二个空要填图形优化的结局: "event_gra"。')
+    fail('这是 Volume 的 OR。第二个空要填 Graphical 的结局: "event_gra"。')
 if close(or_gra, 0.6106, 0.0008):
     fail("很接近,但这是带着默认约束(C=1)的结果。第一个空填 1e6。")
 if close(or_gra, 0.6083, 0.0012):
-    ok("对了: log-odds = 1.62 − 0.50 × 超出的剂量,OR = 0.61。图形优化时,每多超出 1 Gy,降到 68 Gy 以下的 odds 乘以 0.61;体积优化是 0.52。图形优化降得更多,超得多一些也还有机会。")
+    ok("对了: log-odds = 1.62 − 0.50 × 超出的剂量,OR = 0.61。换成 Graphical 时,每多超出 1 Gy,降到 68 Gy 以下的 odds 乘以 0.61;Volume 是 0.52。Graphical 降得更多,超得多一些也还有机会。")
 fail(f"or_gra 现在是 {or_gra:.3f},应该是 0.608。")
 ```
 
@@ -400,7 +400,7 @@ print(f"log-odds = {model_gra.intercept_[0]:.2f} {model_gra.coef_[0][0]:+.2f} ×
 
 **练习 3 · 轮到你: 一位新患者的概率**
 
-一位患者 5 mm 计划的 D2cc 是 70 Gy(超出 2 Gy)。用 `model_gra` 算图形优化后降到 68 Gy 以下的概率,存进 `p_gra`。
+一位患者 5 mm 计划的 D2cc 是 70 Gy(超出 2 Gy)。用 `model_gra` 算 Graphical 后降到 68 Gy 以下的概率,存进 `p_gra`。
 
 ```python
 one = pd.DataFrame({"excess": [___]})
@@ -411,11 +411,11 @@ print(f"概率 {p_gra:.2f}")
 ```pycheck
 need("p_gra")
 if close(p_gra, 0.489, 0.004):
-    fail("这是体积优化的概率。要用 model_gra。")
+    fail("这是 Volume 的概率。要用 model_gra。")
 if close(p_gra, 0.349, 0.004):
     fail("这是'降不下来'的概率: 取的是第 0 个数。发生的概率是 [0, 1]。")
 if close(p_gra, 0.6506, 0.004):
-    ok("对了: 0.65。同样超出 2 Gy,体积优化降下来的概率是 0.49,图形优化是 0.65。")
+    ok("对了: 0.65。同样超出 2 Gy,Volume 降下来的概率是 0.49,Graphical 是 0.65。")
 fail(f"p_gra 现在是 {p_gra},应该是 0.65。第一个空是 2.0;第二个空是 predict_proba(predict 只给 0 或 1)。")
 ```
 
@@ -439,7 +439,7 @@ print(f"概率 {p_gra:.2f}")
 
 ## 6. 不止一个变量
 
-和第 1 课一样,公式里可以再加变量。第 1 课看到,阴道壁越薄,优化后 D2cc 降得越多。把平均壁厚加进来:
+和第 1 课一样,公式里可以再加变量。第 1 课看到,阴道壁越薄,换成 Volume 后 D2cc 降得越多。把平均壁厚加进来:
 
 ```python
 X2 = hi[["excess", "wall_mean"]]
@@ -460,7 +460,7 @@ print("同样超出 2 Gy,壁厚 3 mm 和 5 mm 的概率:", model2.predict_proba(
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化的两变量模型**
+**练习 4 · 轮到你: Graphical 的两变量模型**
 
 用超出的剂量和平均壁厚预测 `event_gra`,把壁厚的 OR 存进 `or_wall`。
 
@@ -473,13 +473,13 @@ print("OR:", np.exp(model2_gra.coef_[0]).round(2), " 壁厚的 OR:", round(or_wa
 ```pycheck
 need("model2_gra", "or_wall")
 if close(or_wall, 0.203, 0.004):
-    fail('这是体积优化的结果。第一个空填 "event_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "event_gra"。')
 if close(or_wall, 0.5626, 0.004):
     fail("这是超出的剂量的 OR(第 0 个)。X2 的两列依次是超出的剂量、壁厚,壁厚是第 1 个。")
 if close(or_wall, -1.0986, 0.01):
     fail("这是系数(log-odds),还没有换成 OR: 要取 np.exp。起始代码里已经有 np.exp,检查有没有删掉。")
 if close(or_wall, 0.3333, 0.004):
-    ok("对了: 0.33。超出的剂量相同时,壁厚每厚 1 mm,图形优化后降到 68 Gy 以下的 odds 乘以 0.33,只剩三分之一。")
+    ok("对了: 0.33。超出的剂量相同时,壁厚每厚 1 mm,Graphical 后降到 68 Gy 以下的 odds 乘以 0.33,只剩三分之一。")
 fail(f"or_wall 现在是 {or_wall:.3f},应该是 0.33。")
 ```
 
@@ -515,7 +515,7 @@ print("OR:", np.exp(model2_gra.coef_[0]).round(2), " 壁厚的 OR:", round(or_wa
 
 <div class="exercise">
 
-**练习 5 · 轮到你: 图形优化的模型比基线好多少**
+**练习 5 · 轮到你: Graphical 的模型比基线好多少**
 
 算 `model_gra`(只用超出的剂量)在这 144 位患者身上的平均罚分,存进 `loss_gra`;再算基线(对每位患者都说总体的比例)的,存进 `loss_base`。
 
@@ -532,11 +532,11 @@ print(f"基线 {loss_base:.3f},模型 {loss_gra:.3f}")
 ```pycheck
 need("loss_gra", "loss_base")
 if close(loss_gra, 0.3704, 0.003):
-    fail("0.370 是体积优化的模型。p_model 要用 model_gra 来算(起始代码里已经是),检查有没有改动。")
+    fail("0.370 是 Volume 的模型。p_model 要用 model_gra 来算(起始代码里已经是),检查有没有改动。")
 if close(loss_base, 0.693, 0.003):
     fail('0.693 是对每个人都说 50% 的罚分。基线用的是总体的比例: hi["event_gra"].mean()。')
 if close(loss_gra, 0.4709, 0.003) and close(loss_base, 0.6500, 0.003):
-    ok("对了: 基线 0.650,模型 0.471。图形优化的事件更多(35%),基线本身的罚分就高;用上超出的剂量,降了四分之一多。和第 1 课一样,这是在建模患者身上的成绩,第 4 课换成诚实的版本。")
+    ok("对了: 基线 0.650,模型 0.471。Graphical 的事件更多(35%),基线本身的罚分就高;用上超出的剂量,降了四分之一多。和第 1 课一样,这是在建模患者身上的成绩,第 4 课换成诚实的版本。")
 fail(f"现在是基线 {loss_base:.3f}、模型 {loss_gra:.3f},应该是 0.650 和 0.471。第一个空是 p_model,第二个空是 mean。")
 ```
 
@@ -599,7 +599,7 @@ print(f"基线 {loss_base:.3f},模型 {loss_gra:.3f}")
 
 方法部分可以这样写(变量换成你实际用的):
 
-> The probability that re-optimisation brought the vaginal D2cc below 68 Gy was modelled by logistic regression, fitted by maximum likelihood without penalisation, with the excess of the 5 mm plan D2cc over 68 Gy and mean vaginal wall thickness as predictors. Results are reported as odds ratios per unit increase of each predictor.
+> The probability that the Volume plan brought the vaginal D2cc below 68 Gy was modelled by logistic regression, fitted by maximum likelihood without penalisation, with the excess of the 5 mm plan D2cc over 68 Gy and mean vaginal wall thickness as predictors. Results are reported as odds ratios per unit increase of each predictor.
 
 **审稿人可能问**: OR = 0.44 是不是说概率降低了 56%?
 

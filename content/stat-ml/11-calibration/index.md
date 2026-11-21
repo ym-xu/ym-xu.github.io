@@ -23,7 +23,7 @@ objectives:
 
 **校准**(calibration)问的就是这件事: 模型说出来的概率,能不能照字面相信。
 
-**练习怎么做**: 讲解用**体积优化**后是否降到 68 Gy 以下(`event`),练习换成**图形优化**(`event_gra`)。
+**练习怎么做**: 讲解用 **Volume** 后是否降到 68 Gy 以下(`event`),练习换成 **Graphical**(`event_gra`)。
 
 ## 0. 准备
 
@@ -133,9 +133,9 @@ print(f"模型预期 {expected:.1f} 位降下来,实际 {y.sum()} 位: O/E = {y.
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的 O/E**
+**练习 1 · 轮到你: Graphical 的 O/E**
 
-对图形优化的结局,算模型预期的事件数(`expected_g`)和 O/E(`oe_g`)。
+对 Graphical 的结局,算模型预期的事件数(`expected_g`)和 O/E(`oe_g`)。
 
 ```python
 yg = hi["event_gra"]
@@ -148,11 +148,11 @@ print(f"预期 {expected_g:.1f} 位,实际 {yg.sum()} 位: O/E = {oe_g:.2f}")
 ```pycheck
 need("expected_g", "oe_g")
 if close(expected_g, 34.17, 0.05):
-    fail('这是体积优化的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
 if close(expected_g, 0.355, 0.005):
     fail("这是平均概率。预期的事件数是把概率加起来: sum。")
 if close(expected_g, 51.18, 0.05) and close(oe_g, 0.9965, 0.004):
-    ok("对了: 预期 51.2 位,实际 51 位,O/E = 1.00。图形优化的模型总体上也不偏。")
+    ok("对了: 预期 51.2 位,实际 51 位,O/E = 1.00。Graphical 的模型总体上也不偏。")
 fail(f"现在是预期 {expected_g:.2f}、O/E {oe_g:.3f},应该是 51.18 和 0.997。两个空都是 sum。")
 ```
 
@@ -240,9 +240,9 @@ Brier 分数 0.088,越小越好。它同时受区分度和校准的影响: 排�
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的校准斜率和 Brier 分数**
+**练习 2 · 轮到你: Graphical 的校准斜率和 Brier 分数**
 
-对图形优化的结局,用 `calibration` 取出校准斜率(`slope_g`),再算 Brier 分数(`brier_g`)。
+对 Graphical 的结局,用 `calibration` 取出校准斜率(`slope_g`),再算 Brier 分数(`brier_g`)。
 
 ```python
 oe, intercept, slope_g = calibration(___, pg)
@@ -253,9 +253,9 @@ print(f"斜率 {slope_g:.2f},截距 {intercept:.2f},Brier {brier_g:.3f}")
 ```pycheck
 need("slope_g", "brier_g")
 if close(slope_g, 0.929, 0.004):
-    fail("这是体积优化的斜率。第一个空是图形优化的结局 yg。")
+    fail("这是 Volume 的斜率。第一个空是 Graphical 的结局 yg。")
 if close(slope_g, 0.960, 0.004) and close(brier_g, 0.1331, 0.002):
-    ok("对了: 斜率 0.96,Brier 0.133。校准和体积优化一样好;Brier 比体积优化的 0.088 大,是因为区分度差一些(AUC 0.89 对 0.93),而且图形优化的事件更接近一半,本来就更难说准。")
+    ok("对了: 斜率 0.96,Brier 0.133。校准和 Volume 一样好;Brier 比 Volume 的 0.088 大,是因为区分度差一些(AUC 0.89 对 0.93),而且 Graphical 的事件更接近一半,本来就更难说准。")
 fail(f"现在是斜率 {slope_g:.3f}、Brier {brier_g:.4f},应该是 0.960 和 0.1331。第一个空是 yg,第二个空是 2。")
 ```
 
@@ -301,9 +301,9 @@ print(f"加权: Brier {((pw - y) ** 2).mean():.3f}")
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化,加权以后**
+**练习 3 · 轮到你: Graphical,加权以后**
 
-对图形优化的结局拟合加权的模型,算平均概率(`mean_w_g`)和 O/E(`oe_w_g`)。
+对 Graphical 的结局拟合加权的模型,算平均概率(`mean_w_g`)和 O/E(`oe_w_g`)。
 
 ```python
 pw_g = out_of_fold(LogisticRegression(C=1e6, class_weight=___), hi, cols, "event_gra")
@@ -315,11 +315,11 @@ print(f"平均概率 {mean_w_g:.2f}(实际比例 {yg.mean():.2f});O/E {oe_w_g:.2
 ```pycheck
 need("mean_w_g", "oe_w_g")
 if close(mean_w_g, 0.346, 0.004):
-    fail('这是体积优化的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的结果。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
 if close(oe_w_g, 0.9965, 0.004):
     fail("O/E 是 1.00,说明算的是不加权的概率。第二个空是加权模型的概率 pw_g。")
 if close(mean_w_g, 0.430, 0.004) and close(oe_w_g, 0.823, 0.004):
-    ok("对了: 平均概率 0.43,实际 0.35;O/E 0.82,截距 −0.63。图形优化的事件本来就比较多(51/144),加权抬高得少一些: ln(93 ÷ 51) = 0.60,正好和截距对上。")
+    ok("对了: 平均概率 0.43,实际 0.35;O/E 0.82,截距 −0.63。Graphical 的事件本来就比较多(51/144),加权抬高得少一些: ln(93 ÷ 51) = 0.60,正好和截距对上。")
 fail(f"现在是平均概率 {mean_w_g:.3f}、O/E {oe_w_g:.3f},应该是 0.430 和 0.823。第一个空是 'balanced',第二个空是 pw_g。")
 ```
 
@@ -430,9 +430,9 @@ plt.show()
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化,新患者身上的校准**
+**练习 4 · 轮到你: Graphical,新患者身上的校准**
 
-用全部 144 位患者拟合图形优化的模型,算它在新患者身上的 O/E(`oe_new_g`)和校准斜率(`slope_new_g`)。
+用全部 144 位患者拟合 Graphical 的模型,算它在新患者身上的 O/E(`oe_new_g`)和校准斜率(`slope_new_g`)。
 
 ```python
 final_g = LogisticRegression(C=1e6).fit(hi[cols], hi["event_gra"])
@@ -444,9 +444,9 @@ print(f"O/E {oe_new_g:.2f},截距 {intercept_new_g:.2f},斜率 {slope_new_g:.2f}
 ```pycheck
 need("oe_new_g", "slope_new_g")
 if close(oe_new_g, 1.088, 0.004):
-    fail('这是体积优化的结果。第一个空填 "event_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "event_gra"。')
 if close(oe_new_g, 1.0685, 0.004) and close(slope_new_g, 0.966, 0.004):
-    ok("对了: O/E 1.07,斜率 0.97。和体积优化一样,新患者身上略有低估,幅度基本正好。")
+    ok("对了: O/E 1.07,斜率 0.97。和 Volume 一样,新患者身上略有低估,幅度基本正好。")
 fail(f'现在是 O/E {oe_new_g:.3f}、斜率 {slope_new_g:.3f},应该是 1.069 和 0.966。第一个空是 "event_gra",第二个空是 p_new_g。')
 ```
 

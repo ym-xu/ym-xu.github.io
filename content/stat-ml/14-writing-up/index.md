@@ -21,7 +21,7 @@ objectives:
 
 这一课没有新的方法。它的用处是让你在动手做自己的研究之前,看一遍完整的流程长什么样。
 
-**练习怎么做**: 讲解用**体积优化**(`event`),练习换成**图形优化**(`event_gra`)。
+**练习怎么做**: 讲解用 **Volume**(`event`),练习换成 **Graphical**(`event_gra`)。
 
 ## 0. TRIPOD+AI 是什么
 
@@ -40,7 +40,7 @@ objectives:
 
 动手之前要能用一句话说清: **对哪些患者,在哪个时刻,用哪些信息,预测什么,给谁用**(条目 3–6、8、9)。
 
-这门课的例子: 对术后做阴道近距离放疗、5 mm 计划的阴道 D2cc 达到 68 Gy 的患者,在 5 mm 计划做完的时候,用计划的剂量和 CT 上量的壁厚,预测换成体积优化后能不能降到 68 Gy 以下;给物理师和医生用,决定要不要多做一个优化计划。
+这门课的例子: 对术后做阴道近距离放疗、5 mm 计划的阴道 D2cc 达到 68 Gy 的患者,在 5 mm 计划做完的时候,用计划的剂量和 CT 上量的壁厚,预测换成 Volume 后能不能降到 68 Gy 以下;给物理师和医生用,决定要不要多做一套 Volume 计划。
 
 ```python
 import numpy as np
@@ -67,7 +67,7 @@ cols = ["excess", "wall_mean"]
 
 print(f"入组 {len(raw)} 位 → 没有壁厚测量,排除 {len(raw) - len(raw.dropna())} 位 → "
       f"5 mm 计划不到 68 Gy,不在研究范围 {len(raw.dropna()) - len(hi)} 位 → 进入分析 {len(hi)} 位")
-print(f"结局: {hi['event'].sum()} 位({hi['event'].mean():.1%})换成体积优化后降到 68 Gy 以下")
+print(f"结局: {hi['event'].sum()} 位({hi['event'].mean():.1%})换成 Volume 后降到 68 Gy 以下")
 print(hi[cols].describe().loc[["mean", "std", "min", "max"]].round(1))
 ```
 
@@ -75,7 +75,7 @@ print(hi[cols].describe().loc[["mean", "std", "min", "max"]].round(1))
 
 这一步最容易出的毛病不在统计上,而在定义上:
 
-- **预测的时刻**(第 5、9 课): 模型里的每个变量,在要做决定的那一刻是不是已经有了? 这里 5 mm 计划的剂量和壁厚都是现成的。如果放进了"体积优化后的 D90",那是泄漏。
+- **预测的时刻**(第 5、9 课): 模型里的每个变量,在要做决定的那一刻是不是已经有了? 这里 5 mm 计划的剂量和壁厚都是现成的。如果放进了"Volume 后的 D90",那是泄漏。
 - **结局的定义**(条目 8): 怎么量的,什么时候量的,量的人知不知道预测值。毒性这类结局还要写随访多久。
 - **排除了谁**(条目 11): 4 位没有壁厚测量的患者被去掉了。要写出人数和原因;如果缺失很多,直接去掉会让剩下的患者不再有代表性。
 
@@ -165,9 +165,9 @@ print(results.round(3))
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化的成绩表**
+**练习 1 · 轮到你: Graphical 的成绩表**
 
-对图形优化的结局,算逻辑回归留出时的概率(`oof_g`)和成绩(`perf_g`)。
+对 Graphical 的结局,算逻辑回归留出时的概率(`oof_g`)和成绩(`perf_g`)。
 
 ```python
 oof_g = cross_val_predict(LogisticRegression(C=1e6), hi[cols], hi[___], cv=cv, method="predict_proba")[:, 1]
@@ -178,7 +178,7 @@ print(pd.Series(perf_g).round(3))
 ```pycheck
 need("oof_g", "perf_g")
 if close(perf_g["AUC"], 0.9299, 0.002):
-    fail('这是体积优化的结果。第一个空填 "event_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "event_gra"。')
 if close(perf_g["AUC"], 0.8906, 0.002) and close(perf_g["校准斜率"], 0.960, 0.004) and close(perf_g["净获益"], 0.2882, 0.002):
     ok("对了: AUC 0.891(0.838 到 0.938),O/E 0.997,校准斜率 0.960,Brier 0.133,净获益 0.288(全都做 0.193)。第 10、11、12 课分三次算出来的数,现在一个函数一次给全。")
 fail(f"现在 AUC 是 {perf_g['AUC']:.3f}、校准斜率 {perf_g['校准斜率']:.3f},应该是 0.891 和 0.960。第二个空是 oof_g。")
@@ -227,9 +227,9 @@ print(f"例: 超出 2 Gy、壁厚 3 mm 的患者,概率 {final.predict(one)[0]:.
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的最终模型**
+**练习 2 · 轮到你: Graphical 的最终模型**
 
-用全部 144 位患者拟合图形优化的模型,取出截距(`intercept_g`)和壁厚的 OR(`or_wall_g`)。
+用全部 144 位患者拟合 Graphical 的模型,取出截距(`intercept_g`)和壁厚的 OR(`or_wall_g`)。
 
 ```python
 final_g = sm.Logit(hi["event_gra"], sm.add_constant(hi[cols])).fit(disp=0)
@@ -241,7 +241,7 @@ print(f"log-odds = {intercept_g:.2f} + ({final_g.params['excess']:.2f}) × 超�
 ```pycheck
 need("intercept_g", "or_wall_g")
 if close(intercept_g, 7.24, 0.02):
-    fail('这是体积优化的模型。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
+    fail('这是 Volume 的模型。结局要用 "event_gra"(起始代码里已经是),检查有没有改动。')
 if close(intercept_g, 5.88, 0.02) and close(or_wall_g, 0.333, 0.004):
     ok("对了: log-odds = 5.88 − 0.58 × 超出的剂量 − 1.10 × 平均壁厚;壁厚的 OR 0.33,和第 2 课练习里用 scikit-learn 得到的一样。三个数都写进论文,别人才能用。")
 fail(f"现在截距是 {intercept_g:.3f}、OR 是 {or_wall_g:.3f},应该是 5.880 和 0.333。空里填 'const'。")
@@ -274,7 +274,7 @@ print(f"log-odds = {intercept_g:.2f} + ({final_g.params['excess']:.2f}) × 超�
 r = results["逻辑回归"]
 paragraph = (
     f"Of {len(raw)} patients, {len(hi)} had a wall thickness measurement and a vaginal D2cc of at least 68 Gy with the 5 mm plan; "
-    f"{hi['event'].sum()} ({hi['event'].mean():.0%}) fell below 68 Gy with the volume-optimised plan. "
+    f"{hi['event'].sum()} ({hi['event'].mean():.0%}) fell below 68 Gy with the Volume plan. "
     f"The prespecified logistic model had a cross-validated AUC of {r['AUC']:.2f} "
     f"(95% CI {r['AUC 下限']:.2f} to {r['AUC 上限']:.2f}), an observed-to-expected ratio of {r['O/E']:.2f} "
     f"and a calibration slope of {r['校准斜率']:.2f}. At a threshold probability of 0.20 its net benefit was "
@@ -287,13 +287,13 @@ print(paragraph)
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 图形优化的结果句**
+**练习 3 · 轮到你: Graphical 的结果句**
 
-用练习 1 的 `perf_g` 写出图形优化的一句结果(`sentence_g`): AUC 和它的区间。
+用练习 1 的 `perf_g` 写出 Graphical 的一句结果(`sentence_g`): AUC 和它的区间。
 
 ```python
 sentence_g = (
-    f"For the graphically optimised plan the AUC was {perf_g[___]:.2f} "
+    f"For the Graphical plan the AUC was {perf_g[___]:.2f} "
     f"(95% CI {perf_g['AUC 下限']:.2f} to {perf_g[___]:.2f})."
 )
 print(sentence_g)
@@ -302,7 +302,7 @@ print(sentence_g)
 ```pycheck
 need("sentence_g")
 if "0.93" in sentence_g and "0.89" not in sentence_g:
-    fail("句子里是体积优化的数。用 perf_g(图形优化)。")
+    fail("句子里是 Volume 的数。用 perf_g(Graphical)。")
 if "0.89" in sentence_g and "0.84 to 0.94" in sentence_g:
     ok("对了: 'the AUC was 0.89 (95% CI 0.84 to 0.94)'。没有一个数是手敲的。")
 fail("句子里应该有 0.89 和 '0.84 to 0.94'。第一个空是 'AUC',第二个空是 'AUC 上限'。")
@@ -318,7 +318,7 @@ fail("句子里应该有 0.89 和 '0.84 to 0.94'。第一个空是 'AUC',第二�
 
 ```python
 sentence_g = (
-    f"For the graphically optimised plan the AUC was {perf_g['AUC']:.2f} "
+    f"For the Graphical plan the AUC was {perf_g['AUC']:.2f} "
     f"(95% CI {perf_g['AUC 下限']:.2f} to {perf_g['AUC 上限']:.2f})."
 )
 print(sentence_g)

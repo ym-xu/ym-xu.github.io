@@ -50,8 +50,8 @@ Teaching Tech Together。学来的做法,每课都要做到:
 6. **先猜再验证**(MLCC 的课前题): 在演示或代码之前放一道"先猜一猜",反馈里不直接给答案,而是让读者去运行。
 7. **想一想**(Carpentry、Teaching Tech Together): 选择题的每个错误选项对应一种具体的误解,点开后解释这种误解;
    半对的选项用"……,但是……"。大约每 10–15 分钟一道。
-8. **练习: 讲解用一套数据,练习换一套**(Kaggle Learn): 统计机器学习课里,讲解用体积优化计划(`vol`),
-   练习用图形优化计划(`gra`),每讲完一步就让读者对图形优化再做一遍;一题只有一两个空,当场检查,
+8. **练习: 讲解用一套数据,练习换一套**(Kaggle Learn): 统计机器学习课里,讲解用 Volume 计划(`vol`),
+   练习用 Graphical 计划(`gra`),每讲完一步就让读者对 Graphical 再做一遍;一题只有一两个空,当场检查,
    答错时说出"现在是多少、应该是多少、可能错在哪"。提示一句话,参考答案折叠。
 9. **课末**: 小结(几条结论)、本课术语(中英对照,为写英文论文准备)、这一课没讲什么(MLU 会明说跳过了什么)、
    写进论文(英文 Methods 的写法、审稿人可能问什么)、常见报错、延伸阅读(只放官方文档和可引用的论文)、下一课。
@@ -231,6 +231,8 @@ python tools/check_course.py /tmp/public python/05-uncertainty stat-ml/04-cross-
 脚本在手机宽度的无头浏览器里点每一道"想一想"、运行每个代码块和每个参考答案、操作每张交互图,
 把读者会看到的东西打印出来,用来和正文里的数字逐个核对(需要 playwright 和 Chromium;页面通过请求拦截提供,不开 HTTP 端口)。
 提交并推送到 `main` 后,GitHub Actions 约半分钟发布;发布后用 `python tools/check_course.py LIVE …` 再跑一遍。
+**三套计划只写 5 mm、Volume、Graphical**(用户 2026-11-21 定,和研究网页一致): 不加中文译名,也不解释是哪一种优化;列名里的 `vol`、`gra` 在课程首页交代一次。泛指时写"换一种计划""多做一套计划",不写"优化计划"。英文的方法句写 the Volume plan、the Graphical plan。`lint_lesson.py` 会查旧的两个中文名。
+
 **"患者",不写"病人"**(用户 2026-11-21 定,全站统一): 两门课、两套练习、图里的文字、检查提示、`cohort.py` 和 `cervix.py` 的注释都用"患者";`lint_lesson.py` 会查。
 这份文件里引用用户原话的地方和 R 课没有改;入口页上三张研究卡片的文字跟着另一边维护的加密网页,也没有改。
 
@@ -243,14 +245,14 @@ python tools/check_course.py /tmp/public python/05-uncertainty stat-ml/04-cross-
 
 用户 2026-11-21: "制定任务,编写和打磨 ML 课程"。每一课的做法都按上面的"写一课的顺序"。
 用户 2026-11-21: "持续做,你自己做自己审核发布,我明早看": 这门课的课时写完、自己按清单审核通过,就直接发布,不用每次问;别的页面仍然要先问。
-贯穿全课的设定: 要预测的连续的量是 `delta`(换成体积优化后阴道 D2cc 的变化);是/否的结局是"5 mm 计划达到 68 Gy 的病人,换方案后降到 68 Gy 以下"
+贯穿全课的设定: 要预测的连续的量是 `delta`(换成 Volume 后阴道 D2cc 的变化);是/否的结局是"5 mm 计划达到 68 Gy 的病人,换方案后降到 68 Gy 以下"
 (第 2 课的 `hi`、`excess`、`event`: 144 位病人,34 个事件;第 4 课在全部 196 位病人里数的是同一批事件);逻辑回归一律写 `LogisticRegression(C=1e6)`(默认带约束);
 浏览器里(Pyodide 314.0.7)是 scikit-learn 1.8.0、numpy 2.4.6、pandas 3.0.2、scipy 1.18.0、statsmodels 0.14.6。本机跑 `run_lesson.py` 用一个装了同样版本的环境
 (`uv venv` 再 `uv pip install scikit-learn==1.8.0 numpy==2.4.6 pandas==3.0.2 scipy==1.18.0 statsmodels==0.14.6 matplotlib`),这样本机和浏览器的数字一致;
 **结果里不能有"并列怎么排"的成分**: 并列的排序在 x86 和浏览器(WASM)里不一样。第 5 课踩过: 两行特征完全相同的病人放进最近邻模型,以及不打乱的 `GroupKFold`,
 本机和浏览器给出不同的数;改用决策树和 `GroupKFold(shuffle=True, random_state=0)` 以后两边一致。
 "新病人"一律是 `make_cohort(n=5000, seed=99)` 去掉缺失值以后的 4900 位(第 3 课的 `prepare`);
-讲解用体积优化,练习用图形优化;每课讲模型或方法的地方配一张能动手的图(加在 `course-widgets.js`)。
+讲解用 Volume,练习用 Graphical;每课讲模型或方法的地方配一张能动手的图(加在 `course-widgets.js`)。
 
 写作(按这个顺序;第一部分先写,因为后面每一课都接着它讲):
 

@@ -23,7 +23,7 @@ objectives:
 
 > 🔬 泄漏是预测模型论文里最常见的硬伤。成绩好得不合常理时,先怀疑泄漏,再相信模型。
 
-**练习怎么做**: 讲解用**体积优化**计划的 Δ,练习换成**图形优化**。
+**练习怎么做**: 讲解用 **Volume** 计划的 Δ,练习换成 **Graphical**。
 
 ## 0. 准备
 
@@ -122,9 +122,9 @@ print(f"挑变量放进交叉验证: {cv_mae(honest, noise, y):.2f} Gy")
 
 <div class="exercise">
 
-**练习 1 · 轮到你: 图形优化,同样的陷阱**
+**练习 1 · 轮到你: Graphical,同样的陷阱**
 
-换成图形优化的 Δ。先算泄漏的版本(`leaky_g`): 用全部患者挑 10 个随机变量,再交叉验证。再算诚实的版本(`honest_g`): 把挑变量放进 Pipeline。
+换成 Graphical 的 Δ。先算泄漏的版本(`leaky_g`): 用全部患者挑 10 个随机变量,再交叉验证。再算诚实的版本(`honest_g`): 把挑变量放进 Pipeline。
 
 ```python
 yg = df["delta_gra"]
@@ -138,7 +138,7 @@ print(f"基线 {cv_mae(DummyRegressor(), noise, yg):.2f},泄漏 {leaky_g:.2f},�
 ```pycheck
 need("leaky_g", "honest_g")
 if close(leaky_g, 2.083, 0.006):
-    fail("这是体积优化的结果。挑变量和交叉验证都要用 yg(起始代码里已经是),检查第一个空是不是 top10_g。")
+    fail("这是 Volume 的结果。挑变量和交叉验证都要用 yg(起始代码里已经是),检查第一个空是不是 top10_g。")
 if close(leaky_g, 2.770, 0.006) and close(honest_g, 3.331, 0.006):
     ok("对了: 基线 3.01 Gy,泄漏的版本 2.77 Gy,诚实的版本 3.33 Gy。同一批随机数,泄漏让它们看起来比基线好 0.24 Gy;诚实地验证,它们比基线差。")
 fail(f"现在是 {leaky_g:.2f} 和 {honest_g:.2f},应该是 2.77 和 3.33。第一个空是 top10_g,第二个空是 LinearRegression()。")
@@ -217,9 +217,9 @@ print(f"加上分期: {cv_mae(pipe, X_stage, full['delta']):.2f} Gy")
 
 <div class="exercise">
 
-**练习 2 · 轮到你: 图形优化的 Pipeline**
+**练习 2 · 轮到你: Graphical 的 Pipeline**
 
-用同样的三步 Pipeline,在全部 200 位患者上预测图形优化的 Δ,把交叉验证的平均误差存进 `mae_pipe_g`。
+用同样的三步 Pipeline,在全部 200 位患者上预测 Graphical 的 Δ,把交叉验证的平均误差存进 `mae_pipe_g`。
 
 ```python
 pipe_g = make_pipeline(SimpleImputer(strategy=___), StandardScaler(), LinearRegression())
@@ -230,7 +230,7 @@ print(f"{mae_pipe_g:.2f} Gy")
 ```pycheck
 need("mae_pipe_g")
 if close(mae_pipe_g, 1.738, 0.004):
-    fail('这是体积优化的结果。第二个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第二个空填 "delta_gra"。')
 if close(mae_pipe_g, 2.454, 0.004):
     fail("这是去掉缺失患者以后(196 位)的结果。题目要用全部 200 位: full[cols]。")
 if close(mae_pipe_g, 2.483, 0.004):
@@ -260,7 +260,7 @@ print(f"{mae_pipe_g:.2f} Gy")
 
 另一种泄漏和步骤无关,出在"怎么分折"上。
 
-每位患者有两套优化计划: 体积优化和图形优化。如果把它们当成两条记录,一条预测体积优化的 Δ,一条预测图形优化的 Δ,数据就从 196 行变成了 392 行,看起来样本翻了一倍。
+每位患者除了 5 mm 计划,还有两套: Volume 和 Graphical。如果把它们当成两条记录,一条预测 Volume 的 Δ,一条预测 Graphical 的 Δ,数据就从 196 行变成了 392 行,看起来样本翻了一倍。
 
 ```python
 long = pd.concat([df.assign(plan="vol", y=df["delta"]),
@@ -307,7 +307,7 @@ print(f"按患者分折:   {cv_mae(tree, long[feat], long['y'], cv=by_patient, g
 
 **练习 3 · 轮到你: 换成 D90**
 
-对靶区的 D90 做同样的事: 每位患者两行,结局是两套优化计划各自的 D90 变化。算同一棵树在随机分折(`tree_random`)和按患者分折(`tree_group`)下的平均误差。
+对靶区的 D90 做同样的事: 每位患者两行,结局是 Volume 和 Graphical 两套计划各自的 D90 变化。算同一棵树在随机分折(`tree_random`)和按患者分折(`tree_group`)下的平均误差。
 
 ```python
 long90 = pd.concat([df.assign(y=df["d90_vol"] - df["d90_5mm"]),
@@ -409,9 +409,9 @@ print(f"嵌套交叉验证: {np.mean(errors):.2f} Gy")
 
 <div class="exercise">
 
-**练习 4 · 轮到你: 图形优化,挑出来的那个有多乐观**
+**练习 4 · 轮到你: Graphical,挑出来的那个有多乐观**
 
-对图形优化的 Δ,给 40 个候选打分,挑出交叉验证成绩最好的(`best_g`),记下它的交叉验证成绩(`cv_best_g`)和新患者身上的成绩(`new_best_g`)。
+对 Graphical 的 Δ,给 40 个候选打分,挑出交叉验证成绩最好的(`best_g`),记下它的交叉验证成绩(`cv_best_g`)和新患者身上的成绩(`new_best_g`)。
 
 ```python
 scores_g = pd.Series({z: cv_mae(LinearRegression(), D[["wall_mean", z]], D[___]) for z in names})
@@ -424,7 +424,7 @@ print(f"{best_g}: 交叉验证 {cv_best_g:.2f} Gy,新患者 {new_best_g:.2f} Gy;
 ```pycheck
 need("best_g", "cv_best_g", "new_best_g")
 if close(cv_best_g, 1.755, 0.004):
-    fail('这是体积优化的结果。第一个空填 "delta_gra"。')
+    fail('这是 Volume 的结果。第一个空填 "delta_gra"。')
 if best_g != "z21" and close(cv_best_g, 2.470, 0.004):
     fail("成绩对了,但挑出来的不是成绩最好的那一个。误差越小越好: 第二个空是 idxmin。")
 if best_g == "z21" and close(cv_best_g, 2.470, 0.004) and close(new_best_g, 2.627, 0.004):
