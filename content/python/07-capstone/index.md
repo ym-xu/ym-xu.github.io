@@ -600,4 +600,4 @@ print(sentence_d90)
 - [JupyterLab 的官方文档](https://jupyterlab.readthedocs.io/en/stable/): 界面和快捷键的说明。
 - Wilson G, et al. [Good enough practices in scientific computing](https://doi.org/10.1371/journal.pcbi.1005510). *PLoS Computational Biology* 2017;13:e1005510。给不是程序员的研究者的一份实用清单: 数据怎么放、代码怎么写、项目怎么组织。
 
-**接下来**: Python 课到这里结束。你已经能把一份数据从 Excel 做到 Table 1、主要结果和图。这些都是在**描述**已经发生的事。下一步是**预测**: 一位新病人,还没有做优化的计划,能不能先知道换了计划会怎样?这是下一门课[放疗副作用的预测模型](/stat-ml/)(统计机器学习课)要讲的。
+**接下来**: Python 课到这里结束。你已经能把一份数据从 Excel 做到 Table 1、主要结果和图。这些都是在**描述**已经发生的事。下一步是**预测**: 一位新病人,还没有做优化的计划,能不能先知道换了计划会怎样?这是下一门课[使用机器学习方法进行放疗临床预测](/stat-ml/)(统计机器学习课)要讲的。

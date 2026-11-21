@@ -1,6 +1,6 @@
 ---
-title: "放疗临床研究的数据分析"
-subtitle: "把已经会做的分析,换成代码来做 · Python for radiotherapy clinical research"
+title: "使用 Python 进行放疗临床数据分析"
+subtitle: "把已经会做的分析,换成代码来做 · Python for radiotherapy clinical data analysis"
 type: course
 noindex: true
 aliases: ["/python-ml/"]
@@ -59,7 +59,7 @@ Table 1 是什么、什么时候用非参数检验,你已经知道。这门课�
 - **第 5–6 课**把 95% 区间和 P 值按"它到底在算什么"重讲一遍。用的是重抽样和打乱标签的办法,统计软件的菜单里看不到这一层,它也是机器学习课的基础。
 - **第 7 课**在自己的电脑上,用自己的数据把全流程走一遍,约 2 小时。
 
-为什么是 Python: 这些事情 R 和 Python 都能做。选 Python,是因为下一门课[放疗副作用的预测模型](/stat-ml/)(统计机器学习课)和后面预测模型的研究用的都是它。
+为什么是 Python: 这些事情 R 和 Python 都能做。选 Python,是因为下一门课[使用机器学习方法进行放疗临床预测](/stat-ml/)(统计机器学习课)和后面预测模型的研究用的都是它。
 
 ## 如果你用过 R 或 SPSS
 
