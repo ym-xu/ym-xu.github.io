@@ -85,10 +85,9 @@ pre { overflow: auto; }
 #content.container,
 .site-footer .footer { padding-left: var(--pad); padding-right: var(--pad); }
 #content.container { max-width: none; margin: 0; padding-top: 2.25rem; padding-bottom: 1rem; }
-body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 1140px; }
-/* the course page of the two Python courses is as wide as its lessons and has the same two columns;
-   so is the entry page /yao/ that leads to them */
-body:is(.section-python, .section-stat-ml, .section-yao).kind-section { --sheet: 1140px; }
+/* R lessons: a wider sheet with the table of contents in a right column. The two Python courses keep the
+   880px paper of every other page and put that column on the desk (see "beside the paper" at the end). */
+body.section-r-course.kind-page { --sheet: 1140px; }
 
 /* Course pages (the two Python courses, their practice, the entry page): a fresh candy-blue palette.
    Text that has to be read keeps enough contrast: links are a deeper blue (5.3:1 on white), and the
@@ -123,9 +122,9 @@ body:is(.section-python, .section-stat-ml, .section-yao) .card { --spot: rgba(10
     --surface: rgba(108, 196, 245, .08); --surface-hover: rgba(108, 196, 245, .15);
   }
 }
-/* the entry page: the opening text keeps the reading width of the courses, the cards use the full sheet */
-body.section-yao .content { max-width: 46rem; }
-@media (min-width: 1001px) { body.section-yao .cards.two { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* the entry page: three cards in a row, one row for 学习 and one for 研究 */
+@media (min-width: 861px) { body.section-yao .cards.two { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+body.section-yao .card-title { text-wrap: balance; }
 
 @media (max-width: 900px) { :root { --pad: 40px; } }
 @media (max-width: 720px) {
@@ -506,8 +505,7 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .reading-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 30; pointer-events: none; }
 .reading-progress > span { display: block; height: 100%; width: 0; background: var(--candy-deep, var(--link)); transition: width .1s linear; }
 @media (max-width: 1000px) {
-  body:is(.section-r-course, .section-python, .section-stat-ml).kind-page { --sheet: 880px; }
-  body:is(.section-python, .section-stat-ml, .section-yao).kind-section { --sheet: 880px; }
+  body.section-r-course.kind-page { --sheet: 880px; }
   .lesson-layout, .lesson-layout.no-toc { grid-template-columns: 1fr; gap: 0; }
   .lesson-main, .lesson-toc { grid-column: auto; grid-row: auto; }
   .lesson-toc { margin: 0 0 1.5rem; }
@@ -874,3 +872,32 @@ body:is(.section-python, .section-stat-ml) .lesson-row.planned:hover { backgroun
 .clip-h { font-weight: 700; }
 .clip .card-foot { margin: .3rem 0 0; padding: 0; }
 .clip-title { margin: 0 0 .4rem; font-size: 1.08rem; }
+
+/* ---------- beside the paper ----------
+   In the two Python courses the paper is as wide as every other page of the site (880px). What used to make
+   it wider, a right column inside the sheet ("我的进度" on a course page, "本课目录" in a lesson), lies on
+   the desk to the right of the paper, as a slip of the same paper (the user, 2026-11-22). The paper stays
+   centred while the slip fits beside it and moves left when it does not. Below 1200px (880 + 28 + 240 and
+   the edges) the slip is part of the page again, as on a phone; so it is in a browser without :has(). */
+body:is(.section-python, .section-stat-ml) .lesson-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+body:is(.section-python, .section-stat-ml) :is(.lesson-main, .lesson-toc) { grid-column: auto; grid-row: auto; }
+body:is(.section-python, .section-stat-ml) .lesson-toc { margin: 0 0 1.5rem; }
+body:is(.section-python, .section-stat-ml) .lesson-toc-inner { position: static; max-height: none; overflow: visible; padding: .75rem .9rem; border: .5px solid var(--rule); border-radius: var(--radius-md); }
+body:is(.section-python, .section-stat-ml) .lesson-toc-label { padding-left: 0; }
+body:is(.section-python, .section-stat-ml) .lesson-toc #TableOfContents a { border-left: 0; padding-left: 0; }
+body:is(.section-python, .section-stat-ml) .course-layout { grid-template-columns: minmax(0, 1fr); }
+body:is(.section-python, .section-stat-ml) .course-layout > :is(.course-intro, .course-side, .course-body) { grid-column: auto; grid-row: auto; }
+body:is(.section-python, .section-stat-ml) .course-layout > .course-side { margin: 0 0 1.6rem; }
+body:is(.section-python, .section-stat-ml) .course-side-inner { position: static; padding: .8rem .95rem; border: .5px solid var(--rule); border-radius: var(--radius-md); }
+@media (min-width: 1200px) {
+  @supports selector(:has(a)) {
+    body:is(.section-python, .section-stat-ml):has(.course-side, .lesson-toc) { display: grid; grid-template-columns: minmax(18px, 1fr) minmax(0, var(--sheet)) minmax(286px, 1fr); }
+    body:is(.section-python, .section-stat-ml):has(.course-side, .lesson-toc) > .sheet { grid-column: 2; position: relative; margin: 40px 0 56px; }
+    body:is(.section-python, .section-stat-ml) :is(.course-layout > .course-side, .lesson-toc) { position: absolute; top: 0; bottom: 0; left: calc(100% + 28px); width: 240px; margin: 0; }
+    body:is(.section-python, .section-stat-ml) :is(.course-side-inner, .lesson-toc-inner) { position: sticky; top: 24px; padding: 1.05rem 1.15rem 1.15rem; border: 0; border-radius: 0; background: var(--bg); box-shadow: var(--shadow); }
+    body:is(.section-python, .section-stat-ml) .lesson-toc-inner { max-height: calc(100vh - 48px); overflow-y: auto; }
+    body:is(.section-python, .section-stat-ml) .lesson-toc #TableOfContents a { border-left: 2px solid var(--border); padding-left: .8rem; }
+    body:is(.section-python, .section-stat-ml) .lesson-toc #TableOfContents a.active { border-left-color: var(--link); }
+    body:is(.section-python, .section-stat-ml) .lesson-toc-label { padding-left: .8rem; }
+  }
+}
