@@ -122,8 +122,7 @@ body:is(.section-python, .section-stat-ml, .section-yao) .card { --spot: rgba(10
     --surface: rgba(108, 196, 245, .08); --surface-hover: rgba(108, 196, 245, .15);
   }
 }
-/* the entry page: three cards in a row, one row for 学习 and one for 研究 */
-@media (min-width: 861px) { body.section-yao .cards.two { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* the entry page: its cards are as wide as the cards of the Projects page (two in a row on the same sheet) */
 body.section-yao .card-title { text-wrap: balance; }
 
 @media (max-width: 900px) { :root { --pad: 40px; } }
