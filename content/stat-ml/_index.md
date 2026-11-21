@@ -4,6 +4,8 @@ subtitle: "从\"哪些因素有关\"到\"对这位病人准不准\" · Statistic
 type: course
 noindex: true
 meta: ["浏览器里直接运行", "每个模型先讲原理", "每课都有练习"]
+# 课后练习: 这个 section 里写着 "after: n" 的那一部分排在第 n 课的旁边,课文末尾的 {{</* practice */>}} 也指向它
+practice: "/stat-ml/practice"
 # 不输出本 section 的 RSS,避免 /stat-ml/index.xml 公开列出课时
 outputs: ["HTML"]
 # section 首页本身:照常渲染,但不进任何全站列表 / sitemap

@@ -121,6 +121,9 @@
         row.querySelector(s.practice ? '.lesson-row-sum' : '.lesson-row-title').appendChild(tag);
       });
 
+      // parts of the practice track that are in its outline but not written yet count too
+      var planned = +(page.getAttribute('data-practice-total') || 0);
+      if (planned > parts) parts = planned;
       // the head of the practice column: how many parts of the practice project are done
       var partsStarted = states.filter(function (s) { return s.practice && s.passed; }).length;
       Array.prototype.forEach.call(page.querySelectorAll('[data-practice-count]'), function (count) {

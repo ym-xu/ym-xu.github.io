@@ -580,3 +580,5 @@ print(f"用次数: {cv_mae(forest(), cols):.2f} Gy;换成是否外照射: {cv_b:
 - Caruana R, Lou Y, Gehrke J, 等. Intelligible models for healthcare: predicting pneumonia risk and hospital 30-day readmission. *Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 2015: 1721–1730。第 4 节里哮喘和肺炎的例子出自这里。
 
 **下一课**: 前面八课一直用"平均差多少 Gy"(MAE)来评价模型。连续结局还有别的尺子: R² 是什么,它为什么会是负的;预测值为什么总比实际值"保守"。第 9 课专门讲连续结局的评价。
+
+{{< practice >}}

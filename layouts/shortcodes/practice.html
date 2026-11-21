@@ -1,13 +1,16 @@
 {{- /* The part of the course's practice track that goes with this lesson: part n (weight n*10) of the
-       section named by "practice" in the course's _index.md. Used at the end of a lesson: {{< practice >}}.
+       section named by "practice" in the course's _index.md, or the part whose front matter says
+       "after: n". Used at the end of a lesson: {{< practice >}}.
        Progress comes from the same record pyodide-run.js keeps for the practice page. */ -}}
 {{- $lesson := .Page -}}
 {{- with $lesson.Parent.Params.practice -}}{{- with site.GetPage . -}}
 {{- $track := . -}}
 {{- $parts := .RegularPages.ByWeight -}}
-{{- range where $parts "Weight" $lesson.Weight -}}
+{{- $lessonN := div $lesson.Weight 10 -}}
+{{- $total := len $parts -}}{{- $planned := 0 -}}{{- range $track.Params.parts -}}{{- $planned = add $planned (len .lessons) -}}{{- end -}}{{- if gt $planned $total -}}{{- $total = $planned -}}{{- end -}}
+{{- range $parts -}}{{- if eq (int (.Params.after | default (div .Weight 10))) (int $lessonN) -}}
 <aside class="practice-card" data-practice-card="{{ .RelPermalink }}">
-  <p class="practice-card-kicker">课后练习 · 主题练习第 {{ div .Weight 10 }} / {{ len $parts }} 部分</p>
+  <p class="practice-card-kicker">课后练习 · 主题练习第 {{ div .Weight 10 }} / {{ $total }} 部分</p>
   <p class="practice-card-title">{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</p>
   {{ with .Params.summary }}<p class="practice-card-sum">{{ . }}</p>{{ end }}
   <p class="practice-card-meta"><span>{{ .Params.duration }}</span><span>{{ len (findRE `<div class="step[ "]` .RawContent) }} 步,一步一屏</span><span class="practice-card-state" data-practice-state></span></p>
@@ -26,5 +29,5 @@
   } catch (e) { /* no storage: the card stays as it is */ }
 })();
 </script>
-{{- end -}}
+{{- end -}}{{- end -}}
 {{- end -}}{{- end -}}

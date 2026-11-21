@@ -6,10 +6,14 @@
   {{ $pages := .RegularPages.ByWeight }}
   {{ $total := 0 }}{{ range $parts }}{{ $total = add $total (len .lessons) }}{{ end }}
   {{- /* Practice track: the section named by "practice" in the course's _index.md. Its part n
-         (weight n*10) goes with lesson n and is listed right under that lesson.
+         (weight n*10) goes with lesson n and is listed right under that lesson; a part that says
+         "after: 5" in its front matter goes with lesson 5 instead (a track with fewer parts than lessons).
          A section that is itself such a track says "stepped: true": its rows count as practice. */ -}}
   {{ $practice := false }}{{ $practicePages := slice }}
   {{ with .Params.practice }}{{ with site.GetPage . }}{{ $practice = . }}{{ $practicePages = .RegularPages.ByWeight }}{{ end }}{{ end }}
+  {{- /* how many parts the practice track will have: its own outline, which may be ahead of the pages written so far */ -}}
+  {{ $practiceTotal := len $practicePages }}
+  {{ with $practice }}{{ $planned := 0 }}{{ range .Params.parts }}{{ $planned = add $planned (len .lessons) }}{{ end }}{{ if gt $planned $practiceTotal }}{{ $practiceTotal = $planned }}{{ end }}{{ end }}
   {{ $stepped := .Params.stepped }}
   {{ $unit := .Params.unit | default "课" }}
   {{- /* Text before the marker <!--syllabus--> stands above the syllabus, the rest below it. */ -}}
@@ -29,7 +33,7 @@
   {{- /* Same sheet and the same two columns as a lesson page (text | 240px): the lesson has its
          table of contents on the right, the course page has "我的进度" there. On a narrow screen the
          panel comes after the opening text, before the syllabus. Filled in by course-progress.js. */ -}}
-  <div class="course-layout" data-course>
+  <div class="course-layout" data-course{{ if $practice }} data-practice-total="{{ $practiceTotal }}"{{ end }}>
     <div class="content course-intro fx-after">{{ $lead | safeHTML }}</div>
 
     <aside class="course-side" data-course-side aria-label="我的进度">
@@ -43,7 +47,7 @@
           <div><dt>通过的代码题</dt><dd data-stat="tasks">0</dd></div>
           {{ else }}
           <div><dt>课文里的练习</dt><dd data-stat="ex">0</dd></div>
-          {{ if $practice }}<div><dt>课后练习</dt><dd data-stat="practice">0 / {{ len $practicePages }} 部分</dd></div>{{ end }}
+          {{ if $practice }}<div><dt>课后练习</dt><dd data-stat="practice">0 / {{ $practiceTotal }} 部分</dd></div>{{ end }}
           {{ end }}
         </dl>
         <p class="course-side-note">进度记在这台设备的这个浏览器里。<button type="button" class="course-side-link" data-progress-export>换设备或备份</button></p>
@@ -65,7 +69,7 @@
         {{ with $practice }}
         <div class="syllabus-head">
           <span>课文</span>
-          <span><span class="syllabus-head-label">课后练习</span> · <a href="{{ .RelPermalink }}">{{ replaceRE "^主题练习: " "" .Title }} →</a><br><span data-practice-count>共 {{ len $practicePages }} 部分</span></span>
+          <span><span class="syllabus-head-label">课后练习</span> · <a href="{{ .RelPermalink }}">{{ replaceRE "^主题练习: " "" .Title }} →</a><br><span data-practice-count>共 {{ $practiceTotal }} 部分</span></span>
         </div>
         {{ end }}
         {{ range $pi, $part := $parts }}
@@ -95,10 +99,11 @@
                   </a>
                   {{- /* the practice part that goes with this lesson; a lesson without one keeps its column width */ -}}
                   {{ $lessonN := .n }}
-                  {{ $mine := where $practicePages "Weight" (mul .n 10) }}
+                  {{ $mine := slice }}
+                  {{ range $practicePages }}{{ if eq (int (.Params.after | default (div .Weight 10))) (int $lessonN) }}{{ $mine = $mine | append . }}{{ end }}{{ end }}
                   {{ if and $practice (not $mine) }}<span class="pair-empty" aria-hidden="true"></span>{{ end }}
                   {{ range $mine }}
-                  <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" .RawContent) }}" data-title="课后练习 {{ $lessonN }} · {{ replaceRE "^练习 [0-9]+ · " "" .Title }}" data-practice-row>
+                  <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-ex="{{ len (findRE "(?m)^```pycheck" .RawContent) }}" data-title="课后练习 {{ div .Weight 10 }} · {{ replaceRE "^练习 [0-9]+ · " "" .Title }}" data-practice-row>
                     <span class="lesson-row-num"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.2 2.3l2.5 2.5L5.6 12.9l-3.2.7.7-3.2z"/><path d="M9.6 3.9l2.5 2.5"/></svg></span>
                     <span class="lesson-row-body">
                       <span class="lesson-row-title"><span class="practice-kicker">课后练习</span>{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</span>

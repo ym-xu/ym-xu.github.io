@@ -432,3 +432,5 @@ print(sentence_g)
 
 - Collins GS, Moons KGM, Dhiman P, 等. TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods. *BMJ* 2024;385:e078378。清单和逐条的说明,开放获取;清单的可填写版本在 [tripod-statement.org](https://www.tripod-statement.org/)。
 - Qiang Y, 等. D90 and D2cc dose in vaginal CTV as dosimetric predictors of late vaginal side effects in postoperative vaginal modern brachytherapy after external beam irradiation in endometrial cancer. *Cancers* 2026;18(14):2350。这门课的临床背景;第 2 课里 68 Gy 这个界值的出处,开放获取。
+
+{{< practice >}}

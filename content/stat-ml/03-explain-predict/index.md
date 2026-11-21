@@ -493,3 +493,5 @@ print(f"建模的病人 {train_g:.2f} Gy,新病人 {new_g:.2f} Gy,相差 {gap:.2
 - statsmodels 文档: [Linear Regression](https://www.statsmodels.org/stable/regression.html)。`OLS`、`conf_int`、`summary` 的说明。
 
 **下一课**: 这一课靠 4900 位造出来的新病人,才看到模型对新病人准不准。真实研究里只有手里这一批。第 4 课讲怎样只用这一批病人,诚实地估计模型对新病人的误差: 交叉验证。
+
+{{< practice >}}

@@ -426,3 +426,5 @@ print(f"新病人: 按模型 {nb_new_g:.3f},全都做 {nb_new_all_g:.3f}")
 - Vickers AJ, van Calster B, Steyerberg EW. A simple, step-by-step guide to interpreting decision curve analysis. *Diagn Progn Res* 2019;3:18。怎么读、怎么定阈值范围,开放获取。
 
 **下一课**: 这几课的结论都带着同一句话: "144 位病人、34 个事件,估计不精确。"到底多少病人才够建一个预测模型? 第 13 课讲样本量。
+
+{{< practice >}}

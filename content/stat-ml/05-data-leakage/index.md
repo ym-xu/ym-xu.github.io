@@ -521,3 +521,5 @@ print(f"{best_g}: 交叉验证 {cv_best_g:.2f} Gy,新病人 {new_best_g:.2f} Gy;
 - Kapoor S, Narayanan A. [Leakage and the reproducibility crisis in machine-learning-based science](https://pmc.ncbi.nlm.nih.gov/articles/PMC10499856/). *Patterns (N Y)* 2023;4(9):100804。整理了各个学科里因为泄漏而站不住的机器学习论文,可以引用。
 
 **下一课**: 这一课里,多放进去的变量(随机数、分期)都让模型在新病人身上变差了一点。变量多、病人少的时候,最小二乘会给每个变量都配一个系数,不管它有没有用。第 6 课讲正则化: 给系数加上约束,让没用的变量自己安静下来。
+
+{{< practice >}}
