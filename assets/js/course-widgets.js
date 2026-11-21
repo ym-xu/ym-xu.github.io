@@ -19,6 +19,7 @@
 //   split              one split of a tree, placed by hand: two groups, each predicted by its own mean
 //   permute            shuffle one variable among the test patients: how much worse the predictions get
 //   rsquared           turn a line through the mean point: R² from 0 up to its best value and down below 0
+//   threshold          move the cut-off on predicted probabilities: sensitivity against specificity, one point of the ROC curve
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1126,7 +1127,83 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared };
+  // ---------- figure 14: a cut-off on predicted probabilities ----------
+  // 40 patients with a predicted probability each: 12 had the event, 28 did not. One slider: the cut-off.
+  // Above: the patients along the probability axis, the cut-off as a line. Below: the ROC curve with the
+  // point of this cut-off. Readout: sensitivity and specificity.
+  function thresholdFig(root) {
+    var rng = mulberry32(17), pts = [], i;
+    for (i = 0; i < 40; i++) { var ev = i < 12, z = (ev ? 0.7 : -1.5) + 1.15 * normal(rng); pts.push({ ev: ev, p: Math.round(100 / (1 + Math.exp(-z))) / 100 }); }
+    var evs = pts.filter(function (q) { return q.ev; }), nos = pts.filter(function (q) { return !q.ev; });
+    function at(t) {
+      var tp = evs.filter(function (q) { return q.p >= t; }).length, tn = nos.filter(function (q) { return q.p < t; }).length;
+      return { tp: tp, tn: tn, sens: tp / evs.length, spec: tn / nos.length };
+    }
+    var conc = 0;
+    evs.forEach(function (a) { nos.forEach(function (b) { conc += a.p > b.p ? 1 : a.p === b.p ? 0.5 : 0; }); });
+    var auc = conc / (evs.length * nos.length);
+
+    var w = 360;
+    function px(v) { return 18 + v * (w - 36); }
+    var svg1 = el('svg', { viewBox: '0 0 ' + w + ' 136', role: 'img', 'aria-label': '40 位病人按模型给的概率排开,竖线是阈值' }, root);
+    el('text', { x: 18, y: 12 }, svg1, '降下来的 12 位');
+    el('text', { x: 18, y: 60 }, svg1, '没降下来的 28 位');
+    el('line', { x1: 14, x2: w - 14, y1: 100, y2: 100, 'class': 'w-axis' }, svg1);
+    [0, 0.2, 0.4, 0.6, 0.8, 1].forEach(function (v) {
+      el('line', { x1: px(v), x2: px(v), y1: 100, y2: 104, 'class': 'w-axis' }, svg1);
+      el('text', { x: px(v), y: 115, 'text-anchor': 'middle' }, svg1, v.toFixed(1));
+    });
+    el('text', { x: w / 2, y: 132, 'text-anchor': 'middle' }, svg1, '模型给的概率');
+    var cut = el('line', { y1: 4, y2: 100, 'class': 'w-mean' }, svg1);
+    var dots = pts.map(function (q, k) { return el('circle', { cx: px(q.p), cy: (q.ev ? 30 : 78) + ((k * 7) % 5 - 2) * 3, r: 3.4 }, svg1); });
+
+    var S = 176, ox = 92, oy = 12;                                        // the ROC square
+    function rx(v) { return ox + v * S; }
+    function ry(v) { return oy + (1 - v) * S; }
+    var svg2 = el('svg', { viewBox: '0 0 ' + w + ' 226', role: 'img', 'aria-label': 'ROC 曲线: 每个阈值是曲线上的一个点' }, root);
+    el('rect', { x: ox, y: oy, width: S, height: S, 'class': 'w-box' }, svg2);
+    el('line', { x1: rx(0), y1: ry(0), x2: rx(1), y2: ry(1), 'class': 'w-zero' }, svg2);
+    [0, 0.5, 1].forEach(function (v) {
+      el('text', { x: rx(v), y: oy + S + 14, 'text-anchor': 'middle' }, svg2, v === 0.5 ? '0.5' : String(v));
+      el('text', { x: ox - 6, y: ry(v) + 4, 'text-anchor': 'end' }, svg2, v === 0.5 ? '0.5' : String(v));
+    });
+    el('text', { x: ox + S / 2, y: oy + S + 30, 'text-anchor': 'middle' }, svg2, '1 − 特异度');
+    el('text', { x: ox - 34, y: oy + S / 2, 'text-anchor': 'middle', transform: 'rotate(-90 ' + (ox - 34) + ' ' + (oy + S / 2) + ')' }, svg2, '灵敏度');
+    var cuts = pts.map(function (q) { return q.p; }).sort(function (a, b) { return b - a; }), d = 'M' + rx(0) + ' ' + ry(0), last = null;
+    cuts.forEach(function (t) { if (t === last) return; last = t; var a = at(t); d += 'L' + rx(1 - a.spec).toFixed(1) + ' ' + ry(a.sens).toFixed(1); });
+    el('path', { d: d + 'L' + rx(1) + ' ' + ry(1), 'class': 'w-curve' }, svg2);
+    el('text', { x: rx(1) - 6, y: ry(0) - 8, 'text-anchor': 'end' }, svg2, 'AUC ' + auc.toFixed(2));
+    var here = el('circle', { r: 5.5, 'class': 'w-pt' }, svg2);
+
+    legend(root, [['pt', '降下来的病人'], ['new', '没降下来的病人'], ['dash', '阈值'], ['line', 'ROC 曲线']]);
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0.05; input.max = 0.95; input.step = 0.05; input.value = 0.5;
+    input.setAttribute('aria-label', '阈值');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = (v * 100).toFixed(1) + '%'; val.textContent = Math.round(v * 100) + '%'; };
+    }
+    var setSens = bar('灵敏度', 'train'), setSpec = bar('特异度', 'new');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var t = Math.round(+input.value * 100) / 100, a = at(t);
+      cut.setAttribute('x1', px(t)); cut.setAttribute('x2', px(t));
+      dots.forEach(function (c, k) { c.setAttribute('class', 'w-pt' + (pts[k].ev ? '' : ' new')); });
+      here.setAttribute('cx', rx(1 - a.spec)); here.setAttribute('cy', ry(a.sens));
+      cap.textContent = '阈值: 概率达到 ' + t.toFixed(2) + ' 就判为"会降"';
+      setSens(a.sens); setSpec(a.spec);
+      status.textContent = '降下来的 ' + evs.length + ' 位里,判对 ' + a.tp + ' 位,漏掉 ' + (evs.length - a.tp) + ' 位。没降下来的 ' + nos.length + ' 位里,判对 ' + a.tn + ' 位,误判 ' + (nos.length - a.tn) + ' 位。';
+    }
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];

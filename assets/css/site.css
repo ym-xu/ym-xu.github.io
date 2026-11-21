@@ -609,6 +609,7 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-axis { stroke: var(--muted); stroke-width: 1; fill: none; }
 .widget .w-grid { stroke: var(--border); stroke-width: 1; }
 .widget .w-zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: .7; }
+.widget .w-box { fill: none; stroke: var(--muted); stroke-width: 1; }
 .widget .w-pt { fill: var(--link); }
 .widget .w-pt.rest { fill: var(--muted); opacity: .5; }
 .widget .w-pt.idle { fill: var(--muted); }
