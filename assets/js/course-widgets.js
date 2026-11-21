@@ -20,6 +20,7 @@
 //   permute            shuffle one variable among the test patients: how much worse the predictions get
 //   rsquared           turn a line through the mean point: R² from 0 up to its best value and down below 0
 //   threshold          move the cut-off on predicted probabilities: sensitivity against specificity, one point of the ROC curve
+//   calib              a calibration plot under four kinds of stated probabilities: right, too high, too extreme, too timid
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1203,7 +1204,78 @@
     update();
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig };
+  // ---------- figure 15: reading a calibration plot ----------
+  // 1500 simulated patients with a true probability each and an outcome drawn from it. Four buttons change
+  // what the "model" states: the true probability, one shifted upwards, one stretched away from the middle
+  // (too extreme) and one squeezed towards it (too timid). The plot groups the patients by stated probability
+  // (eight groups) and shows the observed proportion in each; the readout is O/E and the calibration slope.
+  function calibFig(root) {
+    var rng = mulberry32(204), n = 1500, MID = -1.2, pts = [], i;
+    function inv(z) { return 1 / (1 + Math.exp(-z)); }
+    for (i = 0; i < n; i++) { var t = MID + 1.4 * normal(rng); pts.push({ t: t, y: rng() < inv(t) ? 1 : 0 }); }
+    var KINDS = [
+      { name: '准的', a: 0, b: 1, say: '点落在斜线上: 模型说多少,实际就是多少。' },
+      { name: '整体偏高', a: 0.9, b: 1, say: '点都在斜线下面: 每一组实际出事的比例都比模型说的低。O/E 小于 1,斜率还是 1 左右。' },
+      { name: '说得太极端', a: null, b: 1.9, say: '总数对得上,O/E 看不出毛病。可是左边的点在斜线上面,右边的点在下面: 模型说很低的,实际没那么低;说很高的,实际没那么高。斜率小于 1。过拟合的模型是这个样子。' },
+      { name: '说得太保守', a: null, b: 0.55, say: '总数也对得上。左边的点在斜线下面,右边的点在上面: 模型的概率都挤在中间,实际的差别更大。斜率大于 1。' }
+    ];
+    function stated(k) { return pts.map(function (q) { return MID + k.b * (q.t - MID) + k.a; }); }   // on the logit scale
+    function total(k) { var e = 0; stated(k).forEach(function (z) { e += inv(z); }); return e; }
+    KINDS.forEach(function (k) {                                          // a stretched or squeezed model still states the right total
+      if (k.a !== null) return;
+      var lo = -5, hi = 5, want = total(KINDS[0]), it;
+      for (it = 0; it < 40; it++) { k.a = (lo + hi) / 2; if (total(k) < want) lo = k.a; else hi = k.a; }
+    });
+    function slopeOf(m) {                                                 // logistic regression of the outcome on m, by Newton steps
+      var a = 0, b = 1, it, j;
+      for (it = 0; it < 25; it++) {
+        var g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+        for (j = 0; j < n; j++) { var pr = inv(a + b * m[j]), wv = pr * (1 - pr), r = pts[j].y - pr; g0 += r; g1 += r * m[j]; h00 += wv; h01 += wv * m[j]; h11 += wv * m[j] * m[j]; }
+        var det = h00 * h11 - h01 * h01; a += (h11 * g0 - h01 * g1) / det; b += (h00 * g1 - h01 * g0) / det;
+      }
+      return b;
+    }
+    var w = 360, hgt = 300, m = { l: 40, r: 10, t: 10, b: 38 };
+    function px(v) { return m.l + v * (w - m.l - m.r); }
+    function py(v) { return m.t + (1 - v) * (hgt - m.t - m.b); }
+    var svg = el('svg', { viewBox: '0 0 ' + w + ' ' + hgt, role: 'img', 'aria-label': '校准图: 模型说的概率和实际出事的比例' }, root);
+    [0, 0.2, 0.4, 0.6, 0.8, 1].forEach(function (v) {
+      el('line', { x1: px(0), x2: px(1), y1: py(v), y2: py(v), 'class': 'w-grid' }, svg);
+      el('text', { x: m.l - 5, y: py(v) + 4, 'text-anchor': 'end' }, svg, v.toFixed(1));
+      el('line', { x1: px(v), x2: px(v), y1: py(0), y2: py(0) + 4, 'class': 'w-axis' }, svg);
+      el('text', { x: px(v), y: py(0) + 16, 'text-anchor': 'middle' }, svg, v.toFixed(1));
+    });
+    el('line', { x1: px(0), x2: px(1), y1: py(0), y2: py(0), 'class': 'w-axis' }, svg);
+    el('line', { x1: px(0), x2: px(0), y1: py(0), y2: py(1), 'class': 'w-axis' }, svg);
+    el('text', { x: (px(0) + px(1)) / 2, y: hgt - 4, 'text-anchor': 'middle' }, svg, '模型说的概率(每组的平均)');
+    el('text', { x: px(0) + 5, y: m.t + 10 }, svg, '实际出事的比例');
+    el('line', { x1: px(0), y1: py(0), x2: px(1), y2: py(1), 'class': 'w-mean' }, svg);
+    var path = el('path', { 'class': 'w-curve' }, svg), marks = el('g', {}, svg);
+    legend(root, [['pt', '一组病人(按模型说的概率从低到高分成 8 组)'], ['dash', '模型说的 = 实际的']]);
+    var ctls = h('div', 'w-ctls', root), status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    var btns = KINDS.map(function (k, idx) { return button(ctls, k.name, idx === 0 ? 'primary' : ''); });
+    function show(idx) {
+      var k = KINDS[idx], mm = stated(k), order = pts.map(function (_, j) { return j; }), G = 8, d = '', E = 0, O = 0, g, j;
+      order.sort(function (x, y) { return mm[x] - mm[y]; });
+      while (marks.firstChild) marks.removeChild(marks.firstChild);
+      for (g = 0; g < G; g++) {
+        var from = Math.round(g * n / G), to = Math.round((g + 1) * n / G), sp = 0, so = 0;
+        for (j = from; j < to; j++) { sp += inv(mm[order[j]]); so += pts[order[j]].y; }
+        var xm = sp / (to - from), ym = so / (to - from);
+        d += (g ? 'L' : 'M') + px(xm).toFixed(1) + ' ' + py(ym).toFixed(1);
+        el('circle', { cx: px(xm), cy: py(ym), r: 4.2, 'class': 'w-pt' }, marks);
+      }
+      path.setAttribute('d', d);
+      for (j = 0; j < n; j++) { E += inv(mm[j]); O += pts[j].y; }
+      btns.forEach(function (b, x) { b.className = 'w-btn' + (x === idx ? ' primary' : ''); });
+      status.textContent = k.name + ': 模型一共说会有 ' + Math.round(E) + ' 位出事,实际 ' + O + ' 位,O/E = ' + (O / E).toFixed(2) + ';校准斜率 ' + slopeOf(mm).toFixed(2) + '。' + k.say;
+    }
+    btns.forEach(function (b, idx) { b.addEventListener('click', function () { show(idx); }); });
+    show(0);
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
