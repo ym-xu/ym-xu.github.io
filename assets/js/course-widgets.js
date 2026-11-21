@@ -18,6 +18,7 @@
 //   shrink             ridge or lasso: the stronger the constraint, the smaller the coefficients
 //   split              one split of a tree, placed by hand: two groups, each predicted by its own mean
 //   permute            shuffle one variable among the test patients: how much worse the predictions get
+//   rsquared           turn a line through the mean point: R² from 0 up to its best value and down below 0
 // All figures on a page share the same 30 simulated patients and the same first split.
 (function () {
   'use strict';
@@ -1079,7 +1080,53 @@
     show(base, START);
   }
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute };
+  // ---------- figure 13: R² of a line that is turned ----------
+  // One slider: the slope of a line through the mean point of the 30 patients. Slope 0 is the baseline (every
+  // patient gets the mean, R² = 0), the least-squares slope gives the largest R², and a line more than twice
+  // as steep as that has a larger squared error than the baseline: R² below 0.
+  function rsquared(root) {
+    var sc = getScene(), pts = sc.train, n = pts.length;
+    var mx = mean(pts.map(function (p) { return p.x; })), my = mean(pts.map(function (p) { return p.y; }));
+    function mseOf(b) { var e = 0; pts.forEach(function (p) { var d = p.y - my - b * (p.x - mx); e += d * d / n; }); return e; }
+    var flat = mseOf(0), top = mseOf(4);
+    var plot = frame(root, '散点图: 30 位病人,一条经过平均点、可以转动的线');
+    var segs = el('g', {}, plot);
+    el('line', { x1: sx(XD[0]), x2: sx(XD[1]), y1: sy(my), y2: sy(my), 'class': 'w-mean' }, plot);
+    var line = el('line', { 'class': 'w-curve' }, plot);
+    pts.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+    legend(root, [['pt', '30 位病人'], ['dash', '都猜平均值'], ['line', '模型的线'], ['res', '每位病人的误差']]);
+    var ctl = h('label', 'w-ctl', root), cap = h('span', '', ctl), input = h('input', '', ctl);
+    input.type = 'range'; input.min = 0; input.max = 4; input.step = 0.1; input.value = 0;
+    input.setAttribute('aria-label', '线的斜率');
+    var bars = h('div', 'w-bars', root);
+    bars.setAttribute('aria-live', 'polite');
+    h('p', 'w-bars-title', bars, '误差平方的平均');
+    function bar(label, cls) {
+      var row = h('div', 'w-bar', bars);
+      h('span', 'w-bar-label', row, label);
+      var fill = h('span', 'w-bar-fill ' + cls, h('span', 'w-bar-track', row)), val = h('span', 'w-bar-val', row);
+      return function (v) { fill.style.width = Math.min(100, v / (top * 1.03) * 100).toFixed(1) + '%'; val.textContent = v.toFixed(2); };
+    }
+    var setFlat = bar('都猜平均值', 'new'), setNow = bar('这条线', 'train');
+    var status = h('p', 'w-status', root);
+    status.setAttribute('aria-live', 'polite');
+    function update() {
+      var b = +input.value, e = mseOf(b), r2 = 1 - e / flat;
+      line.setAttribute('x1', sx(XD[0])); line.setAttribute('x2', sx(XD[1]));
+      line.setAttribute('y1', sy(my + b * (XD[0] - mx))); line.setAttribute('y2', sy(my + b * (XD[1] - mx)));
+      while (segs.firstChild) segs.removeChild(segs.firstChild);
+      pts.forEach(function (p) { el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(my + b * (p.x - mx)), 'class': 'w-res' }, segs); });
+      cap.textContent = '线的斜率: ' + b.toFixed(1);
+      setFlat(flat); setNow(e);
+      status.textContent = 'R² = 1 − ' + e.toFixed(2) + ' / ' + flat.toFixed(2) + ' = ' + minus(r2.toFixed(2)) + '。'
+        + (b === 0 ? '这条线就是都猜平均值。' : r2 >= 0.005 ? '比都猜平均值好: 误差平方少了 ' + Math.round(r2 * 100) + '%。'
+          : r2 > -0.005 ? '和都猜平均值一样。' : '比都猜平均值还差: R² 是负的。');
+    }
+    input.addEventListener('input', update);
+    update();
+  }
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
