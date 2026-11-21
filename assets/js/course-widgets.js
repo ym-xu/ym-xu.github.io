@@ -2632,7 +2632,131 @@
     }
   };
 
-  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene) };
+  // --- scene: least squares, how the straight line is found (stat-ml lesson 1) ---
+  // On the 30 shared patients. Above: the patients, the line, and on every error a square whose area is
+  // the squared error. Below: the mean squared error of every slope, for lines through the mean point:
+  // a bowl with one lowest point, which is why the answer can be computed instead of searched.
+  var lineScene = {
+    label: '分步图: 最小二乘怎样找到那条直线',
+    height: 338,
+    tiles: ['斜率', '误差平方的平均', '这一步'],
+    build: function (api) {
+      var svg = api.svg, sc = getScene(), kit = stageKit(svg), T = kit.T, fade = kit.fade, E = easeInOut, P = sc.train, n = P.length, NEWX = 3.0;
+
+      // --- the computation ---
+      var mx = mean(P.map(function (p) { return p.x; })), my = mean(P.map(function (p) { return p.y; })), sxx = 0, sxy = 0;
+      P.forEach(function (p) { sxx += (p.x - mx) * (p.x - mx); sxy += (p.x - mx) * (p.y - my); });
+      var best = sxy / sxx, icpt = my - best * mx, LO = -1, HI = 4;
+      function at(b, lift, x) { return my + (lift || 0) + b * (x - mx); }       // a line through the mean point (raised by "lift")
+      function mseAt(b, lift) { var s = 0; P.forEach(function (p) { var d = p.y - at(b, lift, p.x); s += d * d; }); return s / n; }
+      var flat = mseAt(0), low = mseAt(best);
+      api.facts({ meanX: mx, meanY: my, sxy: sxy, sxx: sxx, slope: best, intercept: icpt, flat: flat, best: low, raised: mseAt(0, 1.5), lowered: mseAt(0, -1.5),
+        atLo: mseAt(LO), atHi: mseAt(HI), atOne: mseAt(1), guess: at(best, 0, NEWX) });
+
+      // --- the plot ---
+      var plot = axes(svg);
+      [].forEach.call(svg.querySelectorAll('text'), function (tx) { if (tx.textContent === 'Δ (Gy)') svg.appendChild(tx); });
+      var squares = P.map(function () { return el('rect', { 'class': 's-square' }, plot); });
+      var sticks = P.map(function (p) { return el('line', { x1: sx(p.x), x2: sx(p.x), y1: sy(p.y), y2: sy(p.y), 'class': 'w-res s-res' }, plot); });
+      var line = el('line', { x1: sx(XD[0]), x2: sx(XD[1]), 'class': 'w-curve' }, plot);
+      P.forEach(function (p) { el('circle', { cx: sx(p.x), cy: sy(p.y), r: 3.4, 'class': 'w-pt' }, plot); });
+      var pivot = el('g', {}, plot);
+      el('circle', { cx: sx(mx), cy: sy(my), r: 6, 'class': 's-ring' }, pivot);
+      T(pivot, sx(mx) + 9, sy(my) + 14, '平均点', 's-v s-small s-halo');
+      var formula = T(plot, W - M.r - 4, H - M.b - 8, '', 's-v s-n s-small s-halo', 'end');
+      var probe = el('g', {}, plot), probeLine = el('line', { x1: sx(NEWX), x2: sx(NEWX), y1: sy(YD[0]), 'class': 's-scan' }, probe);
+      var probeDot = el('circle', { cx: sx(NEWX), r: 5, 'class': 's-token' }, probe);
+      function draw(b, lift, sq) {                  // the line, the errors, and the squares at a share "sq" of their size
+        line.setAttribute('y1', sy(at(b, lift, XD[0]))); line.setAttribute('y2', sy(at(b, lift, XD[1])));
+        P.forEach(function (p, k) {
+          var yp = sy(at(b, lift, p.x)), side = Math.abs(yp - sy(p.y)) * (sq || 0);
+          sticks[k].setAttribute('y2', yp);
+          squares[k].setAttribute('x', sx(p.x)); squares[k].setAttribute('y', Math.min(yp, sy(p.y)));
+          squares[k].setAttribute('width', side); squares[k].setAttribute('height', side);
+        });
+      }
+
+      // --- under the plot: the error of every slope ---
+      var bowl = kit.layer('bowl'), top = Math.max(mseAt(LO), mseAt(HI));
+      function BX(b) { return M.l + 12 + (b - LO) / (HI - LO) * (W - M.l - M.r - 24); }
+      function BY(v) { return 322 - (v - (low - 0.7)) / (top - (low - 0.7)) * 52; }
+      T(bowl, M.l + 4, 264, '每个斜率的误差(越低越好)', 's-k');
+      el('line', { x1: M.l, x2: W - M.r, y1: 324, y2: 324, 'class': 'w-axis' }, bowl);
+      [-1, 0, 1, 2, 3, 4].forEach(function (b) { T(bowl, BX(b), 336, minus(b), 's-n', 'middle'); el('line', { x1: BX(b), x2: BX(b), y1: 324, y2: 327, 'class': 'w-axis' }, bowl); });
+      T(bowl, W - M.r, 264, '横轴: 斜率', 's-k', 'end');
+      var trace = el('polyline', { 'class': 's-curve2', points: '' }, bowl), bottom = el('g', {}, bowl);
+      el('circle', { cx: BX(best), cy: BY(low), r: 5.5, 'class': 's-ring' }, bottom);
+      T(bottom, BX(best), BY(low) - 9, '最低: 斜率 ' + best.toFixed(2), 's-v s-n s-small s-halo', 'middle');
+      var here = el('circle', { r: 4, 'class': 's-token' }, bowl);
+      function traced(from, to) {
+        var pts = [], b;
+        for (b = from; b <= to + 1e-9; b += 0.05) pts.push(BX(b).toFixed(1) + ',' + BY(mseAt(b)).toFixed(1));
+        trace.setAttribute('points', pts.join(' '));
+      }
+      function slopeAt(b, sq) {
+        draw(b, 0, sq == null ? 1 : sq);
+        here.setAttribute('cx', BX(b)); here.setAttribute('cy', BY(mseAt(b))); fade(here, 1);
+        api.tile(0, num(b)); api.tile(1, mseAt(b).toFixed(2), null, mseAt(b) / flat);
+      }
+
+      function reset(layers) { kit.show(layers); [pivot, formula, probe, bottom, here].forEach(function (g) { fade(g, 0); }); squares.forEach(function (r) { fade(r, ''); }); }
+      var steps = [
+        function () {                                 // 1 a first line: everyone gets the mean
+          reset([]);
+          draw(0, 0, 0); sticks.forEach(function (s, k) { s.setAttribute('y2', sy(P[k].y)); });
+          api.tile(0, '0.00'); api.tile(2, num(my) + ' Gy', '都猜平均值');
+          api.tween(300, 900, function (u) { sticks.forEach(function (s, k) { s.setAttribute('y2', lerp(sy(P[k].y), sy(my), E(u))); }); });
+          api.at(1200, function () { api.tile(1, flat.toFixed(2), null, 1); });
+        },
+        function () {                                 // 2 the squares
+          reset([]);
+          draw(0, 0, 0); api.tile(0, '0.00'); api.tile(1, flat.toFixed(2), null, 1); api.tile(2, n + ' 个', '方块');
+          api.tween(300, 1200, function (u) { draw(0, 0, E(u)); });
+        },
+        function () {                                 // 3 the height: through the mean point
+          reset([]);
+          draw(0, 0, 1); api.tile(0, '0.00'); api.tile(1, flat.toFixed(2), null, 1); api.tile(2, '0.0 Gy', '整条线抬高');
+          api.tween(200, 300, function (u) { fade(pivot, u); });
+          [[0, 1.5], [1.5, -1.5], [-1.5, 0]].forEach(function (seg, k) {
+            api.tween(700 + k * 1000, 900, function (u) {
+              var lift = lerp(seg[0], seg[1], E(u));
+              draw(0, lift, 1); api.tile(1, mseAt(0, lift).toFixed(2), null, mseAt(0, lift) / flat); api.tile(2, num(lift, 1) + ' Gy', '整条线抬高');
+            });
+          });
+          api.at(3700, function () { fade(pivot, 1); draw(0, 0, 1); api.tile(1, flat.toFixed(2), null, 1); api.tile(2, '0.0 Gy', '整条线抬高'); });
+        },
+        function () {                                 // 4 every slope
+          reset(['bowl']);
+          fade(pivot, 1); traced(LO, LO); slopeAt(LO); api.tile(2, '—', '已经试到斜率');
+          api.tween(500, 3600, function (u) { var b = lerp(LO, HI, u); traced(LO, b); slopeAt(b); api.tile(2, num(b), '已经试到斜率'); });
+        },
+        function () {                                 // 5 the lowest point, and the formula that gives it
+          reset(['bowl']);
+          fade(pivot, 1); traced(LO, HI); slopeAt(HI); api.tile(2, '—', '公式算出的斜率');
+          api.tween(300, 1100, function (u) { slopeAt(lerp(HI, best, E(u))); });
+          api.at(1400, function () {
+            slopeAt(best); fade(bottom, 1); api.tile(2, best.toFixed(2), '公式算出的斜率');
+            api.control({ label: '自己拖: 斜率 ' + best.toFixed(2), min: LO, max: HI, step: 0.01, value: best.toFixed(2),
+              oninput: function (b, say) { slopeAt(b); say('自己拖: 斜率 ' + num(b)); } });
+          });
+        },
+        function () {                                 // 6 the line as a formula; a new patient
+          reset(['bowl']);
+          traced(LO, HI); slopeAt(best); fade(bottom, 1); fade(pivot, 1);
+          squares.forEach(function (r) { fade(r, 0.05); });
+          formula.textContent = '预测 Δ = ' + num(icpt) + ' + ' + best.toFixed(2) + ' × 壁厚'; fade(formula, 1);
+          var yhat = at(best, 0, NEWX);
+          api.tile(2, '—', '新病人的预测');
+          probeLine.setAttribute('y2', sy(YD[0])); probeDot.setAttribute('cy', sy(YD[0])); fade(probe, 1);
+          api.tween(400, 800, function (u) { var y = lerp(sy(YD[0]), sy(yhat), E(u)); probeLine.setAttribute('y2', y); probeDot.setAttribute('cy', y); });
+          api.at(1200, function () { api.tile(2, num(yhat) + ' Gy', '新病人的预测'); });
+        }
+      ];
+      return function (k) { steps[k](); };
+    }
+  };
+
+  var FIGURES = { overfit: overfit, kfold: kfold, repeatcv: repeatcv, ci: ci, shuffle: shuffleTest, fitline: fitline, sigmoid: sigmoid, signif: signif, leak: leak, shrink: shrink, split: splitTree, permute: permute, rsquared: rsquared, threshold: thresholdFig, calib: calibFig, netbenefit: netBenefitFig, samplesize: sampleSizeFig, models: staged(modelsScene), growtree: staged(treeScene), boost: staged(boostScene), forest: staged(forestScene), leastsq: staged(lineScene) };
   function init() {
     document.querySelectorAll('.widget[data-widget]').forEach(function (root) {
       var make = FIGURES[root.getAttribute('data-widget')];
