@@ -11,6 +11,8 @@ back_label: "练习目录"
 questions_label: "这一部分要回答的问题"
 objectives_label: "要用到的本领"
 meta: ["和 Python 课配套", "一步一屏", "每一步当场检查"]
+# 课程首页上那张练习卡片里的一句话
+teaser: "一份模拟的科室审计数据。每学完一课做一部分;六部分连起来,是从一位病人的 EQD2 到审计结论的一次完整分析。"
 # 目录: 第 n 部分的页面 weight 是 n*10
 parts:
   - title: "算和整理"

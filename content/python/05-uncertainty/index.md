@@ -529,10 +529,6 @@ print(f"50 位: {ci50_gra},200 位: {ci200_gra},宽度是 {ratio:.1f} 倍")
 - SciPy 文档: [scipy.stats.bootstrap](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.bootstrap.html)。
 - Altman DG, Bland JM. [Standard deviations and standard errors](https://www.bmj.com/content/331/7521/903). *BMJ* 2005;331:903。一页纸讲清标准差和标准误的区别。
 
-<div class="frame">
-
-**课后练习**: [练习 5 · 估计得有多准](/python/practice/05-intervals/)。它属于一套独立的[主题练习](/python/practice/): 换了一份数据(宫颈癌近距离放疗的剂量审计),不给填空,把这一课学的东西从头用一遍。
-
-</div>
+{{< practice >}}
 
 **下一课**: 有了区间,下一个问题是: 两组之间的差别、两个量之间的关系,会不会只是碰巧?第 6 课讲 P 值、常用的几种检验和相关系数。

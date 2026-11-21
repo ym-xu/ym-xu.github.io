@@ -625,6 +625,37 @@ body:is(.section-r-course, .section-python, .section-stat-ml).kind-page .content
 .widget .w-btn.primary { color: var(--bg); background: var(--link); }
 .widget .w-btn:disabled { opacity: .45; cursor: default; }
 .content .widget .w-status { margin: .45rem 0 0; min-height: 4.6em; font-size: .93rem; line-height: 1.5; }
+/* Practice track on a course page: a card above the syllabus, and one row under each lesson. */
+.practice-strip { display: grid; gap: .28rem; margin: 0 0 1.9rem; padding: .85rem 1rem .8rem; border: .5px solid color-mix(in oklab, var(--link) 45%, var(--border)); border-radius: var(--radius-md); background: var(--surface); color: inherit; text-decoration: none; transition: background var(--dur); }
+.practice-strip:hover { background: var(--surface-hover); color: inherit; text-decoration: none; }
+.practice-strip-kicker, .practice-kicker, .practice-card-kicker { font-size: .8rem; color: var(--link); letter-spacing: .03em; }
+.practice-strip-title { font-size: 1.1rem; line-height: 1.3; color: var(--fg); }
+.practice-strip-text { font-size: .9rem; line-height: 1.45; color: var(--muted); }
+.practice-strip-bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin-top: .4rem; }
+.practice-strip-bar i { height: 6px; border-radius: 3px; background: var(--border); }
+.practice-strip-bar i.part { background: color-mix(in oklab, var(--link) 40%, var(--border)); }
+.practice-strip-bar i.done { background: var(--link); }
+.practice-strip-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .1rem 1rem; font-size: .85rem; color: var(--muted); }
+.practice-strip-go { color: var(--link); white-space: nowrap; }
+.lesson-row.practice-row { margin: 0 0 .55rem 3.2rem; padding: .4rem .6rem .45rem .7rem; grid-template-columns: 1rem minmax(0, 1fr) auto; gap: .6rem; border-left: 2px solid color-mix(in oklab, var(--link) 40%, var(--border)); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.practice-row .lesson-row-num { color: var(--link); }
+.practice-row .lesson-row-num svg { width: .95rem; height: .95rem; vertical-align: -.12em; }
+.practice-row .lesson-row-title { font-size: .98rem; }
+.practice-kicker { margin-right: .55em; white-space: nowrap; }
+.practice-row .lesson-row-sum { font-size: .84rem; }
+.course-about { margin-top: 2.6rem; padding-top: .4rem; border-top: .5px solid var(--rule); }
+/* The same part as a card at the end of its lesson ({{< practice >}}). */
+.content .practice-card { display: grid; gap: .3rem; justify-items: start; margin: 1.7rem 0; padding: .95rem 1.1rem 1rem; border: .5px solid color-mix(in oklab, var(--link) 45%, var(--border)); border-radius: var(--radius-md); background: var(--surface); }
+.content .practice-card p { margin: 0; }
+.content .practice-card p.practice-card-title { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.content .practice-card p.practice-card-sum { font-size: .95rem; color: var(--muted); }
+.content .practice-card p.practice-card-meta { display: flex; flex-wrap: wrap; gap: .1rem 1rem; margin-top: .2rem; font-size: .86rem; color: var(--muted); }
+.content .practice-card-state:not(:empty) { color: var(--link); }
+/* a button, not a text link: the underline animation of .content a is switched off */
+.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run) { display: inline-block; margin: .5rem 0 .35rem; padding: .42rem .95rem; border-radius: var(--radius-sm); background: var(--link); background-image: none; color: var(--bg); text-decoration: none; }
+.content .practice-card a.practice-card-go:not(.code-copy):not(.code-run):hover { background: var(--link-hover); background-image: none; color: var(--bg); }
+.content .practice-card p.practice-card-note { font-size: .86rem; color: var(--muted); }
+@media (max-width: 720px) { .lesson-row.practice-row { margin-left: 1.5rem; } }
 .lesson-row.planned { cursor: default; }
 .lesson-row.planned:hover { background: none; }
 .lesson-row.planned .lesson-row-title, .lesson-row.planned .lesson-row-num { color: var(--muted); }

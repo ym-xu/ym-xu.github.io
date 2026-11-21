@@ -1,0 +1,30 @@
+{{- /* The part of the course's practice track that goes with this lesson: part n (weight n*10) of the
+       section named by "practice" in the course's _index.md. Used at the end of a lesson: {{< practice >}}.
+       Progress comes from the same record pyodide-run.js keeps for the practice page. */ -}}
+{{- $lesson := .Page -}}
+{{- with $lesson.Parent.Params.practice -}}{{- with site.GetPage . -}}
+{{- $track := . -}}
+{{- $parts := .RegularPages.ByWeight -}}
+{{- range where $parts "Weight" $lesson.Weight -}}
+<aside class="practice-card" data-practice-card="{{ .RelPermalink }}">
+  <p class="practice-card-kicker">课后练习 · 主题练习第 {{ div .Weight 10 }} / {{ len $parts }} 部分</p>
+  <p class="practice-card-title">{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</p>
+  {{ with .Params.summary }}<p class="practice-card-sum">{{ . }}</p>{{ end }}
+  <p class="practice-card-meta"><span>{{ .Params.duration }}</span><span>{{ len (findRE `<div class="step[ "]` .RawContent) }} 步,一步一屏</span><span class="practice-card-state" data-practice-state></span></p>
+  <a class="practice-card-go" href="{{ .RelPermalink }}" data-practice-go>开始练习 →</a>
+  <p class="practice-card-note">它属于一套独立的主题练习: <a href="{{ $track.RelPermalink }}">{{ replaceRE "^主题练习: " "" $track.Title }}</a>。换了一份数据,没有讲解,也不给填空,把这一课学的东西从头用一遍。</p>
+</aside>
+<script>
+(function () {
+  try {
+    var card = document.currentScript.previousElementSibling;
+    var p = JSON.parse(localStorage.getItem('course-progress:v1:' + card.getAttribute('data-practice-card')) || 'null');
+    if (!p || !p.core || !p.coreDone) return;
+    var done = p.coreDone >= p.core;
+    card.querySelector('[data-practice-state]').textContent = done ? '做完了 ✓' : '已通过 ' + p.coreDone + ' / ' + p.core + ' 题';
+    card.querySelector('[data-practice-go]').textContent = done ? '再看一遍 →' : '继续练习 →';
+  } catch (e) { /* no storage: the card stays as it is */ }
+})();
+</script>
+{{- end -}}
+{{- end -}}{{- end -}}

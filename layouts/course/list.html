@@ -5,6 +5,14 @@
   {{ $parts := .Params.parts }}
   {{ $pages := .RegularPages.ByWeight }}
   {{ $total := 0 }}{{ range $parts }}{{ $total = add $total (len .lessons) }}{{ end }}
+  {{- /* Practice track: the section named by "practice" in the course's _index.md. Its part n
+         (weight n*10) goes with lesson n and is listed right under that lesson. */ -}}
+  {{ $practice := false }}{{ $practicePages := slice }}
+  {{ with .Params.practice }}{{ with site.GetPage . }}{{ $practice = . }}{{ $practicePages = .RegularPages.ByWeight }}{{ end }}{{ end }}
+  {{- /* Text before the marker <!--syllabus--> stands above the syllabus, the rest below it. */ -}}
+  {{ $bits := split .Content "<!--syllabus-->" }}
+  {{ $lead := index $bits 0 }}
+  {{ $rest := "" }}{{ if gt (len $bits) 1 }}{{ $rest = index $bits 1 }}{{ end }}
 
   <header class="course-hero fx-title">
     <h1>{{ .Title }}</h1>
@@ -15,7 +23,17 @@
     </ul>
   </header>
 
-  <div class="content course-intro fx-after">{{ .Content }}</div>
+  <div class="content course-intro fx-after">{{ $lead | safeHTML }}</div>
+
+  {{ with $practice }}
+  <a class="practice-strip" href="{{ .RelPermalink }}" data-practice-strip data-parts="{{ len $practicePages }}">
+    <span class="practice-strip-kicker">课后练习 · 主题练习</span>
+    <span class="practice-strip-title">{{ replaceRE "^主题练习: " "" .Title }}</span>
+    {{ with .Params.teaser }}<span class="practice-strip-text">{{ . }}</span>{{ end }}
+    <span class="practice-strip-bar" aria-hidden="true">{{ range $practicePages }}<i data-progress-path="{{ .RelPermalink }}"></i>{{ end }}</span>
+    <span class="practice-strip-foot"><span data-practice-count>共 {{ len $practicePages }} 部分,在下面每一课的后面</span><span class="practice-strip-go">背景和数据 →</span></span>
+  </a>
+  {{ end }}
 
   <div class="syllabus">
     {{ range $pi, $part := $parts }}
@@ -40,6 +58,17 @@
                 </span>
                 <span class="lesson-row-arrow" aria-hidden="true">→</span>
               </a>
+              {{- /* the practice part that goes with this lesson */ -}}
+              {{ range where $practicePages "Weight" (mul .n 10) }}
+              <a class="lesson-row practice-row spot" href="{{ .RelPermalink }}" data-progress-path="{{ .RelPermalink }}" data-practice-row>
+                <span class="lesson-row-num"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.2 2.3l2.5 2.5L5.6 12.9l-3.2.7.7-3.2z"/><path d="M9.6 3.9l2.5 2.5"/></svg></span>
+                <span class="lesson-row-body">
+                  <span class="lesson-row-title"><span class="practice-kicker">课后练习</span>{{ replaceRE "^练习 [0-9]+ · " "" .Title }}</span>
+                  <span class="lesson-row-sum">{{ .Params.duration }} · {{ len (findRE `<div class="step[ "]` .RawContent) }} 步</span>
+                </span>
+                <span class="lesson-row-arrow" aria-hidden="true">→</span>
+              </a>
+              {{ end }}
             {{ else }}
               <div class="lesson-row planned">
                 <span class="lesson-row-num">{{ printf "%02d" .n }}</span>
@@ -55,6 +84,8 @@
     {{ end }}
   </div>
 
+  {{ with $rest }}<div class="content course-about">{{ . | safeHTML }}</div>{{ end }}
+
   {{- /* Exercise progress is kept in this browser only (see pyodide-run.js). */ -}}
   <script>
   (function () {
@@ -68,8 +99,22 @@
         if (!n && !p.hwDone) return;
         var tag = document.createElement('span');
         tag.className = 'lesson-row-tag done';
-        tag.textContent = (n >= core ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + core) + (p.hw && p.hwDone >= p.hw ? ' · 课后 ✓' : '');
-        row.querySelector('.lesson-row-title').appendChild(tag);
+        tag.textContent = row.hasAttribute('data-practice-row')
+          ? (n >= core ? '做完了 ✓' : '已通过 ' + n + ' / ' + core)
+          : (n >= core ? '练习全部通过 ✓' : '练习 ' + n + ' / ' + core) + (p.hw && p.hwDone >= p.hw ? ' · 课后 ✓' : '');
+        // a practice row is narrow: its tag goes on the second line, after the time and the number of steps
+        row.querySelector(row.hasAttribute('data-practice-row') ? '.lesson-row-sum' : '.lesson-row-title').appendChild(tag);
+      });
+      // the practice track: one segment per part, filled when all its code tasks have passed
+      document.querySelectorAll('[data-practice-strip]').forEach(function (strip) {
+        var done = 0, started = 0;
+        strip.querySelectorAll('i[data-progress-path]').forEach(function (seg) {
+          var p = JSON.parse(localStorage.getItem('course-progress:v1:' + seg.getAttribute('data-progress-path')) || 'null');
+          if (!p || !p.core || !p.coreDone) return;
+          started++;
+          if (p.coreDone >= p.core) { done++; seg.className = 'done'; } else seg.className = 'part';
+        });
+        if (started) strip.querySelector('[data-practice-count]').textContent = '已完成 ' + done + ' / ' + strip.getAttribute('data-parts') + ' 部分';
       });
     } catch (e) {}
   })();

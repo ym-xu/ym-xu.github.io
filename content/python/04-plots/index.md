@@ -507,10 +507,6 @@ plt.show()
 - matplotlib 官方教程: [Quick start guide](https://matplotlib.org/stable/users/explain/quick_start.html)。
 - Weissgerber TL, et al. [Beyond bar and line graphs: time for a new data presentation paradigm](https://doi.org/10.1371/journal.pbio.1002128). *PLoS Biology* 2015;13:e1002128。为什么小样本不该只画柱子,写论文时可以引用。
 
-<div class="frame">
-
-**课后练习**: [练习 4 · 把审计结果画出来](/python/practice/04-figures/)。它属于一套独立的[主题练习](/python/practice/): 换了一份数据(宫颈癌近距离放疗的剂量审计),不给填空,把这一课学的东西从头用一遍。
-
-</div>
+{{< practice >}}
 
 **下一课**: 直方图上的那条长尾,决定了该报均值还是中位数。而任何一个从 200 位病人算出来的数,换一批病人都会变。第 5 课讲怎么描述数据,怎么说清楚一个结果有多不确定。
