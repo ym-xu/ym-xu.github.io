@@ -61,6 +61,8 @@ enableRobotsTXT = true
     "principal developer",
     "e-commerce AI agents",
   ]
+  # One line under the bio, in Markdown, for what I am looking for. Delete it to hide it.
+  seeking = "**Looking for a research internship or a job in 2027 or 2028**, on document agents and agentic RL."
   # A theorem-style aside under the bio. Delete both lines to hide it.
   definitionTerm = "Document"
   definition = "A page is not an image; it is a tree of meaning that happens to be printed."
@@ -102,7 +104,7 @@ enableRobotsTXT = true
     url = "/publications/"
     weight = 20
   [[menu.main]]
-    name = "Map"
+    name = "Survey"
     url = "https://ym-xu.github.io/living-survey/"
     weight = 25
   [[menu.main]]

@@ -1,5 +1,7 @@
 # Home-page News list (newest first). `date` is YYYY-MM; `text` is Markdown.
 # Shows the first `params.home.newsCount` items (default 5).
+- date: "2026-11"
+  text: "*Aligning Decoder Attention with Human Fixations* is accepted to **Findings of EACL 2027**."
 - date: "2026-06"
   text: "[MADQA](/publications/icml-madqa/) is accepted at **ICML 2026** as an **Oral**."
 - date: "2026-04"

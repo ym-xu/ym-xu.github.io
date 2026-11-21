@@ -1,9 +1,10 @@
-{{- /* A project as a card. Context: the project page. */ -}}
+{{- /* A project as a card. Context: the project page.
+       The year is shown above the title but written after it; see pub-card.html. */ -}}
 <a class="card" href="{{ .RelPermalink }}">
+  <h3 class="card-title">{{ .Title }}</h3>
   <div class="card-kicker">
     {{ with .Params.year }}<span>{{ . }}</span>{{ end }}
   </div>
-  <h3 class="card-title">{{ .Title }}</h3>
   {{ with .Params.role }}<p class="card-role">{{ . }}</p>{{ end }}
   {{ with .Params.summary }}<p class="card-text">{{ . }}</p>{{ end }}
   {{ with .Params.tags }}<div class="card-foot">{{ delimit . " · " }}</div>{{ end }}

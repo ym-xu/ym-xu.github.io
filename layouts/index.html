@@ -26,6 +26,8 @@
     <div class="home-bio">{{ $bio | safeHTML }}</div>
   </section>
 
+  {{ with $h.seeking }}<p class="home-seeking">{{ . | markdownify }}</p>{{ end }}
+
   <div class="home-links">
     {{ with $h.emailCode }}<button id="home-email" class="linkish" type="button" data-c="{{ . }}" aria-label="Email me (opens your mail app and copies the address)">email</button>{{ end }}
     {{ with $h.cvUrl }}{{ if fileExists (path.Join "static" .) }}<a href="{{ . | relURL }}">cv (pdf)</a>{{ end }}{{ end }}
