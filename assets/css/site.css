@@ -392,8 +392,7 @@ body.section-posts.kind-page .content h3::before { counter-increment: h3; conten
 .pager { display: flex; justify-content: space-between; gap: 1rem; margin: 2.5rem 0 0; padding-top: 1rem; border-top: .5px solid var(--border); font-style: italic; }
 .pager .next { margin-left: auto; text-align: right; }
 
-/* ---------- publication "case" pages (freeform rich layout) ---------- */
-.pub-single.case .content figure > img { width: 100%; height: auto; display: block; }
+/* ---------- publication cover figure ---------- */
 .pub-cover { margin: 0 0 1.5rem; }
 .pub-cover img { width: 100%; height: auto; display: block; }
 

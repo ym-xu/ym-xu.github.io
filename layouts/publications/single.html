@@ -1,6 +1,5 @@
 {{ define "main" }}
-  {{ $isCase := or (.Params.case) (eq .Params.layout "case") }}
-  <article class="pub-single{{ if $isCase }} case{{ end }}">
+  <article class="pub-single">
     <header class="maketitle fx-title">
       <h1>{{ .Title }}</h1>
       {{ $hideMeta := or (.Params.hideMeta) (eq .Params.header "none") }}
@@ -17,16 +16,14 @@
     </header>
 
     {{ with .Params.summary }}
-      {{ if not $isCase }}
-        <div class="abstract fx-after">
-          <p class="abstract-h">Abstract</p>
-          <p>{{ . }}</p>
-        </div>
-      {{ end }}
+      <div class="abstract fx-after">
+        <p class="abstract-h">Abstract</p>
+        <p>{{ . }}</p>
+      </div>
     {{ end }}
 
     {{ $cover := .Resources.GetMatch "cover*" }}
-    {{ $showCover := cond (isset .Params "showcover") .Params.showCover (not $isCase) }}
+    {{ $showCover := cond (isset .Params "showcover") .Params.showCover true }}
     {{ if and $showCover $cover }}
       <figure class="pub-cover">
         <img src="{{ $cover.RelPermalink }}" alt="Overview figure for {{ .Title }}" loading="lazy" decoding="async" />
