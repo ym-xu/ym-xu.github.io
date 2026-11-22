@@ -44,8 +44,18 @@ print("准备好了")
 
 然后用它算外照射部分的 EQD2: 靶区(α/β = 10)存进 `ebrt_10`,直肠(α/β = 3)存进 `ebrt_3`。直肠在外照射的范围里,这一部分按处方剂量算。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码: 先定义 eqd2,再算 ebrt_10 和 ebrt_3。
+def eqd2(d, n, ab):
+    """每次剂量 d(Gy)、照射 n 次、α/β = ab 时的 EQD2(Gy)。"""
+    # 公式: n × d × (d + α/β) ÷ (2 + α/β)
+    return ___
+
+# eqd2 要的是每次的剂量
+ebrt_10 = eqd2(___, ebrt_fx, 10)
+ebrt_3 = eqd2(___, ebrt_fx, 3)
+print(ebrt_10, ebrt_3)
 ```
 
 ```pycheck
@@ -86,8 +96,10 @@ fail(f"现在 ebrt_10 = {ebrt_10},ebrt_3 = {ebrt_3},应该是 44.25 和 43.2。�
 ```python
 def eqd2(d, n, ab):
     """每次剂量 d(Gy)、照射 n 次、α/β = ab 时的 EQD2(Gy)。"""
+    # 公式: n × d × (d + α/β) ÷ (2 + α/β)
     return n * d * (d + ab) / (2 + ab)
 
+# eqd2 要的是每次的剂量
 ebrt_10 = eqd2(ebrt_gy / ebrt_fx, ebrt_fx, 10)
 ebrt_3 = eqd2(ebrt_gy / ebrt_fx, ebrt_fx, 3)
 print(ebrt_10, ebrt_3)
@@ -114,8 +126,22 @@ print(ebrt_10, ebrt_3)
 
 用循环,把每一次近距离的 EQD2 加到外照射的部分上: 靶区的总剂量存进 `d90_total`,直肠的存进 `rectum_total`。直肠每次的 D2cc 直接相加,等于假设每次最热的那 2 cm³ 都在同一处,这是通行的保守做法(见[练习目录](../))。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。要用到第 1 步的 eqd2、ebrt_10、ebrt_3,和上面的 d90、rectum。
+# 从外照射的部分开始
+d90_total = ebrt_10
+# d 依次是每一次的 D90
+for d in d90:
+    # 加上这一次的 EQD2: 照射 1 次,α/β = 10
+    d90_total = d90_total + ___
+
+# 直肠: 同样的做法,α/β = 3
+rectum_total = ___
+for d in rectum:
+    rectum_total = ___
+
+print(f"HR-CTV D90: {d90_total:.1f} Gy,直肠 D2cc: {rectum_total:.1f} Gy")
 ```
 
 ```pycheck
@@ -150,10 +176,14 @@ ok("对了: 靶区 D90 的总 EQD2 是 90.1 Gy,直肠 D2cc 是 65.7 Gy。直肠�
 <details><summary>参考答案</summary>
 
 ```python
+# 从外照射的部分开始
 d90_total = ebrt_10
+# d 依次是每一次的 D90
 for d in d90:
+    # 加上这一次的 EQD2: 照射 1 次,α/β = 10
     d90_total = d90_total + eqd2(d, 1, 10)
 
+# 直肠: 同样的做法,α/β = 3
 rectum_total = ebrt_3
 for d in rectum:
     rectum_total = rectum_total + eqd2(d, 1, 3)
@@ -173,8 +203,24 @@ print(f"HR-CTV D90: {d90_total:.1f} Gy,直肠 D2cc: {rectum_total:.1f} Gy")
 
 再用它判断这位患者是否达标(靶区 ≥ 85 Gy,并且直肠 < 65 Gy),结果(True 或 False)存进 `meets`。
 
+骨架已经给出,把五处 `___` 填上。
+
 ```python
-# 在这里写你的代码: 定义 total_eqd2,再算 meets。
+def total_eqd2(ebrt_gy, ebrt_fx, bt_doses, ab):
+    """外照射加上各次近距离的总 EQD2(Gy)。"""
+    # 外照射的部分,和第 1 步一样
+    total = eqd2(___, ebrt_fx, ab)
+    for d in bt_doses:
+        # 加上这一次近距离,和第 3 步一样
+        total = ___
+    return total
+
+# 这位患者靶区和直肠的总 EQD2
+target = total_eqd2(ebrt_gy, ebrt_fx, d90, 10)
+rect = total_eqd2(ebrt_gy, ebrt_fx, ___, ___)
+# 达标: 靶区 ≥ 85 Gy,并且直肠 < 65 Gy
+meets = ___
+print(meets)
 ```
 
 ```pycheck
@@ -199,13 +245,13 @@ ok("对了: 这位患者靶区达标(90.1 Gy),直肠超了一点(65.7 Gy),所以
 
 <details><summary>提示 1: 思路</summary>
 
-函数里做的就是第 1 步和第 3 步的事: 先算外照射的 EQD2,再用循环把每一次近距离加上去,最后 `return`。判断用比较和 `and`(两个条件都成立才是 True)。
+函数里做的就是第 1 步和第 3 步的事: 先算外照射的 EQD2,再用循环把每一次近距离加上去。函数里要用参数(`ebrt_gy`、`ebrt_fx`、`ab`),不要写死成 45、25 或 10。判断用比较和 `and`(两个条件都成立才是 True)。
 
 </details>
 
 <details><summary>提示 2: 用到的写法</summary>
 
-函数里: `total = eqd2(ebrt_gy / ebrt_fx, ebrt_fx, ab)`,`for d in bt_doses:`,`total = total + eqd2(d, 1, ab)`,`return total`。然后 `meets = total_eqd2(45, 25, d90, 10) >= 85 and total_eqd2(45, 25, rectum, 3) < 65`。
+函数里: `eqd2(ebrt_gy / ebrt_fx, ebrt_fx, ab)`;循环里 `total = total + eqd2(d, 1, ab)`。直肠: `total_eqd2(ebrt_gy, ebrt_fx, rectum, 3)`。最后 `meets = target >= 85 and rect < 65`。
 
 </details>
 
@@ -214,12 +260,18 @@ ok("对了: 这位患者靶区达标(90.1 Gy),直肠超了一点(65.7 Gy),所以
 ```python
 def total_eqd2(ebrt_gy, ebrt_fx, bt_doses, ab):
     """外照射加上各次近距离的总 EQD2(Gy)。"""
+    # 外照射的部分,和第 1 步一样
     total = eqd2(ebrt_gy / ebrt_fx, ebrt_fx, ab)
     for d in bt_doses:
+        # 加上这一次近距离,和第 3 步一样
         total = total + eqd2(d, 1, ab)
     return total
 
-meets = total_eqd2(ebrt_gy, ebrt_fx, d90, 10) >= 85 and total_eqd2(ebrt_gy, ebrt_fx, rectum, 3) < 65
+# 这位患者靶区和直肠的总 EQD2
+target = total_eqd2(ebrt_gy, ebrt_fx, d90, 10)
+rect = total_eqd2(ebrt_gy, ebrt_fx, rectum, 3)
+# 达标: 靶区 ≥ 85 Gy,并且直肠 < 65 Gy
+meets = target >= 85 and rect < 65
 print(meets)
 ```
 
@@ -233,8 +285,22 @@ print(meets)
 
 页面开头的准备代码里有一个列表 `patients`: 五位患者(都是外照射 45 Gy 分 25 次),每位是一个字典,有 `"id"`、`"d90"`、`"rectum"` 三项。数出靶区和直肠**都达标**的有几位,存进 `n_ok`;把他们的编号放进列表 `ok_ids`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 n_ok 和 ok_ids。
+# 达标的人数从 0 开始数,编号从空列表开始放
+n_ok = 0
+ok_ids = []
+# p 依次是每一位患者(一个字典)
+for p in patients:
+    target = total_eqd2(45, 25, p["d90"], 10)
+    rect = total_eqd2(45, 25, ___, 3)
+    # 两条都达标: 人数加 1,编号放进列表
+    if ___:
+        n_ok = ___
+        ok_ids.append(___)
+    print(p["id"], round(target, 1), round(rect, 1))
+print(n_ok, ok_ids)
 ```
 
 ```pycheck
@@ -265,11 +331,14 @@ ok("对了: 只有 B 和 E 两位都达标。A 和 D 靶区够了,直肠超了;C
 <details><summary>参考答案</summary>
 
 ```python
+# 达标的人数从 0 开始数,编号从空列表开始放
 n_ok = 0
 ok_ids = []
+# p 依次是每一位患者(一个字典)
 for p in patients:
     target = total_eqd2(45, 25, p["d90"], 10)
     rect = total_eqd2(45, 25, p["rectum"], 3)
+    # 两条都达标: 人数加 1,编号放进列表
     if target >= 85 and rect < 65:
         n_ok = n_ok + 1
         ok_ids.append(p["id"])

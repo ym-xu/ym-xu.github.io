@@ -277,8 +277,19 @@ print(round(mae_base, 2), round(mae_model, 2))
 
 在有随访的 185 位患者(`tox`)里,用直肠总剂量 `rectum_total` 预测有没有出现晚期直肠副作用 `rect_tox`。用课上的写法 `LogisticRegression(C=1e6)`。算两个数: 直肠总剂量每高 **5 Gy**,odds 变成几倍(`or_5gy`);直肠总剂量 70 Gy 的患者,出现副作用的概率(`p70`)。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 or_5gy 和 p70。
+logit = LogisticRegression(C=1e6).fit(tox[["rectum_total"]], tox["rect_tox"])
+# 系数: 直肠总剂量每高 1 Gy,log-odds 增加多少
+b = logit.coef_[0][0]
+# 每高 5 Gy,odds 变成几倍
+or_5gy = ___
+# 一位直肠总剂量 70 Gy 的新患者,放进一张表
+new = pd.DataFrame({"rectum_total": [___]})
+# [0, 1]: 第一位患者、结局为 1(出现副作用)的概率
+p70 = logit.___(new)[0, 1]
+print(round(or_5gy, 2), round(p70, 3))
 ```
 
 ```pycheck
@@ -302,7 +313,7 @@ fail(f"现在是 {or_5gy:.2f} 和 {p70:.3f},应该是 1.98 和 0.128。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`logit = LogisticRegression(C=1e6).fit(tox[["rectum_total"]], tox["rect_tox"])`;`np.exp(5 * logit.coef_[0][0])`;`logit.predict_proba(pd.DataFrame({"rectum_total": [70]}))[0, 1]`。
+`np.exp(5 * b)`;`{"rectum_total": [70]}`;概率是 `logit.predict_proba(new)`。
 
 </details>
 
@@ -310,8 +321,14 @@ fail(f"现在是 {or_5gy:.2f} 和 {p70:.3f},应该是 1.98 和 0.128。")
 
 ```python
 logit = LogisticRegression(C=1e6).fit(tox[["rectum_total"]], tox["rect_tox"])
-or_5gy = np.exp(5 * logit.coef_[0][0])
-p70 = logit.predict_proba(pd.DataFrame({"rectum_total": [70]}))[0, 1]
+# 系数: 直肠总剂量每高 1 Gy,log-odds 增加多少
+b = logit.coef_[0][0]
+# 每高 5 Gy,odds 变成几倍
+or_5gy = np.exp(5 * b)
+# 一位直肠总剂量 70 Gy 的新患者,放进一张表
+new = pd.DataFrame({"rectum_total": [70]})
+# [0, 1]: 第一位患者、结局为 1(出现副作用)的概率
+p70 = logit.predict_proba(new)[0, 1]
 print(round(or_5gy, 2), round(p70, 3))
 ```
 

@@ -146,6 +146,18 @@ async def run(code):
         res["text"] += "\\n(图没能画出来: " + repr(e) + ")"
     return res
 
+def head(code):
+    # the whole statements before the first one that still has a ___ blank (an exercise half filled in)
+    import ast
+    lines = code.split(chr(10))
+    first = next((i + 1 for i, line in enumerate(lines) if "___" in line), 0)
+    try:
+        body = ast.parse(code).body
+    except SyntaxError:
+        return ""
+    done = [st for st in body if st.end_lineno < first]
+    return chr(10).join(lines[:done[-1].end_lineno]) if done else ""
+
 class _Stop(Exception):
     pass
 
@@ -594,13 +606,23 @@ async function runCard(card) {
   const checkCode = checkCodeFor(card);
   saveCode(card);                                 // an exercise: keep what was typed, also when it fails
   out.hidden = false;
-  if (checkCode && code.includes('___')) {
-    out.innerHTML = '';
+  // An exercise with ___ blanks left: the statements before the first blank are run (so a step that
+  // asks the reader to look at the data first can show it), nothing after it, and there is no check.
+  const blanks = !!checkCode && code.includes('___');
+  const blankNote = (ranSome) => {
     const p = document.createElement('p');
     p.className = 'code-output-check fail';
-    p.textContent = '先把代码里的 ___ 换成你的答案,再点运行。';
+    p.textContent = (ranSome ? '空前面的几行已经运行,结果在上面。' : '') + '先把代码里的 ___ 换成你的答案,再点运行。';
     out.appendChild(p);
-    return;
+  };
+  if (blanks) {
+    const lines = code.split('\n');
+    const before = lines.slice(0, lines.findIndex((l) => l.includes('___')));
+    if (!before.some((l) => l.trim() && !l.trim().startsWith('#'))) {   // nothing to run before the first blank
+      out.innerHTML = '';
+      blankNote(false);
+      return;
+    }
   }
   const setStatus = (msg) => { out.innerHTML = '<pre class="code-output-text code-output-status"></pre>'; out.firstChild.textContent = msg; };
   const paint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -611,12 +633,19 @@ async function runCard(card) {
 
   try {
     const py = await boot(setStatus);
-    await loadPackages(py, code, setStatus);
+    const runner = py.pyimport('_runner');
+    const src = blanks ? runner.head(code) : code;
+    if (blanks && !src.trim()) {
+      runner.destroy();
+      out.innerHTML = '';
+      blankNote(false);
+      return;
+    }
+    await loadPackages(py, src, setStatus);
     setStatus('运行中…');
     await paint(); // let the status show before the (blocking) run
-    const runner = py.pyimport('_runner');
     const runOnce = async () => {
-      const proxy = await runner.run(code);
+      const proxy = await runner.run(src);
       const r = proxy.toJs({ dict_converter: Object.fromEntries });
       proxy.destroy();
       return r;
@@ -645,8 +674,8 @@ async function runCard(card) {
       res = await runOnce();
       res.replayed = earlier.length;
     }
-    ran.add(card);
-    if (checkCode && !res.error) {
+    if (!blanks) ran.add(card);
+    if (checkCode && !blanks && !res.error) {
       const c = await runner.check(checkCode);
       res.check = c.toJs();
       c.destroy();
@@ -654,6 +683,11 @@ async function runCard(card) {
     }
     runner.destroy();
     render(out, res);
+    if (blanks) {
+      const quiet = out.querySelector('.code-output-status');            // "(运行完毕,没有输出)"
+      if (quiet) quiet.remove();
+      blankNote(!!((res.text && res.text.trim()) || res.html || (res.images || []).length || res.error));
+    }
   } catch (err) {
     out.innerHTML = '';
     const pre = document.createElement('pre');

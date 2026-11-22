@@ -163,8 +163,19 @@ right_var = "needles"
 
 树说加针的和不加针的患者规律不同。直接验证: 把患者按 `needles` 分成两组,每组单独做"靶区剂量对肿瘤体积"的直线,斜率分别存进 `slope_ic`(没加针)和 `slope_is`(加了针)。
 
+骨架已经给出,把两处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 slope_ic 和 slope_is。
+slopes = []
+# 0: 没加针,1: 加了针
+for v in [0, 1]:
+    # 这一组的患者
+    part = df[___]
+    line = LinearRegression().fit(part[["hrctv_vol"]], part["d90_total"])
+    # 这条直线的斜率
+    slopes.append(___)
+slope_ic, slope_is = slopes
+print(round(slope_ic, 3), round(slope_is, 3))
 ```
 
 ```pycheck
@@ -184,7 +195,7 @@ fail(f"现在是 {slope_ic:.3f} 和 {slope_is:.3f},应该是 −0.349 和 −0.0
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`part = df[df["needles"] == 0]`;`LinearRegression().fit(part[["hrctv_vol"]], part["d90_total"]).coef_[0]`。
+这一组: `df[df["needles"] == v]`;斜率是 `line.coef_[0]`。
 
 </details>
 
@@ -192,9 +203,13 @@ fail(f"现在是 {slope_ic:.3f} 和 {slope_is:.3f},应该是 −0.349 和 −0.0
 
 ```python
 slopes = []
+# 0: 没加针,1: 加了针
 for v in [0, 1]:
+    # 这一组的患者
     part = df[df["needles"] == v]
-    slopes.append(LinearRegression().fit(part[["hrctv_vol"]], part["d90_total"]).coef_[0])
+    line = LinearRegression().fit(part[["hrctv_vol"]], part["d90_total"])
+    # 这条直线的斜率
+    slopes.append(line.coef_[0])
 slope_ic, slope_is = slopes
 print(round(slope_ic, 3), round(slope_is, 3))
 ```
@@ -265,8 +280,18 @@ print(round(mae_inter, 2))
 
 换一个问题: 候选变量很多的时候怎么办。表 `D` 里除了三个真变量,还有 10 列随机数,一共 13 个候选(`many`)。拟合一个标准化以后的 LASSO(`alpha=0.3`),数一数有几个系数不是 0(`n_kept`);再算它的交叉验证误差(`mae_lasso`)。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 n_kept 和 mae_lasso。
+# 先标准化,再 LASSO
+lasso = make_pipeline(StandardScaler(), Lasso(alpha=___)).fit(D[many], y)
+# lasso[-1] 是 Pipeline 的最后一步,也就是拟合好的 LASSO
+coef = pd.Series(lasso[-1].coef_, index=many)
+print(coef[coef != 0].round(2))
+# 不是 0 的系数有几个
+n_kept = ___
+mae_lasso = cv_mae(make_pipeline(StandardScaler(), Lasso(alpha=0.3)), ___, y)
+print(n_kept, round(mae_lasso, 2))
 ```
 
 ```pycheck
@@ -286,16 +311,19 @@ fail(f"现在是 {n_kept} 和 {mae_lasso:.2f},应该是 6 和 4.30。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`lasso = make_pipeline(StandardScaler(), Lasso(alpha=0.3)).fit(D[many], y)`;`(lasso[-1].coef_ != 0).sum()`;`cv_mae(make_pipeline(StandardScaler(), Lasso(alpha=0.3)), D[many], y)`。
+`Lasso(alpha=0.3)`;`(coef != 0).sum()`;交叉验证的数据是 `D[many]`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 先标准化,再 LASSO
 lasso = make_pipeline(StandardScaler(), Lasso(alpha=0.3)).fit(D[many], y)
+# lasso[-1] 是 Pipeline 的最后一步,也就是拟合好的 LASSO
 coef = pd.Series(lasso[-1].coef_, index=many)
 print(coef[coef != 0].round(2))
+# 不是 0 的系数有几个
 n_kept = (coef != 0).sum()
 mae_lasso = cv_mae(make_pipeline(StandardScaler(), Lasso(alpha=0.3)), D[many], y)
 print(n_kept, round(mae_lasso, 2))

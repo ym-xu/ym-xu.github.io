@@ -67,8 +67,16 @@ print({k: round(float(v), 2) for k, v in r.items()})
 
 Riley 的准则要一个"预期的 R²cs"。手头没有以前的研究,先用自己这批患者算一个: 用 statsmodels 拟合副作用对直肠总剂量的逻辑回归(存进 `fit`),再按第 13 课的式子算 Cox–Snell R²,存进 `r2_cs`。
 
+骨架已经给出,把两处 `___` 填上。
+
 ```python
-# 在这里写你的代码。模型存进 fit,结果存进 r2_cs。
+# statsmodels 要自己加上截距那一列
+X = sm.add_constant(tox[["rectum_total"]])
+# 结局在前,变量在后
+fit = sm.Logit(___, X).fit(disp=0)
+# Cox-Snell R² = 1 - exp(-LR / n),LR 是 fit.llr,n 是患者数
+r2_cs = ___
+print(round(r2_cs, 3))
 ```
 
 ```pycheck
@@ -88,14 +96,18 @@ fail(f"现在是 {r2_cs:.4f},应该是 0.040。式子是 1 - np.exp(-fit.llr / l
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`fit = sm.Logit(event, sm.add_constant(tox[["rectum_total"]])).fit(disp=0)`;`1 - np.exp(-fit.llr / len(tox))`。
+`sm.Logit(event, X).fit(disp=0)`;`1 - np.exp(-fit.llr / len(tox))`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-fit = sm.Logit(event, sm.add_constant(tox[["rectum_total"]])).fit(disp=0)
+# statsmodels 要自己加上截距那一列
+X = sm.add_constant(tox[["rectum_total"]])
+# 结局在前,变量在后
+fit = sm.Logit(event, X).fit(disp=0)
+# Cox-Snell R² = 1 - exp(-LR / n),LR 是 fit.llr,n 是患者数
 r2_cs = 1 - np.exp(-fit.llr / len(tox))
 print(round(r2_cs, 3))
 ```
@@ -206,8 +218,19 @@ print(round(p_max, 2))
 
 论文里要给出完整的模型。第 1 步的 `fit` 里有截距和系数,还有系数的 95% 区间(`fit.conf_int()`)。算出直肠总剂量每高 5 Gy 的 OR(`or5`)和它的 95% 区间(`or5_low`、`or5_high`)。
 
+骨架已经给出,把两处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 or5、or5_low 和 or5_high。
+# 每个系数的 95% 区间: 0 列是下限,1 列是上限
+ci = fit.conf_int()
+# 直肠总剂量的系数(每 1 Gy)
+b = fit.params["rectum_total"]
+# 每高 5 Gy 的 OR,和它的区间
+or5 = ___
+or5_low = np.exp(5 * ci.loc["rectum_total", 0])
+or5_high = ___
+print(f"log-odds = {fit.params['const']:.2f} + {b:.3f} × 直肠总剂量")
+print(f"每高 5 Gy: OR {or5:.2f} (95% CI {or5_low:.2f} to {or5_high:.2f})")
 ```
 
 ```pycheck
@@ -227,18 +250,22 @@ fail(f"现在是 {or5:.2f}({or5_low:.2f} 到 {or5_high:.2f}),应该是 1.98(1.21
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`np.exp(5 * fit.params["rectum_total"])`;`ci = fit.conf_int()`,`np.exp(5 * ci.loc["rectum_total", 0])` 和 `np.exp(5 * ci.loc["rectum_total", 1])`。
+`np.exp(5 * b)`;上限和下限一样,只是取 1 列: `np.exp(5 * ci.loc["rectum_total", 1])`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 每个系数的 95% 区间: 0 列是下限,1 列是上限
 ci = fit.conf_int()
-or5 = np.exp(5 * fit.params["rectum_total"])
+# 直肠总剂量的系数(每 1 Gy)
+b = fit.params["rectum_total"]
+# 每高 5 Gy 的 OR,和它的区间
+or5 = np.exp(5 * b)
 or5_low = np.exp(5 * ci.loc["rectum_total", 0])
 or5_high = np.exp(5 * ci.loc["rectum_total", 1])
-print(f"log-odds = {fit.params['const']:.2f} + {fit.params['rectum_total']:.3f} × 直肠总剂量")
+print(f"log-odds = {fit.params['const']:.2f} + {b:.3f} × 直肠总剂量")
 print(f"每高 5 Gy: OR {or5:.2f} (95% CI {or5_low:.2f} to {or5_high:.2f})")
 ```
 
@@ -250,12 +277,14 @@ print(f"每高 5 Gy: OR {or5:.2f} (95% CI {or5_low:.2f} to {or5_high:.2f})")
 
 **第 6 步 · 让结果段落从代码里来**
 
-论文里的数字不要手抄。下面给了结果段落的第一句;接着写第二句,存进 `text`: 报告交叉验证的 AUC 和它的 95% 区间、O/E、校准斜率,数字都从字典 `r` 里取,保留两位小数。
+论文里的数字不要手抄。下面给了结果段落的两句话,第二句里的五个数还空着: 交叉验证的 AUC 和它的 95% 区间、O/E、校准斜率。把五处 `___` 换成字典 `r` 里对应的数(比如 `r['AUC']`),保留两位小数的格式已经写好。
 
 ```python
 text = (
     f"Of {len(full)} patients, {len(tox)} had follow-up and {event.sum()} ({event.mean():.0%}) developed late rectal toxicity. "
-    # 在这里接着写第二句(用 f"..."),数字从 r 里取。
+    f"A logistic model with total rectal D2cc as the only prespecified predictor had a cross-validated AUC of {___:.2f} "
+    f"(95% CI {___:.2f} to {___:.2f}), an observed-to-expected ratio of {___:.2f} "
+    f"and a calibration slope of {___:.2f}."
 )
 print(text)
 ```
@@ -275,13 +304,13 @@ fail("第一句被改动了: 保留给出的那一行,在它后面接着写。")
 
 <details><summary>提示 1: 思路</summary>
 
-圆括号里可以连着写几个 `f"..."`,Python 会把它们接成一个字符串。花括号里放要填的数,冒号后面是格式: `{r['AUC']:.2f}`。
+花括号里放要填的数,冒号后面是格式: `{r['AUC']:.2f}` 是 `r` 里的 AUC,保留两位小数。`r` 的五个键是 `AUC`、`low`、`high`、`O/E`、`slope`(见页面开头的准备代码)。
 
 </details>
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`f"... a cross-validated AUC of {r['AUC']:.2f} (95% CI {r['low']:.2f} to {r['high']:.2f}), ..."`;O/E 是 `r['O/E']`,校准斜率是 `r['slope']`。
+依次是 `r['AUC']`、`r['low']`、`r['high']`、`r['O/E']`、`r['slope']`。
 
 </details>
 

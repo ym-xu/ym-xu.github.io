@@ -101,8 +101,17 @@ print(round(mae_train, 2), round(mae_cv, 2))
 
 4.16 Gy 来自一种分法。用 `RepeatedKFold` 把 5 折交叉验证重复 10 次(`random_state=1`),得到 10 次重复各自的平均误差。其中最小的存进 `rep_low`,最大的存进 `rep_high`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 rep_low 和 rep_high。
+# 5 折交叉验证,重复 10 次
+rkf = RepeatedKFold(n_splits=___, n_repeats=___, random_state=1)
+scores = -cross_val_score(LinearRegression(), df[cols], y, cv=rkf, scoring="neg_mean_absolute_error")
+# 50 个误差排成 10 行 5 列,每一行(一次重复)取平均
+each = scores.reshape(10, 5).mean(axis=1)
+# 10 个平均值里最小的、最大的
+rep_low, rep_high = ___, ___
+print(each.round(2), round(each.mean(), 2))
 ```
 
 ```pycheck
@@ -124,16 +133,19 @@ fail(f"现在是 {rep_low:.2f} 和 {rep_high:.2f},应该是 4.03 和 4.14。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`scores = -cross_val_score(LinearRegression(), df[cols], y, cv=rkf, scoring="neg_mean_absolute_error")`;`scores.reshape(10, 5).mean(axis=1)` 是 10 次重复各自的平均。
+`RepeatedKFold(n_splits=5, n_repeats=10, random_state=1)`;`each.min()` 和 `each.max()`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 5 折交叉验证,重复 10 次
 rkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=1)
 scores = -cross_val_score(LinearRegression(), df[cols], y, cv=rkf, scoring="neg_mean_absolute_error")
+# 50 个误差排成 10 行 5 列,每一行(一次重复)取平均
 each = scores.reshape(10, 5).mean(axis=1)
+# 10 个平均值里最小的、最大的
 rep_low, rep_high = each.min(), each.max()
 print(each.round(2), round(each.mean(), 2))
 ```
@@ -194,8 +206,15 @@ print(round(mae_all, 2))
 - 泄漏的做法: 先用**全部**患者挑出和 `y` 关系最强的 5 列(`SelectKBest(f_regression, k=5)`),再对这 5 列做交叉验证,误差存进 `leaky`。
 - 诚实的做法: 把"挑 5 列"和线性回归绑成一个 Pipeline,整个交给交叉验证,误差存进 `honest`。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 leaky 和 honest。
+# 泄漏的做法: 先用全部患者挑出 5 列,再对这 5 列做交叉验证
+picked = noise.columns[SelectKBest(f_regression, k=5).fit(noise, y).get_support()]
+leaky = cv_mae(LinearRegression(), ___, y)
+# 诚实的做法: 挑列和建模绑成一个 Pipeline,交叉验证拿到的是全部 30 列
+honest = cv_mae(make_pipeline(___, LinearRegression()), ___, y)
+print(list(picked), round(leaky, 2), round(honest, 2))
 ```
 
 ```pycheck
@@ -217,15 +236,17 @@ fail(f"现在是 {leaky:.2f} 和 {honest:.2f},应该是 4.41 和 4.62。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`picked = noise.columns[SelectKBest(f_regression, k=5).fit(noise, y).get_support()]`;`cv_mae(LinearRegression(), noise[picked], y)`;`cv_mae(make_pipeline(SelectKBest(f_regression, k=5), LinearRegression()), noise, y)`。
+泄漏的: `cv_mae(LinearRegression(), noise[picked], y)`。诚实的: `make_pipeline(SelectKBest(f_regression, k=5), LinearRegression())`,数据给全部的 `noise`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 泄漏的做法: 先用全部患者挑出 5 列,再对这 5 列做交叉验证
 picked = noise.columns[SelectKBest(f_regression, k=5).fit(noise, y).get_support()]
 leaky = cv_mae(LinearRegression(), noise[picked], y)
+# 诚实的做法: 挑列和建模绑成一个 Pipeline,交叉验证拿到的是全部 30 列
 honest = cv_mae(make_pipeline(SelectKBest(f_regression, k=5), LinearRegression()), noise, y)
 print(list(picked), round(leaky, 2), round(honest, 2))
 ```
@@ -251,8 +272,16 @@ print(list(picked), round(leaky, 2), round(honest, 2))
 
 换到副作用的模型。185 位患者里只有 15 位出现了晚期直肠副作用(`tox["rect_tox"]`)。数一数每一份里有几个事件: 用普通的 5 折(准备好的 `cv`)数一次,存进 `counts_plain`;再用分层的 5 折(`StratifiedKFold`,`shuffle=True, random_state=0`)数一次,存进 `counts_strat`。两个都是 5 个数的列表。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 counts_plain 和 counts_strat。
+event = tox["rect_tox"]
+# 普通的 5 折: split 每次交出(训练的行号, 测试的行号),数测试的那一份里有几个事件
+counts_plain = [int(event.iloc[test].sum()) for _, test in cv.split(tox, event)]
+# 分层的 5 折,打乱,种子 0
+skf = StratifiedKFold(n_splits=5, shuffle=___, random_state=___)
+counts_strat = [int(event.iloc[test].sum()) for _, test in ___.split(tox, event)]
+print(counts_plain, counts_strat)
 ```
 
 ```pycheck
@@ -278,7 +307,7 @@ fail(f"现在是 {plain} 和 {strat},应该是 [1, 3, 2, 3, 6] 和 [3, 3, 3, 3, 
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`event = tox["rect_tox"]`;`[int(event.iloc[test].sum()) for _, test in cv.split(tox, event)]`;分层时把 `cv` 换成 `StratifiedKFold(n_splits=5, shuffle=True, random_state=0)`。
+`StratifiedKFold(n_splits=5, shuffle=True, random_state=0)`;第二行和第一行一样,只是换成 `skf.split`。
 
 </details>
 
@@ -286,7 +315,9 @@ fail(f"现在是 {plain} 和 {strat},应该是 [1, 3, 2, 3, 6] 和 [3, 3, 3, 3, 
 
 ```python
 event = tox["rect_tox"]
+# 普通的 5 折: split 每次交出(训练的行号, 测试的行号),数测试的那一份里有几个事件
 counts_plain = [int(event.iloc[test].sum()) for _, test in cv.split(tox, event)]
+# 分层的 5 折,打乱,种子 0
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 counts_strat = [int(event.iloc[test].sum()) for _, test in skf.split(tox, event)]
 print(counts_plain, counts_strat)
@@ -302,8 +333,16 @@ print(counts_plain, counts_strat)
 
 交叉验证只用来打分。真正拿去用的,是在全部 200 位患者上重新拟合的那一个。把第 3 步的 Pipeline 在全部患者上拟合,然后给一位新患者预测: 打算加插植针,肿瘤体积还没量(`np.nan`)。预测值存进 `pred_unknown`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 pred_unknown。
+# 第 3 步的 Pipeline,在全部 200 位患者上拟合
+final = make_pipeline(SimpleImputer(strategy="median"), LinearRegression())
+final.fit(___, ___)
+# 新患者: 打算加插植针,肿瘤体积还没量
+new = pd.DataFrame({"hrctv_vol": [___], "needles": [___]})
+pred_unknown = final.predict(new)[0]
+print(round(pred_unknown, 2))
 ```
 
 ```pycheck
@@ -323,15 +362,19 @@ Pipeline 和普通模型一样有 `fit` 和 `predict`。新患者放进一张表
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`final = make_pipeline(SimpleImputer(strategy="median"), LinearRegression()).fit(full[cols], full["d90_total"])`;`final.predict(pd.DataFrame({"hrctv_vol": [np.nan], "needles": [1]}))[0]`。
+`final.fit(full[cols], full["d90_total"])`;没量的体积写 `np.nan`,加针写 `1`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-final = make_pipeline(SimpleImputer(strategy="median"), LinearRegression()).fit(full[cols], full["d90_total"])
-pred_unknown = final.predict(pd.DataFrame({"hrctv_vol": [np.nan], "needles": [1]}))[0]
+# 第 3 步的 Pipeline,在全部 200 位患者上拟合
+final = make_pipeline(SimpleImputer(strategy="median"), LinearRegression())
+final.fit(full[cols], full["d90_total"])
+# 新患者: 打算加插植针,肿瘤体积还没量
+new = pd.DataFrame({"hrctv_vol": [np.nan], "needles": [1]})
+pred_unknown = final.predict(new)[0]
 print(round(pred_unknown, 2))
 ```
 

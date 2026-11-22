@@ -151,8 +151,20 @@ pct_iiib_is = pct.loc["IIIB", "IC/IS"]
 
 把四次的 HR-CTV D90(`d90_1` 到 `d90_4`)变成长表 `long`: 每位患者的每一次占一行,带着 `id` 和 `technique`,记第几次的那一列叫 `fraction`,剂量那一列叫 `d90`。再算每一次的中位数,存进 `d90_by_fx`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 long 和 d90_by_fx。
+long = df.melt(
+    # 每一行都要带着的列: 患者编号和施源器
+    id_vars=___,
+    # 要叠起来的四列
+    value_vars=["d90_1", "d90_2", "d90_3", "d90_4"],
+    # 叠出来的两列叫什么: 第几次、剂量
+    var_name=___, value_name=___)
+print(long.shape)
+# 每一次的中位数
+d90_by_fx = long.groupby(___)["d90"].median()
+print(d90_by_fx)
 ```
 
 ```pycheck
@@ -179,16 +191,22 @@ fail(f"四次的中位数应该是 7.9、8.0、7.9、7.95,现在是 {vals}。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`df.melt(id_vars=["id", "technique"], value_vars=["d90_1", "d90_2", "d90_3", "d90_4"], var_name="fraction", value_name="d90")`。
+`id_vars=["id", "technique"]`,`var_name="fraction"`,`value_name="d90"`;分组用 `long.groupby("fraction")`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-long = df.melt(id_vars=["id", "technique"], value_vars=["d90_1", "d90_2", "d90_3", "d90_4"],
-               var_name="fraction", value_name="d90")
+long = df.melt(
+    # 每一行都要带着的列: 患者编号和施源器
+    id_vars=["id", "technique"],
+    # 要叠起来的四列
+    value_vars=["d90_1", "d90_2", "d90_3", "d90_4"],
+    # 叠出来的两列叫什么: 第几次、剂量
+    var_name="fraction", value_name="d90")
 print(long.shape)
+# 每一次的中位数
 d90_by_fx = long.groupby("fraction")["d90"].median()
 print(d90_by_fx)
 ```
@@ -256,16 +274,16 @@ print(f"{n_lost} 位没有随访;有随访的 {m['rect_tox'].count()} 位里,{to
 
 **第 6 步 · 一张基线表**
 
-把前面看到的写成一张按施源器分列的基线表。行名已经给出,把四处 `___` 换成算这一格的代码(用准备代码里的 `median_iqr` 和 `n_pct`;年龄不留小数)。
+把前面看到的写成一张按施源器分列的基线表。行名和要用的函数(准备代码里的 `median_iqr` 和 `n_pct`)已经给出。把四处 `___` 填上: 年龄、体积和剂量填这一组患者(`d`)的那一列;分期填两个分期组成的列表。
 
 ```python
 def column(d):
     return pd.Series({
         "Patients, n": len(d),
-        "Age, years": ___,
-        "FIGO stage IIIB or IVA, n (%)": ___,
-        "HR-CTV volume, cm3": ___,
-        "HR-CTV D90, Gy (EQD2)": ___,
+        "Age, years": median_iqr(___, 0),
+        "FIGO stage IIIB or IVA, n (%)": n_pct(d["stage"].isin(___)),
+        "HR-CTV volume, cm3": median_iqr(___),
+        "HR-CTV D90, Gy (EQD2)": median_iqr(___),
     })
 
 table1 = pd.DataFrame({

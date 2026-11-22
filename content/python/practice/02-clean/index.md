@@ -131,8 +131,19 @@ print(df["technique"].value_counts())
 
 近距离每次的 HR-CTV D90 一般在 5 到 10 Gy 之间。检查 `d90_1` 到 `d90_4` 四列,找出不可能的值。假设你已经核对过原始计划,确认是录入时丢了小数点(比如 7.6 录成了 76)。把它改正。
 
+骨架已经给出。先点一次运行,看四列各自的最大值,再把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。找出并改正 df 里不可能的 D90。
+cols = ["d90_1", "d90_2", "d90_3", "d90_4"]
+# 四列各自的最大值: 哪一列有大于 10 的?
+print(df[cols].max())
+
+# 那一列里大于 10 的行,看看是哪位患者
+bad = df[___] > 10
+print(df[bad][["id"] + cols])
+# 改成正确的值
+df.loc[bad, ___] = ___
+print(df[cols].max())
 ```
 
 ```pycheck
@@ -156,7 +167,7 @@ ok("对了: C037 第 3 次的 D90 录成了 76 Gy,改回 7.6 Gy。如果不改,�
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`df[["d90_1", "d90_2", "d90_3", "d90_4"]].max()`;`df[df["d90_3"] > 10]`;`df.loc[df["d90_3"] > 10, "d90_3"] = 7.6`。
+最大值不对的是 `d90_3`(76 Gy,是 7.6 丢了小数点): `bad = df["d90_3"] > 10`,改正用 `df.loc[bad, "d90_3"] = 7.6`。
 
 </details>
 
@@ -164,10 +175,14 @@ ok("对了: C037 第 3 次的 D90 录成了 76 Gy,改回 7.6 Gy。如果不改,�
 
 ```python
 cols = ["d90_1", "d90_2", "d90_3", "d90_4"]
+# 四列各自的最大值: 哪一列有大于 10 的?
 print(df[cols].max())
-print(df[df["d90_3"] > 10][["id"] + cols])
 
-df.loc[df["d90_3"] > 10, "d90_3"] = 7.6
+# 那一列里大于 10 的行,看看是哪位患者
+bad = df["d90_3"] > 10
+print(df[bad][["id"] + cols])
+# 改成正确的值
+df.loc[bad, "d90_3"] = 7.6
 print(df[cols].max())
 ```
 
@@ -192,8 +207,21 @@ print(df[cols].max())
 
 给 `df` 加三列: `d90_total`(HR-CTV D90,α/β = 10)、`rectum_total` 和 `bladder_total`(直肠和膀胱的 D2cc,α/β = 3)。每一列都是外照射的 EQD2 加上 4 次近距离各自的 EQD2(直肠和膀胱的外照射按处方剂量算,四次的 D2cc 直接相加,和练习 1 一样)。注意外照射的剂量和次数不是每位患者都一样(看 `ebrt_gy` 和 `ebrt_fx` 两列)。
 
+骨架已经给出,把两处 `___` 填上。
+
 ```python
-# 在这里写你的代码。给 df 加上 d90_total、rectum_total、bladder_total 三列。
+# 每位患者外照射每次的剂量(一整列)
+per_fraction = ___
+for name, ab in [("d90", 10), ("rectum", 3), ("bladder", 3)]:
+    # 外照射的部分
+    total = eqd2(per_fraction, df["ebrt_fx"], ab)
+    # 加上第 1 到第 4 次近距离: 第 k 次的列名是 name 加上 _k
+    for k in range(1, 5):
+        total = total + eqd2(___, 1, ab)
+    # 存成新的一列,比如 d90_total
+    df[f"{name}_total"] = total
+
+print(df[["d90_total", "rectum_total", "bladder_total"]].median().round(1))
 ```
 
 ```pycheck
@@ -225,18 +253,22 @@ ok("对了: 三列总剂量的中位数是 HR-CTV D90 92.3 Gy、直肠 64.7 Gy�
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`ebrt_10 = eqd2(df["ebrt_gy"] / df["ebrt_fx"], df["ebrt_fx"], 10)`;`df["d90_total"] = ebrt_10 + eqd2(df["d90_1"], 1, 10) + eqd2(df["d90_2"], 1, 10) + …`。也可以用循环: 列名用 `f"d90_{k}"` 拼出来,`k` 从 1 到 4。
+每次的剂量是 `df["ebrt_gy"] / df["ebrt_fx"]`。第 k 次的那一列是 `df[f"{name}_{k}"]`,和最后一行的 `f"{name}_total"` 是同一种拼法。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 每位患者外照射每次的剂量(一整列)
 per_fraction = df["ebrt_gy"] / df["ebrt_fx"]
 for name, ab in [("d90", 10), ("rectum", 3), ("bladder", 3)]:
-    total = eqd2(per_fraction, df["ebrt_fx"], ab)            # 外照射的部分
+    # 外照射的部分
+    total = eqd2(per_fraction, df["ebrt_fx"], ab)
+    # 加上第 1 到第 4 次近距离: 第 k 次的列名是 name 加上 _k
     for k in range(1, 5):
-        total = total + eqd2(df[f"{name}_{k}"], 1, ab)       # 加上第 k 次近距离
+        total = total + eqd2(df[f"{name}_{k}"], 1, ab)
+    # 存成新的一列,比如 d90_total
     df[f"{name}_total"] = total
 
 print(df[["d90_total", "rectum_total", "bladder_total"]].median().round(1))
@@ -252,8 +284,21 @@ print(df[["d90_total", "rectum_total", "bladder_total"]].median().round(1))
 
 审计的第一个问题。三条标准各有多少位患者达到?三条都达到的有几位?把三条都达到的人数存进 `n_all_ok`,把靶区达标(D90 ≥ 85 Gy)的比例存进 `share_d90`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 n_all_ok 和 share_d90。
+# 每条标准: 每位患者一个 True 或 False
+ok_d90 = df["d90_total"] >= 85
+ok_rectum = ___
+ok_bladder = ___
+for name, flag in [("HR-CTV D90 >= 85 Gy", ok_d90), ("直肠 D2cc < 65 Gy", ok_rectum), ("膀胱 D2cc < 80 Gy", ok_bladder)]:
+    print(f"{name}: {flag.sum()} 位({flag.mean():.1%})")
+
+# 靶区达标的比例
+share_d90 = ___
+# 三条都达到的人数: 用 & 连起来,再数
+n_all_ok = ___
+print(f"三条都达到: {n_all_ok} 位({n_all_ok / len(df):.1%})")
 ```
 
 ```pycheck
@@ -286,13 +331,16 @@ ok("对了: 靶区达标 181 位(90.5%),直肠 108 位(54%),膀胱 158 位(79%);
 <details><summary>参考答案</summary>
 
 ```python
+# 每条标准: 每位患者一个 True 或 False
 ok_d90 = df["d90_total"] >= 85
 ok_rectum = df["rectum_total"] < 65
 ok_bladder = df["bladder_total"] < 80
 for name, flag in [("HR-CTV D90 >= 85 Gy", ok_d90), ("直肠 D2cc < 65 Gy", ok_rectum), ("膀胱 D2cc < 80 Gy", ok_bladder)]:
     print(f"{name}: {flag.sum()} 位({flag.mean():.1%})")
 
+# 靶区达标的比例
 share_d90 = ok_d90.mean()
+# 三条都达到的人数: 用 & 连起来,再数
 n_all_ok = (ok_d90 & ok_rectum & ok_bladder).sum()
 print(f"三条都达到: {n_all_ok} 位({n_all_ok / len(df):.1%})")
 ```

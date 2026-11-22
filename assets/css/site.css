@@ -448,6 +448,8 @@ body:is(.section-python, .section-stat-ml) .content table code { overflow-wrap: 
 .content .code-card .cm-line { padding: 0; }
 /* an exercise: room for six lines, and a tap anywhere in it lands in the code */
 .content .code-card .py-editor-exercise .cm-content.chroma { min-height: calc(9em + 1.6rem); }
+.content .code-card .cm-blank { background: color-mix(in oklab, var(--link) 16%, transparent); border-radius: 3px;
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--link) 60%, transparent); }   /* a ___ blank to fill in */
 .content .code-card .cm-editor.cm-focused .cm-matchingBracket { background: color-mix(in oklab, var(--link) 22%, transparent); }
 /* Completion list and call hint of the code boxes (py-editor.js, opts.assist). They hang on <body>,
    so they use the page colours; the doubled classes outweigh CodeMirror's own theme. */

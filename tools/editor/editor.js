@@ -17,7 +17,7 @@
 //   (as in JupyterLab); on a phone it opens by itself after "." or two letters, and Enter stays a new
 //   line. The answers come from the running Python, through the functions in opts.assist.
 import { EditorState, EditorSelection, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
-import { EditorView, keymap, ViewPlugin, Decoration, showTooltip, tooltips } from '@codemirror/view';
+import { EditorView, keymap, ViewPlugin, Decoration, MatchDecorator, showTooltip, tooltips } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentMore, indentLess } from '@codemirror/commands';
 import { LanguageSupport, indentUnit, indentOnInput, bracketMatching, syntaxHighlighting, HighlightStyle, syntaxTree } from '@codemirror/language';
 import { pythonLanguage } from '@codemirror/lang-python';
@@ -95,6 +95,30 @@ const straightQuotes = EditorView.inputHandler.of((view, from, to, text) => {
 
 // ---- completion and call hints (opts.assist) ----
 const TOUCH = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+// ___ marks a blank the reader fills in. Blanks are shaded, and a tap or click on one (or moving the
+// caret into it) selects the whole blank, so what is typed next replaces it: no need to delete the
+// three underscores first on a phone keyboard.
+const blankDeco = new MatchDecorator({ regexp: /___/g, decoration: Decoration.mark({ class: 'cm-blank' }) });
+const blankMarks = ViewPlugin.fromClass(class {
+  constructor(view) { this.decorations = blankDeco.createDeco(view); }
+  update(u) { this.decorations = blankDeco.updateDeco(u, this.decorations); }
+}, { decorations: (v) => v.decorations });
+const selectBlank = EditorState.transactionFilter.of((tr) => {
+  if (tr.docChanged || !tr.selection || !tr.isUserEvent('select') || tr.selection.ranges.length > 1) return tr;
+  const sel = tr.selection.main;
+  if (!sel.empty) return tr;
+  const line = tr.newDoc.lineAt(sel.head);
+  for (const m of line.text.matchAll(/___/g)) {
+    const from = line.from + m.index, to = from + 3;
+    if (sel.head >= from && sel.head <= to) {
+      const back = tr.startState.selection.main;                      // stepping out of a selected blank: let it go
+      if (back.from === from && back.to === to) return tr;
+      return [tr, { selection: EditorSelection.range(from, to) }];
+    }
+  }
+  return tr;
+});
+
 const EXPR = String.raw`[A-Za-z_]\w*(?:\.[A-Za-z_]\w*|\[(?:"[^"\n]*"|'[^'\n]*'|-?\d+)\])*`;   // name, .attr, ["key"] or [0]
 const KEY_BEFORE = new RegExp('(' + EXPR + String.raw`)\[\s*(["'])([^"'\n]*)$`);
 const ATTR_BEFORE = new RegExp('(' + EXPR + String.raw`)\.(\w*)$`);
@@ -127,7 +151,7 @@ function completionSource(assist) {
     const from = ctx.pos - (word ? word[1].length : 0);
     const options = assist.names(), have = new Set(options.map((o) => o.label));
     for (const m of ctx.state.doc.toString().matchAll(/[A-Za-z_]\w+/g)) {   // names written in this box, not yet run
-      if (m.index === from || have.has(m[0])) continue;
+      if (m.index === from || have.has(m[0]) || /^_+$/.test(m[0])) continue;   // not the ___ blanks
       have.add(m[0]);
       options.push({ label: m[0], boost: 1 });
     }
@@ -303,6 +327,8 @@ function create(pre, text, opts) {
         new LanguageSupport(pythonLanguage),
         syntaxHighlighting(chroma),
         builtinNames,
+        blankMarks,
+        selectBlank,
         straightQuotes,
         EditorView.contentAttributes.of({ class: 'chroma', 'aria-label': opts.label || 'Python 代码,可以直接修改' }),
         EditorView.editorAttributes.of({ class: opts.exercise ? 'py-editor py-editor-exercise' : 'py-editor' }),

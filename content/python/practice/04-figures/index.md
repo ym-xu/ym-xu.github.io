@@ -33,8 +33,18 @@ print("准备好了:", df.shape)
 
 画 HR-CTV D90 总剂量(`d90_total`)的直方图,分 20 段;在审计标准 85 Gy 的位置画一条竖线;两个轴都加标签,剂量带单位。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。坐标系存在 ax 里(fig, ax = plt.subplots())。
+fig, ax = plt.subplots()
+# 直方图,分 20 段
+ax.___(df["d90_total"], bins=20)
+# 85 Gy 处的竖线
+ax.___(85, color="black", linestyle="--", linewidth=1)
+# 两个轴的标签,剂量带单位
+ax.set_xlabel(___)
+ax.set_ylabel(___)
+plt.show()
 ```
 
 ```pycheck
@@ -61,7 +71,7 @@ ok("对了。大多数患者在 88 到 98 Gy 之间;竖线左边有 19 位患者
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`fig, ax = plt.subplots()`;`ax.hist(df["d90_total"], bins=20)`;`ax.axvline(85, color="black", linestyle="--")`。
+直方图是 `ax.hist`,竖线是 `ax.axvline`;标签是一段文字,比如 `"HR-CTV D90, total EQD2 (Gy)"` 和 `"Number of patients"`。
 
 </details>
 
@@ -69,8 +79,11 @@ ok("对了。大多数患者在 88 到 98 Gy 之间;竖线左边有 19 位患者
 
 ```python
 fig, ax = plt.subplots()
+# 直方图,分 20 段
 ax.hist(df["d90_total"], bins=20)
+# 85 Gy 处的竖线
 ax.axvline(85, color="black", linestyle="--", linewidth=1)
+# 两个轴的标签,剂量带单位
 ax.set_xlabel("HR-CTV D90, total EQD2 (Gy)")
 ax.set_ylabel("Number of patients")
 plt.show()
@@ -86,8 +99,20 @@ plt.show()
 
 画箱线图: 左边是单纯腔内(IC)的 `d90_total`,右边是腔内加插植(IC/IS)的;加上 85 Gy 的横线。`ax.boxplot(...)` 交回的结果存进 `bp`。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。写成 bp = ax.boxplot(...)。
+# 单纯腔内的患者,和加了插植针的(IC/IS)
+ic = df.loc[df["technique"] == "IC", "d90_total"]
+needles = df.loc[___, "d90_total"]
+
+fig, ax = plt.subplots()
+# 两组放进一个列表,IC 在前
+bp = ax.boxplot(___, tick_labels=["IC", "IC/IS"])
+# 85 Gy 处的横线
+ax.___(85, color="grey", linestyle="--", linewidth=1)
+ax.set_ylabel("HR-CTV D90, total EQD2 (Gy)")
+plt.show()
 ```
 
 ```pycheck
@@ -110,18 +135,21 @@ fail("箱子里的数据不对: 第一个箱子是 technique 为 IC 的患者的
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`ic = df.loc[df["technique"] == "IC", "d90_total"]`;`bp = ax.boxplot([ic, needles], tick_labels=["IC", "IC/IS"])`。
+`needles = df.loc[df["technique"] == "IC/IS", "d90_total"]`;`ax.boxplot([ic, needles], ...)`;横线是 `ax.axhline`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 单纯腔内的患者,和加了插植针的(IC/IS)
 ic = df.loc[df["technique"] == "IC", "d90_total"]
 needles = df.loc[df["technique"] == "IC/IS", "d90_total"]
 
 fig, ax = plt.subplots()
+# 两组放进一个列表,IC 在前
 bp = ax.boxplot([ic, needles], tick_labels=["IC", "IC/IS"])
+# 85 Gy 处的横线
 ax.axhline(85, color="grey", linestyle="--", linewidth=1)
 ax.set_ylabel("HR-CTV D90, total EQD2 (Gy)")
 plt.show()
@@ -137,8 +165,20 @@ plt.show()
 
 画散点图: 横轴是 HR-CTV 体积(`hrctv_vol`),纵轴是 `d90_total`;两种施源器用不同的颜色,带图例;加上 85 Gy 的横线。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。坐标系存在 ax 里。
+fig, ax = plt.subplots()
+# 每种施源器的患者(d)各画一次,颜色自动不同
+for tech, d in df.groupby("technique"):
+    # 横轴体积,纵轴剂量
+    ax.scatter(___, ___, s=14, alpha=0.6, label=tech)
+ax.axhline(85, color="grey", linestyle="--", linewidth=1)
+ax.set_xlabel("HR-CTV volume (cm3)")
+ax.set_ylabel("HR-CTV D90, total EQD2 (Gy)")
+# 图例
+ax.___(title="Applicator")
+plt.show()
 ```
 
 ```pycheck
@@ -169,7 +209,7 @@ ok("对了。这张图讲出了箱线图讲不出的事: 单纯腔内的点随�
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`for tech, d in df.groupby("technique"):`,循环里 `ax.scatter(d["hrctv_vol"], d["d90_total"], s=14, alpha=0.6, label=tech)`。
+循环里画的是这一组 `d` 的点: `ax.scatter(d["hrctv_vol"], d["d90_total"], ...)`;图例是 `ax.legend`。
 
 </details>
 
@@ -177,11 +217,14 @@ ok("对了。这张图讲出了箱线图讲不出的事: 单纯腔内的点随�
 
 ```python
 fig, ax = plt.subplots()
+# 每种施源器的患者(d)各画一次,颜色自动不同
 for tech, d in df.groupby("technique"):
+    # 横轴体积,纵轴剂量
     ax.scatter(d["hrctv_vol"], d["d90_total"], s=14, alpha=0.6, label=tech)
 ax.axhline(85, color="grey", linestyle="--", linewidth=1)
 ax.set_xlabel("HR-CTV volume (cm3)")
 ax.set_ylabel("HR-CTV D90, total EQD2 (Gy)")
+# 图例
 ax.legend(title="Applicator")
 plt.show()
 ```
@@ -207,8 +250,20 @@ plt.show()
 
 把第 3 步的散点图按 3.5 × 2.8 英寸重画,存成 300 dpi 的 `audit_figure.png`。点和图例的字要小一些,才放得下。
 
+骨架已经给出: 和第 3 步的图一样,点和图例的字已经调小。把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。存成 audit_figure.png。
+# 图的尺寸: 宽 3.5 英寸、高 2.8 英寸
+fig, ax = plt.subplots(figsize=___)
+for tech, d in df.groupby("technique"):
+    ax.scatter(d["hrctv_vol"], d["d90_total"], s=8, alpha=0.6, label=tech)
+ax.axhline(85, color="grey", linestyle="--", linewidth=1)
+ax.set_xlabel("HR-CTV volume (cm3)")
+ax.set_ylabel("HR-CTV D90 (Gy)")
+ax.legend(title="Applicator", fontsize=7, title_fontsize=7)
+# 存成文件: 文件名,分辨率
+fig.savefig(___, dpi=___, bbox_inches="tight")
+plt.show()
 ```
 
 ```pycheck
@@ -232,13 +287,14 @@ ok(f"对了: {w} × {h} 像素,3.5 英寸宽、300 dpi。这张图可以直接�
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`plt.subplots(figsize=(3.5, 2.8))`;`fig.savefig("audit_figure.png", dpi=300, bbox_inches="tight")`。
+`figsize=(3.5, 2.8)`;`fig.savefig("audit_figure.png", dpi=300, bbox_inches="tight")`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# 图的尺寸: 宽 3.5 英寸、高 2.8 英寸
 fig, ax = plt.subplots(figsize=(3.5, 2.8))
 for tech, d in df.groupby("technique"):
     ax.scatter(d["hrctv_vol"], d["d90_total"], s=8, alpha=0.6, label=tech)
@@ -246,6 +302,7 @@ ax.axhline(85, color="grey", linestyle="--", linewidth=1)
 ax.set_xlabel("HR-CTV volume (cm3)")
 ax.set_ylabel("HR-CTV D90 (Gy)")
 ax.legend(title="Applicator", fontsize=7, title_fontsize=7)
+# 存成文件: 文件名,分辨率
 fig.savefig("audit_figure.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```

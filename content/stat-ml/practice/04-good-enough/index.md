@@ -79,8 +79,17 @@ print(len(df), "位患者,", int((y < 85).sum()), "位靶区剂量低于 85 Gy;"
 
 用 `cross_val_predict` 得到带交互项的直线(`xcols`)给每位患者的 out-of-fold 预测值,存进 `pred`(一个和 `y` 一样长的 Series)。再算平均绝对误差(`mae_oof`)和 R²(`r2_oof`)。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 pred、mae_oof 和 r2_oof。
+# 每位患者由没见过他的那一折的模型来预测
+oof = cross_val_predict(LinearRegression(), ___, y, cv=cv)
+# 变成和 y 对得上的 Series
+pred = pd.Series(oof, index=df.index)
+# 平均绝对误差和 R²
+mae_oof = ___
+r2_oof = ___(y, pred)
+print(round(mae_oof, 2), round(r2_oof, 2))
 ```
 
 ```pycheck
@@ -100,14 +109,18 @@ fail(f"现在是 {mae_oof:.2f} 和 {r2_oof:.2f},应该是 3.71 和 0.24。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`pred = pd.Series(cross_val_predict(LinearRegression(), df[xcols], y, cv=cv), index=df.index)`;`(y - pred).abs().mean()`;`r2_score(y, pred)`。
+`cross_val_predict(LinearRegression(), df[xcols], y, cv=cv)`;`(y - pred).abs().mean()`;`r2_score(y, pred)`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-pred = pd.Series(cross_val_predict(LinearRegression(), df[xcols], y, cv=cv), index=df.index)
+# 每位患者由没见过他的那一折的模型来预测
+oof = cross_val_predict(LinearRegression(), df[xcols], y, cv=cv)
+# 变成和 y 对得上的 Series
+pred = pd.Series(oof, index=df.index)
+# 平均绝对误差和 R²
 mae_oof = (y - pred).abs().mean()
 r2_oof = r2_score(y, pred)
 print(round(mae_oof, 2), round(r2_oof, 2))
@@ -208,8 +221,16 @@ print(flagged, found)
 
 换到副作用的模型: 用直肠总剂量 `rectum_total` 预测 `event`,`LogisticRegression(C=1e6)`,数据是 `tox`。用分层的 `skf` 得到每位患者的 out-of-fold 概率,存进 `p`(一个 Series);再算 AUC,存进 `auc`。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 p 和 auc。
+model = LogisticRegression(C=1e6)
+# 用分层的 skf;要的是概率,不是 0 和 1
+proba = cross_val_predict(model, tox[["rectum_total"]], event, cv=___, method=___)
+# [:, 1]: 每位患者结局为 1(出现副作用)的那一列
+p = pd.Series(proba[:, 1], index=tox.index)
+auc = ___
+print(round(auc, 3))
 ```
 
 ```pycheck
@@ -231,14 +252,17 @@ fail(f"现在是 {auc:.3f},应该是 0.681。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`proba = cross_val_predict(LogisticRegression(C=1e6), tox[["rectum_total"]], event, cv=skf, method="predict_proba")`;`p = pd.Series(proba[:, 1], index=tox.index)`;`roc_auc_score(event, p)`。
+`cv=skf, method="predict_proba"`;`roc_auc_score(event, p)`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-proba = cross_val_predict(LogisticRegression(C=1e6), tox[["rectum_total"]], event, cv=skf, method="predict_proba")
+model = LogisticRegression(C=1e6)
+# 用分层的 skf;要的是概率,不是 0 和 1
+proba = cross_val_predict(model, tox[["rectum_total"]], event, cv=skf, method="predict_proba")
+# [:, 1]: 每位患者结局为 1(出现副作用)的那一列
 p = pd.Series(proba[:, 1], index=tox.index)
 auc = roc_auc_score(event, p)
 print(round(auc, 3))
@@ -254,8 +278,21 @@ print(round(auc, 3))
 
 0.68 来自 15 个事件。用 bootstrap 给它一个 95% 区间: `rng = np.random.default_rng(0)`,重抽 1000 次,每次有放回地抽 185 位(连同各自的概率和结局),算一次 AUC;取中间的 95%,存进 `low` 和 `high`。
 
+骨架已经给出,把四处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 low 和 high。
+rng = np.random.default_rng(0)
+y_np, p_np = event.to_numpy(), p.to_numpy()
+aucs = []
+# 重抽 1000 次
+for _ in range(___):
+    # 有放回地抽 185 个行号
+    idx = rng.integers(0, len(y_np), len(y_np))
+    # 抽到的这些患者的结局和概率: 用同一组行号
+    aucs.append(roc_auc_score(___, ___))
+# 中间的 95%
+low, high = np.percentile(aucs, ___)
+print(round(low, 3), round(high, 3))
 ```
 
 ```pycheck
@@ -273,7 +310,7 @@ fail(f"现在是 {low:.3f} 到 {high:.3f},应该是 0.523 到 0.821。检查: �
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`idx = rng.integers(0, len(y_np), len(y_np))`;`roc_auc_score(y_np[idx], p_np[idx])`;`np.percentile(aucs, [2.5, 97.5])`。
+`range(1000)`;`roc_auc_score(y_np[idx], p_np[idx])`;`np.percentile(aucs, [2.5, 97.5])`。
 
 </details>
 
@@ -283,9 +320,13 @@ fail(f"现在是 {low:.3f} 到 {high:.3f},应该是 0.523 到 0.821。检查: �
 rng = np.random.default_rng(0)
 y_np, p_np = event.to_numpy(), p.to_numpy()
 aucs = []
+# 重抽 1000 次
 for _ in range(1000):
+    # 有放回地抽 185 个行号
     idx = rng.integers(0, len(y_np), len(y_np))
+    # 抽到的这些患者的结局和概率: 用同一组行号
     aucs.append(roc_auc_score(y_np[idx], p_np[idx]))
+# 中间的 95%
 low, high = np.percentile(aucs, [2.5, 97.5])
 print(round(low, 3), round(high, 3))
 ```

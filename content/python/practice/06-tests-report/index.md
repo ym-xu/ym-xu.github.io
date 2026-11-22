@@ -38,8 +38,20 @@ print("准备好了:", df.shape, m.shape)
 
 两种施源器用在两组不同的患者身上,所以用 Mann–Whitney 检验比较这两组的 `d90_total`,做两次: 全部患者(P 值存进 `p_all`),和只看 HR-CTV 体积 40 cm³ 以上的患者(存进 `p_big`)。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 p_all 和 p_big。
+# d 是一张患者表;交回两种施源器比较的 P 值
+def compare(d):
+    ic = d.loc[d["technique"] == "IC", "d90_total"]
+    needles = d.loc[d["technique"] == "IC/IS", "d90_total"]
+    # 两组是不同的患者: Mann-Whitney 检验
+    return stats.___(ic, needles).pvalue
+
+# 全部患者;只看 HR-CTV 体积 40 cm3 以上的患者
+p_all = compare(___)
+p_big = compare(___)
+print(f"全部患者: P = {p_all:.2f};体积 40 cm3 以上: P = {p_big:.1g}")
 ```
 
 ```pycheck
@@ -55,24 +67,27 @@ ok("对了: 全部患者混在一起,P = 0.57,看不出差别;只看大肿瘤,P 
 
 <details><summary>提示 1: 思路</summary>
 
-`stats.mannwhitneyu(第一组的数, 第二组的数).pvalue`。先对全部患者做;再筛出大肿瘤的患者,存成一张新表,在这张表上重做一遍。
+`stats.mannwhitneyu(第一组的数, 第二组的数).pvalue`。函数 `compare` 对交给它的那张表做比较: 先交全部患者,再交大肿瘤的患者。
 
 </details>
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`ic = df.loc[df["technique"] == "IC", "d90_total"]`;`big = df[df["hrctv_vol"] >= 40]`,然后在 `big` 上同样筛两组。
+函数里是 `stats.mannwhitneyu`;大肿瘤的患者是 `df[df["hrctv_vol"] >= 40]`,把这张表交给 `compare`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
+# d 是一张患者表;交回两种施源器比较的 P 值
 def compare(d):
     ic = d.loc[d["technique"] == "IC", "d90_total"]
     needles = d.loc[d["technique"] == "IC/IS", "d90_total"]
+    # 两组是不同的患者: Mann-Whitney 检验
     return stats.mannwhitneyu(ic, needles).pvalue
 
+# 全部患者;只看 HR-CTV 体积 40 cm3 以上的患者
 p_all = compare(df)
 p_big = compare(df[df["hrctv_vol"] >= 40])
 print(f"全部患者: P = {p_all:.2f};体积 40 cm3 以上: P = {p_big:.1g}")
@@ -99,8 +114,16 @@ print(f"全部患者: P = {p_all:.2f};体积 40 cm3 以上: P = {p_big:.1g}")
 
 只看单纯腔内(IC)的患者: HR-CTV 体积和 `d90_total` 的 Spearman 相关系数是多少?存进 `rho_ic`。记得体积有缺失值。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 rho_ic。
+# 只看单纯腔内的患者,再去掉体积缺失的
+d = df[df["technique"] == ___]
+d = d.dropna(subset=___)
+# Spearman 相关
+res = stats.___(d["hrctv_vol"], d["d90_total"])
+rho_ic = res.statistic
+print(f"ρ = {rho_ic:.2f},P = {res.pvalue:.2g},n = {len(d)}")
 ```
 
 ```pycheck
@@ -126,19 +149,20 @@ fail(f"rho_ic 现在是 {rho_ic:.3f},应该是 −0.63。")
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`d = df[df["technique"] == "IC"].dropna(subset=["hrctv_vol"])`;`stats.spearmanr(d["hrctv_vol"], d["d90_total"]).statistic`。
+`df[df["technique"] == "IC"]`;`d.dropna(subset=["hrctv_vol"])`;`stats.spearmanr(...)`。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-for tech in ["IC", "IC/IS"]:
-    d = df[df["technique"] == tech].dropna(subset=["hrctv_vol"])
-    res = stats.spearmanr(d["hrctv_vol"], d["d90_total"])
-    print(f"{tech}: ρ = {res.statistic:.2f},P = {res.pvalue:.2g},n = {len(d)}")
-    if tech == "IC":
-        rho_ic = res.statistic
+# 只看单纯腔内的患者,再去掉体积缺失的
+d = df[df["technique"] == "IC"]
+d = d.dropna(subset=["hrctv_vol"])
+# Spearman 相关
+res = stats.spearmanr(d["hrctv_vol"], d["d90_total"])
+rho_ic = res.statistic
+print(f"ρ = {rho_ic:.2f},P = {res.pvalue:.2g},n = {len(d)}")
 ```
 
 </details>
@@ -151,8 +175,19 @@ for tech in ["IC", "IC/IS"]:
 
 审计的第三个问题。在合并了随访的表 `m` 里,把患者按直肠 D2cc 是否达到 65 Gy(`rectum_total >= 65`)分成两组,和有没有晚期直肠副作用(`rect_tox`)做四格表,存进 `table_tox`;用 Fisher 精确检验,P 值存进 `p_tox`。
 
+骨架已经给出,把三处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 table_tox 和 p_tox。
+# 直肠总剂量是否达到 65 Gy: 每位患者一个 True 或 False
+m["rect_high"] = ___
+# 四格表: 行是剂量分组,列是有没有副作用
+table_tox = pd.crosstab(___, m["rect_tox"])
+print(table_tox)
+# 两组各自的副作用比例
+print(m.groupby("rect_high")["rect_tox"].mean().round(3))
+# Fisher 精确检验
+p_tox = stats.___(table_tox).pvalue
+print(f"Fisher 精确检验: P = {p_tox:.3f}")
 ```
 
 ```pycheck
@@ -185,10 +220,14 @@ fail(f"p_tox 现在是 {p_tox:.4f},应该是 0.006。")
 <details><summary>参考答案</summary>
 
 ```python
+# 直肠总剂量是否达到 65 Gy: 每位患者一个 True 或 False
 m["rect_high"] = m["rectum_total"] >= 65
+# 四格表: 行是剂量分组,列是有没有副作用
 table_tox = pd.crosstab(m["rect_high"], m["rect_tox"])
 print(table_tox)
+# 两组各自的副作用比例
 print(m.groupby("rect_high")["rect_tox"].mean().round(3))
+# Fisher 精确检验
 p_tox = stats.fisher_exact(table_tox).pvalue
 print(f"Fisher 精确检验: P = {p_tox:.3f}")
 ```

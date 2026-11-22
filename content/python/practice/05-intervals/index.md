@@ -43,8 +43,16 @@ print("准备好了:", df.shape)
 
 靶区达标(`d90_total` ≥ 85 Gy)的比例是多少?它的 95% 区间呢?比例存进 `p_d90`,区间存进 `ci_p`。区间用上面的 `boot_ci` 算,重抽次数和种子用默认的。
 
+骨架已经给出,把两处 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进 p_d90 和 ci_p。
+# 每位患者记成 1(达标)或 0(没达标)
+met = (df["d90_total"] >= 85).to_numpy().astype(int)
+# 比例: 这串 0 和 1 的均值
+p_d90 = ___
+# 要算的量是均值,不是默认的中位数
+ci_p = boot_ci(met, stat=___)
+print(f"{met.sum()} / {len(met)} = {p_d90:.1%},95% 区间 {ci_p.round(3)}")
 ```
 
 ```pycheck
@@ -77,8 +85,11 @@ fail(f"区间现在是 {lo:.3f} 到 {hi:.3f},应该是 0.860 到 0.945。把'达
 <details><summary>参考答案</summary>
 
 ```python
+# 每位患者记成 1(达标)或 0(没达标)
 met = (df["d90_total"] >= 85).to_numpy().astype(int)
+# 比例: 这串 0 和 1 的均值
 p_d90 = met.mean()
+# 要算的量是均值,不是默认的中位数
 ci_p = boot_ci(met, stat=np.mean)
 print(f"{met.sum()} / {len(met)} = {p_d90:.1%},95% 区间 {ci_p.round(3)}")
 ```
@@ -93,8 +104,15 @@ print(f"{met.sum()} / {len(met)} = {p_d90:.1%},95% 区间 {ci_p.round(3)}")
 
 两种施源器的患者,`d90_total` 的中位数各自的 95% 区间是多少(同样用 `boot_ci`,不改默认设置)?存进字典 `ci_by_tech`: 键是 `"IC"` 和 `"IC/IS"`,值是区间。
 
+骨架已经给出,把 `___` 填上。
+
 ```python
-# 在这里写你的代码。结果存进字典 ci_by_tech。
+ci_by_tech = {}
+# tech 是施源器,d 是这一组的患者
+for tech, d in df.groupby("technique"):
+    # 这一组患者的 d90_total 交给 boot_ci
+    ci_by_tech[tech] = boot_ci(___)
+    print(f"{tech}: {len(d)} 位,中位数 {d['d90_total'].median():.1f} Gy,95% 区间 {ci_by_tech[tech].round(1)}")
 ```
 
 ```pycheck
@@ -121,7 +139,7 @@ fail(f"现在是 IC {a},IC/IS {b},应该是 [91.83, 93.79] 和 [90.44, 93.04]。
 
 <details><summary>提示 2: 用到的写法</summary>
 
-`ci_by_tech = {}`;`for tech, d in df.groupby("technique"):`,循环里 `ci_by_tech[tech] = boot_ci(d["d90_total"].to_numpy())`。
+循环里是这一组的 `d`,不是全部患者的 `df`: `boot_ci(d["d90_total"])`。
 
 </details>
 
@@ -129,8 +147,10 @@ fail(f"现在是 IC {a},IC/IS {b},应该是 [91.83, 93.79] 和 [90.44, 93.04]。
 
 ```python
 ci_by_tech = {}
+# tech 是施源器,d 是这一组的患者
 for tech, d in df.groupby("technique"):
-    ci_by_tech[tech] = boot_ci(d["d90_total"].to_numpy())
+    # 这一组患者的 d90_total 交给 boot_ci
+    ci_by_tech[tech] = boot_ci(d["d90_total"])
     print(f"{tech}: {len(d)} 位,中位数 {d['d90_total'].median():.1f} Gy,95% 区间 {ci_by_tech[tech].round(1)}")
 ```
 
