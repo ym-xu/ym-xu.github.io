@@ -26,17 +26,17 @@ const HEAVY = new Set(['numpy', 'pandas', 'scipy', 'sklearn', 'matplotlib', 'sta
 let pyPromise = null;
 const seenImports = new Set();
 
-// Completion and call hints in the code boxes are being tried out: on with ?try=complete in the address
-// (kept in this browser, for every lesson), off again with ?try=off.
+// Completion and call hints in the code boxes: on for everyone (owner, 2026-11-22, after a trial).
+// ?try=off in the address switches them off in this browser, for every lesson; ?try=complete back on.
 const TRY_KEY = 'course-try:complete';
 const ASSIST = (() => {
   try {
     const q = new URLSearchParams(location.search).get('try');
-    if (q === 'complete') localStorage.setItem(TRY_KEY, '1');
-    if (q === 'off') localStorage.removeItem(TRY_KEY);
-    return localStorage.getItem(TRY_KEY) === '1';
+    if (q === 'complete') localStorage.removeItem(TRY_KEY);
+    if (q === 'off') localStorage.setItem(TRY_KEY, 'off');
+    return localStorage.getItem(TRY_KEY) !== 'off';
   } catch (_) {
-    return false;
+    return true;
   }
 })();
 let pyRunner = null;                              // the _runner module once Python is up (for completion)

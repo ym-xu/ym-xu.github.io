@@ -3,7 +3,7 @@
     hugo --minify -d /tmp/public
     python tools/check_complete.py /tmp/public
 
-While the feature is on trial it is switched on with ?try=complete (kept in the browser) and off with ?try=off.
+It is on by default; ?try=off switches it off in a browser (kept there), ?try=complete back on.
 Checks: Tab completion of names, attributes, column names; the parameter hint and its bold parameter;
 on a phone the list opens by itself, a tap takes a choice and Enter stays a new line; ?try=off turns it off.
 Needs playwright with Chromium; Pyodide comes from the CDN. The site is served by request interception.
@@ -66,8 +66,8 @@ with sync_playwright() as p:
     ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
     ctx.route(SITE + '**', serve)
     pg = ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))
-    pg.goto(SITE + 'python/02-pandas/?try=complete', wait_until='networkidle')
-    check('the trial switch is kept in this browser', pg.evaluate("localStorage.getItem('course-try:complete')") == '1')
+    pg.goto(SITE + 'python/02-pandas/', wait_until='networkidle')
+    check('on by default: nothing stored, nothing in the address', pg.evaluate("localStorage.getItem('course-try:complete')") is None)
     card = pg.locator('.exercise .py-runnable').first
     fresh(pg, card, 'pri'); pg.keyboard.press('Tab'); pg.wait_for_timeout(150)
     check('before Python runs: Tab after "pri" lists print', 'print' in options(pg), options(pg)[:5])
@@ -115,7 +115,7 @@ with sync_playwright() as p:
     ctx = browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, device_scale_factor=2)
     ctx.route(SITE + '**', serve)
     pg = ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))
-    pg.goto(SITE + 'python/02-pandas/?try=complete', wait_until='networkidle')
+    pg.goto(SITE + 'python/02-pandas/', wait_until='networkidle')
     out = run_first_block(pg)
     card = pg.locator('.exercise .py-runnable').first
     fresh(pg, card, 'df.'); pg.wait_for_timeout(250)
@@ -143,16 +143,20 @@ with sync_playwright() as p:
     ctx.close()
 
     # ---- switched off again ----
-    print('== switched off with ?try=off')
+    print('== switched off with ?try=off, and on again')
     ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
     ctx.route(SITE + '**', serve)
     pg = ctx.new_page(); pg.on('pageerror', lambda e: errors.append(str(e)))
-    pg.goto(SITE + 'python/02-pandas/?try=complete', wait_until='networkidle')
     pg.goto(SITE + 'python/02-pandas/?try=off', wait_until='networkidle')
+    pg.goto(SITE + 'python/03-table-one/', wait_until='networkidle')
     card = pg.locator('.exercise .py-runnable').first
     fresh(pg, card, 'pri'); pg.keyboard.press('Tab'); pg.wait_for_timeout(150)
     check('no list, Tab inserts spaces as before', len(options(pg)) == 0 and card.evaluate(CODE) == 'pri ', repr(card.evaluate(CODE)))
-    check('the switch is gone from this browser', pg.evaluate("localStorage.getItem('course-try:complete')") is None)
+    check('switched off for this browser, also on another lesson', pg.evaluate("localStorage.getItem('course-try:complete')") == 'off')
+    pg.goto(SITE + 'python/02-pandas/?try=complete', wait_until='networkidle')
+    card = pg.locator('.exercise .py-runnable').first
+    fresh(pg, card, 'pri'); pg.keyboard.press('Tab'); pg.wait_for_timeout(150)
+    check('?try=complete switches it back on', 'print' in options(pg), options(pg)[:3])
     ctx.close()
     print('  JavaScript errors:', errors or 'none')
     check('no JavaScript errors', not errors)
