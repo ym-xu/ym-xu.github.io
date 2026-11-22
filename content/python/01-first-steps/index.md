@@ -12,7 +12,7 @@ questions:
 objectives:
   - "在浏览器里运行 Python,改了代码再运行"
   - "用变量、列表和字典存一位患者的三套计划"
-  - "用循环和条件找出达到 68 Gy 的计划"
+  - "用循环和条件找出超过 68 Gy 的计划"
   - "把 EQD2 公式写成一个可以反复用的函数"
   - "读懂 6 种最常见的报错,并把它们改好"
   - "一行一行读懂别人或 AI 写的代码"
@@ -43,13 +43,15 @@ Python 可以当计算器用: `+ - * /` 是加减乘除,`**` 是乘方,括号和
 
 > EQD2 = 次数 × 每次剂量 × (每次剂量 + α/β) / (2 + α/β)
 
-α/β 是组织的特性: 算晚期副作用(比如阴道黏膜)时取 3,算肿瘤时取 10。近距离放疗 7 Gy × 3 次,阴道黏膜的 EQD2 是:
+α/β 是组织的特性: 算晚期副作用(比如阴道)时取 3,算肿瘤时取 10。单纯近距离放疗最常用 7 Gy × 3 次,处方在施源器表面下 5 mm。按 α/β = 3,这一点的 EQD2 是:
 
 ```python
 3 * 7 * (7 + 3) / (2 + 3)
 ```
 
 结果是 `42.0`。用 `/` 做除法,结果总是带小数点。
+
+注意这是**处方点**(表面下 5 mm)的剂量。阴道黏膜贴着施源器,离放射源更近,每次受到的比 7 Gy 多,大约是 1.6 到 2 倍(施源器越细越多)。直径 3 cm 的施源器,同样 3 次,表面的 EQD2 约 92 Gy。所以真实的计划里,算阴道的总剂量不用处方剂量,而用计划里阴道 D2cc 每一次的值。这门课从第 2 课起用的模拟数据就是这样记的。
 
 **同一页上的代码块共用同一个 Python**: 前面代码块里定义的名字,后面的代码块可以接着用。所以请**按顺序运行**。刷新页面会全部清空,从头再来。
 
@@ -60,7 +62,7 @@ Python 可以当计算器用: `+ - * /` 是加减乘除,`**` 是乘方,括号和
 ```python
 d = 7        # 每次剂量(Gy)
 n = 3        # 次数
-ab = 3       # α/β,阴道黏膜按 3
+ab = 3       # α/β,晚期副作用按 3
 eqd2 = n * d * (d + ab) / (2 + ab)
 eqd2
 ```
@@ -144,7 +146,7 @@ Python 里的值有不同的类型。最常用的四种:
 arm = "EBRT+VCB"      # 文字(字符串),要加引号
 age = 63              # 整数
 d2cc = 71.4           # 小数
-high = d2cc >= 68     # 比较的结果: True 或 False
+high = d2cc > 68      # 比较的结果: True 或 False
 print(type(arm), type(age), type(d2cc), type(high))
 print(high)
 ```
@@ -161,7 +163,7 @@ print(high)
 把数字放进一句话里显示,用 **f 字符串**(f-string): 引号前加 `f`,花括号里放名字:
 
 ```python
-print(f"这位患者 {age} 岁,D2cc = {d2cc} Gy,达到 68 Gy: {high}")
+print(f"这位患者 {age} 岁,D2cc = {d2cc} Gy,超过 68 Gy: {high}")
 total = 43.2 + 18.7
 print(total)
 print(f"总 EQD2 = {total:.1f} Gy")    # :.1f 表示保留 1 位小数
@@ -261,12 +263,12 @@ print(patient)
 
 ## 6. 循环(loop)和条件(condition): 一个一个地检查
 
-想知道三套计划里哪几套达到了 68 Gy:
+想知道三套计划里哪几套超过了 68 Gy:
 
 ```python
 for plan, dose in zip(plans, d2cc):
-    if dose >= 68:
-        print(f"{plan}: {dose} Gy,达到 68 Gy")
+    if dose > 68:
+        print(f"{plan}: {dose} Gy,超过 68 Gy")
     else:
         print(f"{plan}: {dose} Gy")
 ```
@@ -277,26 +279,28 @@ for plan, dose in zip(plans, d2cc):
 
 <div class="exercise">
 
-**练习 3 · 数一数有几位患者达到 68 Gy**
+**练习 3 · 数一数有几位患者超过 68 Gy**
 
-下面是 8 位患者 5 mm 计划的阴道 D2cc。补上 `if` 后面的条件,数出**达到 68 Gy**(大于或等于 68)的有几位,结果在 `n_high` 里。
+下面是 8 位患者 5 mm 计划的阴道 D2cc。补上 `if` 后面的条件,数出**超过 68 Gy**(大于 68,正好 68.0 不算)的有几位,结果在 `n_high` 里。这是论文里的分法: 68 Gy 及以下是一组,超过 68 Gy 是另一组。
 
 ```python
-doses = [71.4, 66.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
+doses = [71.4, 74.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
 n_high = 0
 for dose in doses:
     if ___:
         n_high = n_high + 1
-print(n_high, "位患者达到 68 Gy")
+print(n_high, "位患者超过 68 Gy")
 ```
 
 ```pycheck
 need("n_high")
 if n_high == 5:
-    ok("对了: 71.4、69.0、73.2、68.0、70.5,一共 5 位。")
-elif n_high == 4:
-    fail("差一位: 正好 68.0 Gy 的那位算不算达到 68 Gy?用 >= 而不是 >。")
+    ok("对了: 71.4、74.0、69.0、73.2、70.5,一共 5 位。正好 68.0 的那位不算超过: 论文里它属于 68 Gy 及以下那一组。")
+elif n_high == 6:
+    fail("多了一位: 正好 68.0 Gy 的那位不算超过 68 Gy。用 > 而不是 >=。")
 elif n_high == 3:
+    fail("你数的是 68 Gy 及以下的患者。")
+elif n_high == 2:
     fail("你数的是低于 68 Gy 的患者。")
 elif n_high == 8:
     fail("每一位都数进去了: if 后面的条件是不是总是成立?")
@@ -306,22 +310,22 @@ else:
 
 <details><summary>提示</summary>
 
-条件写成 `dose >= 68`。"达到"包括正好等于 68。
+条件写成 `dose > 68`。"超过"不包括正好等于 68。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-doses = [71.4, 66.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
+doses = [71.4, 74.0, 69.0, 73.2, 64.8, 68.0, 70.5, 67.9]
 n_high = 0
 for dose in doses:
-    if dose >= 68:
+    if dose > 68:
         n_high = n_high + 1
-print(n_high, "位患者达到 68 Gy")
+print(n_high, "位患者超过 68 Gy")
 ```
 
-学了第 8 节的 numpy 以后,也可以一行写完: `(np.array(doses) >= 68).sum()`。
+学了第 8 节的 numpy 以后,也可以一行写完: `(np.array(doses) > 68).sum()`。
 
 </details>
 
@@ -336,9 +340,9 @@ def eqd2(d, n, ab=3):
     """每次剂量 d(Gy)、照射 n 次、α/β = ab 时的 EQD2(Gy)。"""
     return n * d * (d + ab) / (2 + ab)
 
-print(eqd2(7, 3))                       # 单纯近距离 7 Gy × 3 次,阴道黏膜
+print(eqd2(7, 3))                       # 单纯近距离 7 Gy × 3 次,处方点,α/β = 3
 print(eqd2(7, 3, ab=10))                # 同样的照射,靶区按 α/β = 10
-print(eqd2(1.8, 25) + eqd2(5.5, 2))     # 外照射 1.8 Gy × 25 次,加近距离 5.5 Gy × 2 次
+print(eqd2(1.8, 25) + eqd2(5.5, 2))     # 外照射 1.8 Gy × 25 次,加近距离 5.5 Gy × 2 次(处方点)
 ```
 
 - `def 名字(参数):` 开始定义函数,括号里的**参数**(argument)是每次调用时填进去的值;下面缩进的几行是函数的内容,`return` 后面是它交回的结果。
@@ -351,7 +355,7 @@ print(eqd2(1.8, 25) + eqd2(5.5, 2))     # 外照射 1.8 Gy × 25 次,加近距�
 
 **练习 4 · 用函数算总 EQD2**
 
-一位患者先做外照射 2 Gy × 25 次,再做近距离 6 Gy × 2 次。用上面的 `eqd2` 函数,算阴道黏膜(α/β = 3)的总 EQD2,存进 `total`。
+一位患者先做外照射 2 Gy × 25 次,再做近距离 6 Gy × 2 次(处方在施源器表面下 5 mm)。用上面的 `eqd2` 函数,按 α/β = 3 算处方点的总 EQD2,存进 `total`。外照射的剂量按处方算到这一点上。
 
 ```python
 total = eqd2(___, ___) + eqd2(___, ___)
@@ -365,7 +369,7 @@ if close(total, 71.6):
 elif close(total, 292.0):
     fail("每次剂量和次数填反了: eqd2(每次剂量, 次数),每次剂量在前。")
 elif close(total, 66.0):
-    fail("阴道黏膜按 α/β = 3 算: 不写 ab 就是 3,不要写 ab=10。")
+    fail("这里按 α/β = 3 算: 不写 ab 就是 3,不要写 ab=10。")
 else:
     fail(f"现在 total = {total:.1f} Gy。对照题目检查四个数: 外照射每次 2 Gy、25 次,近距离每次 6 Gy、2 次。")
 ```
@@ -449,7 +453,7 @@ import numpy as np
 doses = np.array([71.4, 67.9, 66.2, 73.0, 69.5])   # 5 位患者的 D2cc
 print(np.mean(doses), np.median(doses))
 print(doses - 68)       # 一次算出每位患者比 68 Gy 高多少
-print(doses >= 68)
+print(doses > 68)
 ```
 
 `import numpy as np` 拿进来 numpy(数值计算的包),并约定用简称 `np`,这是大家通用的写法。numpy 的**数组**(array)可以整列一起算: `doses - 68` 对每个数都减 68,不用写循环。普通列表不行,第 9 节会看到。
@@ -457,9 +461,9 @@ print(doses >= 68)
 这门课后面会用到 pandas(表格)和 matplotlib(画图),统计机器学习课还会用到 scikit-learn。浏览器里第一次导入一个大包要先下载,会多等一会儿。
 
 <div class="quiz">
-<p><b>想一想</b>: <code>doses &gt;= 68</code> 得到一串 True 和 False。那么 <code>(doses &gt;= 68).sum()</code> 算出来的是什么?</p>
-<button class="quiz-opt" data-why="求和的对象是那一串 True 和 False,不是剂量本身。">达到 68 Gy 的那几个剂量加起来</button>
-<button class="quiz-opt" data-correct data-why="求和时 True 算 1,False 算 0,所以得到的是 True 的个数,这里是 3。数人数最常用的就是这个写法。">达到 68 Gy 的患者有几位</button>
+<p><b>想一想</b>: <code>doses &gt; 68</code> 得到一串 True 和 False。那么 <code>(doses &gt; 68).sum()</code> 算出来的是什么?</p>
+<button class="quiz-opt" data-why="求和的对象是那一串 True 和 False,不是剂量本身。">超过 68 Gy 的那几个剂量加起来</button>
+<button class="quiz-opt" data-correct data-why="求和时 True 算 1,False 算 0,所以得到的是 True 的个数,这里是 3。数人数最常用的就是这个写法。">超过 68 Gy 的患者有几位</button>
 <button class="quiz-opt" data-why="可以相加: Python 把 True 当 1,把 False 当 0。">报错: True 和 False 不能相加</button>
 </div>
 
@@ -581,17 +585,17 @@ print(high)
 3. **把中间结果 print 出来**。拿不准某个名字里存的是什么,就打印它,或者用 `type()` 看类型。
 4. **用一个能心算的小例子试**。比如只放三位患者,结果你自己能算出来,再看代码算得对不对。
 
-试试读下面这段。它判断换方案后阴道 D2cc 有没有从 68 Gy 及以上降到 68 Gy 以下:
+试试读下面这段。它判断换方案后阴道 D2cc 有没有从超过 68 Gy 降到 68 Gy 及以下:
 
 ```python
 def crossing(d2cc_5mm, d2cc_new, threshold=68):
-    """5 mm 计划达到阈值,换方案后降到阈值以下,返回 True。"""
-    return d2cc_5mm >= threshold and d2cc_new < threshold
+    """5 mm 计划超过阈值,换方案后降到阈值及以下,返回 True。"""
+    return d2cc_5mm > threshold and d2cc_new <= threshold
 
 pairs = [(71.4, 67.9), (69.0, 68.5), (66.0, 64.2)]
 flags = [crossing(a, b) for a, b in pairs]
 print(flags)
-print(sum(flags), "位患者降到 68 Gy 以下")
+print(sum(flags), "位患者降到 68 Gy 及以下")
 ```
 
 逐行看:
@@ -601,7 +605,7 @@ print(sum(flags), "位患者降到 68 Gy 以下")
 - `[crossing(a, b) for a, b in pairs]`: 第 6 节那种循环的简写(叫列表推导式, list comprehension),意思是"对 pairs 里的每一对 (a, b),算一次 crossing,把结果排成一个新列表"。
 - `sum(flags)`: 对真假求和时 `True` 算 1,`False` 算 0,所以得到的是 `True` 的个数。
 
-心算核对: 第一位从 71.4 降到 67.9,算;第二位 68.5 还在 68 以上,不算;第三位本来就低于 68,不算。结果应该是 `[True, False, False]` 和 1 位,和代码一致。
+心算核对: 第一位从 71.4 降到 67.9,算;第二位 68.5 还在 68 以上,不算;第三位本来就不超过 68,不算。结果应该是 `[True, False, False]` 和 1 位,和代码一致。
 
 > ⚠️ 让 AI 帮忙写代码或解释报错时,只描述数据的样子: 有哪些列、是什么类型,最多编几行假数据。**不要把患者数据贴进对话**,病历号和逐例数值都不要。
 
@@ -676,6 +680,8 @@ print(numpy.__version__)
 ## 延伸阅读 Further reading
 
 - [Python 官方教程(中文)](https://docs.python.org/zh-cn/3/tutorial/): 第 3–5 章和这一课的内容对应,想多练可以看。
+- Arden JD, 等. [Toxicity and Efficacy After Adjuvant Vaginal Brachytherapy Using 30 Gy in 6 Fractions for Stages I and II Endometrial Cancer](https://pmc.ncbi.nlm.nih.gov/articles/PMC8655421/). *Adv Radiat Oncol* 2021;6:100773。表 5 列出常用的阴道近距离放疗方案在表面和 5 mm 处的 EQD2(3 cm 施源器): 7 Gy × 3 次,5 mm 处 42 Gy,表面 92.4 Gy。
+- Glaser SM, Beriwal S. [Brachytherapy for malignancies of the vagina in the 3D era](https://pmc.ncbi.nlm.nih.gov/articles/PMC4643736/). *J Contemp Brachytherapy* 2015;7:312。处方在 5 mm 时,表面剂量是处方剂量的 165%(3.5 cm 施源器)到 196%(2.5 cm)。
 
 {{< practice >}}
 

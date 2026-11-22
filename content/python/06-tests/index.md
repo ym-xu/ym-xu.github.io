@@ -39,7 +39,7 @@ df["bmi"] = df["weight_kg"] / (df["height_cm"] / 100) ** 2
 df["delta_vol"] = df["d2cc_vol"] - df["d2cc_5mm"]
 df["delta_gra"] = df["d2cc_gra"] - df["d2cc_5mm"]
 merged = df.merge(make_followup(), on="id", how="left")
-merged["high_5mm"] = merged["d2cc_5mm"] >= 68
+merged["high_5mm"] = merged["d2cc_5mm"] > 68
 print(df.shape, merged.shape)
 ```
 
@@ -113,6 +113,8 @@ print(f"BMI: 外照射加近距离组比单纯近距离组 {diff:+.2f},P = {p:.3
 ```
 
 `~in_group` 里的 `~` 是"取反": True 变 False,False 变 True,所以 `values[~in_group]` 是不在第一组的患者。`rng.permutation(...)` 把一串东西随机打乱。
+
+常用的软件(比如 SciPy 的 `stats.permutation_test`)算 P 时,分子和分母各加 1: (次数 + 1) ÷ (打乱次数 + 1)。实际的分组本身也是一种分法,算进去以后,P 就不会是 0。打乱 2000 次时,两种算法只差万分之几。
 
 外照射加近距离组的 BMI 平均低 0.81,P = 0.31: 把组别打乱 2000 次,有三成的时候都能碰上这么大的差别。数据并不支持"两组的 BMI 不同"。在这个模拟里我们知道真相: 两组的 BMI 是按同一个规律产生的,0.81 的差别纯属碰巧。
 
@@ -332,7 +334,7 @@ print(f"Fisher 精确检验:          P = {stats.fisher_exact(table).pvalue:.3f}
 
 **练习 3 · 轮到你: 模拟队列的四格表**
 
-对课程的模拟队列做同样的事: 用 `merged`(第 0 节合并好的表),做"5 mm 计划的 D2cc 是否达到 68 Gy"(`high_5mm`)和"有没有晚期副作用"(`tox`)的四格表 `table_sim`,再做卡方检验,P 值存进 `p_sim`。
+对课程的模拟队列做同样的事: 用 `merged`(第 0 节合并好的表),做"5 mm 计划的 D2cc 是否超过 68 Gy"(`high_5mm`)和"有没有晚期副作用"(`tox`)的四格表 `table_sim`,再做卡方检验,P 值存进 `p_sim`。
 
 ```python
 table_sim = pd.crosstab(merged[___], merged["tox"])
@@ -350,7 +352,7 @@ if int(table_sim.values.sum()) != 188:
 if close(p_sim, 0.0712, 0.001):
     fail("这是 Fisher 精确检验的结果。题目要的是卡方检验: stats.chi2_contingency。")
 if close(p_sim, 0.0761, 0.001):
-    ok("对了: 达到 68 Gy 的 139 位里 36 位有副作用(25.9%),没达到的 49 位里 6 位(12.2%),P = 0.076。和论文里那张表很像: 比例差了一倍,P 值却在 0.05 附近。不做连续性校正是 0.048。结论不该取决于选了哪一种算法。")
+    ok("对了: 超过 68 Gy 的 139 位里 36 位有副作用(25.9%),68 Gy 及以下的 49 位里 6 位(12.2%),P = 0.076。和论文里那张表很像: 比例差了一倍,P 值却在 0.05 附近。不做连续性校正是 0.048。结论不该取决于选了哪一种算法。")
 fail(f"现在 p_sim = {p_sim:.4f},应该是 0.076。crosstab 的第一个变量是 \"high_5mm\"。")
 ```
 
@@ -654,6 +656,7 @@ for (a, b), p0, p1 in zip(pairs, p_raw, p_holm):
 
 - SciPy 文档: [Statistical functions (scipy.stats)](https://docs.scipy.org/doc/scipy/reference/stats.html)。本课用到的检验都在这一页。
 - Wasserstein RL, Lazar NA. [The ASA statement on p-values: context, process, and purpose](https://doi.org/10.1080/00031305.2016.1154108). *The American Statistician* 2016;70:129–133。美国统计学会关于 P 值的六条声明,第 7 节的内容大多出自这里。
+- Phipson B, Smyth GK. [Permutation P-values should never be zero](https://arxiv.org/abs/1603.05766). *Stat Appl Genet Mol Biol* 2010;9:39。打乱分组的检验里,P 为什么要算上实际的那一种分法。
 - Altman DG, Bland JM. [Absence of evidence is not evidence of absence](https://www.bmj.com/content/311/7003/485). *BMJ* 1995;311:485。一页的短文,讲的就是"没有检出差别"不等于"没有差别"。
 
 {{< practice >}}

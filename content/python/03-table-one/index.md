@@ -332,11 +332,11 @@ print(merged["tox"].isna().sum(), "位患者没有随访记录")
 合并以后,就能把剂量和随访结果放在一起看了:
 
 ```python
-merged["high_5mm"] = merged["d2cc_5mm"] >= 68
+merged["high_5mm"] = merged["d2cc_5mm"] > 68
 merged.groupby("high_5mm")["tox"].agg(["count", "sum", "mean"]).round(3)
 ```
 
-`tox` 是 0 和 1,所以 `sum` 是出现副作用的人数,`mean` 是比例,`count` 是有随访的人数。在这批模拟患者里,D2cc 达到 68 Gy 的 139 位里有 36 位出现了晚期副作用(25.9%),没达到的 49 位里有 6 位(12.2%)。这个差别算不算"真的",是第 6 课的问题。
+`tox` 是 0 和 1,所以 `sum` 是出现副作用的人数,`mean` 是比例,`count` 是有随访的人数。在这批模拟患者里,D2cc 超过 68 Gy 的 139 位里有 36 位出现了晚期副作用(25.9%),68 Gy 及以下的 49 位里有 6 位(12.2%)。这个差别算不算"真的",是第 6 课的问题。
 
 <div class="exercise">
 
@@ -444,7 +444,7 @@ print(pd.read_csv("table1.csv", index_col=0).shape)
 
 **练习 5 · 轮到你: 给 Table 1 加一行**
 
-给 Table 1 加一行"5 mm 计划的阴道 D2cc 达到 68 Gy 的人数(百分比)"。用 `n_pct` 分别算出三列里的这一格,存进 `row`。
+给 Table 1 加一行"5 mm 计划的阴道 D2cc 超过 68 Gy 的人数(百分比)"。用 `n_pct` 分别算出三列里的这一格,存进 `row`。
 
 ```python
 groups = {"All": df, "VCB alone": df[df["arm"] == "VCB"], "EBRT+VCB": df[df["arm"] == "EBRT+VCB"]}
@@ -458,13 +458,13 @@ want = {"All": "148 (74.0%)", "VCB alone": "58 (63.7%)", "EBRT+VCB": "90 (82.6%)
 if row == want:
     ok("对了: 全部患者 148 (74.0%),单纯近距离 58 (63.7%),外照射加近距离 90 (82.6%)。把它加进 table1_column 里,就是 Table 1 的一行。花括号里的那一句,是对三组各算一次的简写。")
 if row.get("All") == "52 (26.0%)":
-    fail("这是没有达到 68 Gy 的人数。达到 68 Gy 是 >= 68。")
-fail(f"现在是 {row}。空里填比较符号 >=。")
+    fail("这是 68 Gy 及以下的人数。超过 68 Gy 是 > 68。")
+fail(f"现在是 {row}。空里填比较符号 >。")
 ```
 
 <details><summary>提示</summary>
 
-"达到 68 Gy"是 `>= 68`。
+"超过 68 Gy"是 `> 68`,和论文的分组一样: 正好 68.0 不算超过。
 
 </details>
 
@@ -472,7 +472,7 @@ fail(f"现在是 {row}。空里填比较符号 >=。")
 
 ```python
 groups = {"All": df, "VCB alone": df[df["arm"] == "VCB"], "EBRT+VCB": df[df["arm"] == "EBRT+VCB"]}
-row = {name: n_pct(d["d2cc_5mm"] >= 68) for name, d in groups.items()}
+row = {name: n_pct(d["d2cc_5mm"] > 68) for name, d in groups.items()}
 print(row)
 ```
 

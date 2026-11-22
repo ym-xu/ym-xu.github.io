@@ -44,7 +44,9 @@ parts:
 - **HR-CTV**(高危临床靶区): 近距离时残留的肿瘤加上整个宫颈。它的 **D90**(90% 的体积至少受到的剂量)代表靶区照得够不够。
 - **直肠和膀胱的 D2cc**: 受照最多的 2 cm³ 至少受到的剂量,代表最热的那一小块。
 - 两种施源器: **IC**(intracavitary)单纯腔内;**IC/IS**(加 interstitial)腔内加插植针。肿瘤大、形状不规则时加针,把剂量送到腔内施源器够不到的地方。
-- 外照射和 4 次近距离的剂量各自换算成 **EQD2**,再加起来。靶区用 α/β = 10,直肠和膀胱用 α/β = 3。
+- 外照射和 4 次近距离的剂量各自换算成 **EQD2**,再加起来。靶区用 α/β = 10,直肠和膀胱用 α/β = 3。相加时有两条通行的约定:
+  - 直肠和膀胱在外照射的范围里,外照射的部分按处方剂量(45 Gy 或 50.4 Gy)算。
+  - 每次的 D2cc 直接相加,等于假设每次最热的那 2 cm³ 都在同一个地方。实际上不一定在同一处,所以这样算出的总剂量通常偏高,是偏保守的估计;GEC-ESTRO 的建议里叫它"最坏情况的假设"(worst case assumption)。出处: Gelover E, 等. [Patient's specific integration of OAR doses (D2cc) from EBRT and 3D image-guided brachytherapy for cervical cancer](https://pmc.ncbi.nlm.nih.gov/articles/PMC5849844/). *J Appl Clin Med Phys* 2018;19:83。
 
 科里的审计标准有三条:
 

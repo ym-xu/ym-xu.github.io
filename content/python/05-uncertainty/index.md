@@ -17,7 +17,7 @@ objectives:
   - "说明样本量怎样影响区间的宽度"
 ---
 
-前几课算出了不少数: 换成 Volume 后,阴道 D2cc 变化的中位数是 −2.0 Gy;148 位患者里有 36 位降到了 68 Gy 以下。每个数都是从**这 200 位**患者算出来的。读者关心的却不是这 200 位,而是以后的患者: 换一家医院、换一批患者,这个 −2.0 会变成多少?
+前几课算出了不少数: 换成 Volume 后,阴道 D2cc 变化的中位数是 −2.0 Gy;148 位患者里有 36 位降到了 68 Gy 及以下。每个数都是从**这 200 位**患者算出来的。读者关心的却不是这 200 位,而是以后的患者: 换一家医院、换一批患者,这个 −2.0 会变成多少?
 
 这一课回答两个问题。第一,用哪个数来概括一组数据: 均值还是中位数。第二,怎样说清楚一个结果有多不确定: 论文里每个结果后面跟着的"95% CI"是什么,怎么算出来。
 
@@ -354,25 +354,27 @@ print("中位数的区间:", boot_ci(x))
 print("均值的区间:  ", boot_ci(x, stat=np.mean).round(2))
 ```
 
-比例也一样。5 mm 计划达到 68 Gy 的 148 位患者里,换成 Volume 后降到 68 Gy 以下的占多少?把每位患者记成 1(降到了)或 0(没有),比例就是这串 0 和 1 的均值:
+比例也一样。5 mm 计划超过 68 Gy 的 148 位患者里,换成 Volume 后降到 68 Gy 及以下的占多少?把每位患者记成 1(降到了)或 0(没有),比例就是这串 0 和 1 的均值:
 
 ```python
-high = df["d2cc_5mm"] >= 68
-crossed_vol = (df.loc[high, "d2cc_vol"] < 68).to_numpy().astype(int)     # 148 个 0 或 1
+high = df["d2cc_5mm"] > 68
+crossed_vol = (df.loc[high, "d2cc_vol"] <= 68).to_numpy().astype(int)     # 148 个 0 或 1
 print(f"{crossed_vol.sum()} / {len(crossed_vol)} = {crossed_vol.mean():.1%}")
 print("95% 区间:", boot_ci(crossed_vol, stat=np.mean).round(3))
 ```
 
-36 / 148 = 24.3%,95% 区间 17.6% 到 31.1%。单说"四分之一的患者能降到 68 Gy 以下"听起来很确定;加上区间,读者才知道真实的比例可能低到六分之一,也可能高到三分之一。
+36 / 148 = 24.3%,95% 区间 17.6% 到 31.1%。单说"四分之一的患者能降到 68 Gy 及以下"听起来很确定;加上区间,读者才知道真实的比例可能低到六分之一,也可能高到三分之一。
+
+单个比例的区间也有现成的公式,论文里常用 Wilson 法或精确法(Clopper–Pearson): 这里分别是 18.1% 到 31.8% 和 17.7% 到 32.1%,和 bootstrap 相差在 1 个百分点以内。bootstrap 的好处是同一个办法什么量都能用。
 
 <div class="exercise">
 
 **练习 3 · 轮到你: Graphical 的比例**
 
-同样的 148 位患者,换成 **Graphical** 后降到 68 Gy 以下的比例是多少?用 `boot_ci` 算它的 95% 区间,存进 `ci_gra`。
+同样的 148 位患者,换成 **Graphical** 后降到 68 Gy 及以下的比例是多少?用 `boot_ci` 算它的 95% 区间,存进 `ci_gra`。
 
 ```python
-crossed_gra = (df.loc[high, ___] < 68).to_numpy().astype(int)
+crossed_gra = (df.loc[high, ___] <= 68).to_numpy().astype(int)
 p_gra = crossed_gra.mean()
 ci_gra = boot_ci(crossed_gra, stat=___)
 print(f"{crossed_gra.sum()} / {len(crossed_gra)} = {p_gra:.1%},95% 区间 {ci_gra.round(3)}")
@@ -382,13 +384,15 @@ print(f"{crossed_gra.sum()} / {len(crossed_gra)} = {p_gra:.1%},95% 区间 {ci_gr
 need("p_gra", "ci_gra")
 if close(p_gra, 0.2432, 0.001):
     fail('这是 Volume 的比例: 第一处填 "d2cc_gra"。')
-if not close(p_gra, 0.3649, 0.001):
-    fail(f"p_gra 现在是 {p_gra:.3f},应该是 0.365(54 / 148)。")
+if close(p_gra, 0.3649, 0.001):
+    fail("这是用 < 68 算的: 有两位换成 Graphical 后正好是 68.0 Gy,它们也算降到了 68 Gy 及以下。用 <= 68。")
+if not close(p_gra, 0.3784, 0.001):
+    fail(f"p_gra 现在是 {p_gra:.3f},应该是 0.378(56 / 148)。")
 if close(ci_gra[0], ci_gra[1], 1e-9):
     fail("区间缩成了一个点: 0 和 1 的中位数不是 0 就是 1。比例是均值,stat 填 np.mean。")
-if close(ci_gra[0], 0.2838, 0.002) and close(ci_gra[1], 0.4459, 0.002):
-    ok("对了: 54 / 148 = 36.5%(95% CI 28.4% 到 44.6%)。Volume 是 24.3%(17.6% 到 31.1%)。两个区间有一小段重叠;两种计划的差别是不是碰巧,要用第 6 课的办法来回答。")
-fail(f"区间现在是 {ci_gra},应该是 0.284 到 0.446。stat 填 np.mean。")
+if close(ci_gra[0], 0.2973, 0.002) and close(ci_gra[1], 0.4527, 0.002):
+    ok("对了: 56 / 148 = 37.8%(95% CI 29.7% 到 45.3%)。Volume 是 24.3%(17.6% 到 31.1%)。两个区间有一小段重叠;两种计划的差别是不是碰巧,要用第 6 课的办法来回答。")
+fail(f"区间现在是 {ci_gra},应该是 0.297 到 0.453。stat 填 np.mean。")
 ```
 
 <details><summary>提示</summary>
@@ -400,7 +404,7 @@ fail(f"区间现在是 {ci_gra},应该是 0.284 到 0.446。stat 填 np.mean。"
 <details><summary>参考答案</summary>
 
 ```python
-crossed_gra = (df.loc[high, "d2cc_gra"] < 68).to_numpy().astype(int)
+crossed_gra = (df.loc[high, "d2cc_gra"] <= 68).to_numpy().astype(int)
 p_gra = crossed_gra.mean()
 ci_gra = boot_ci(crossed_gra, stat=np.mean)
 print(f"{crossed_gra.sum()} / {len(crossed_gra)} = {p_gra:.1%},95% 区间 {ci_gra.round(3)}")

@@ -190,7 +190,7 @@ print(df[cols].max())
 
 **第 5 步 · 每位患者的总剂量**
 
-给 `df` 加三列: `d90_total`(HR-CTV D90,α/β = 10)、`rectum_total` 和 `bladder_total`(直肠和膀胱的 D2cc,α/β = 3)。每一列都是外照射的 EQD2 加上 4 次近距离各自的 EQD2。注意外照射的剂量和次数不是每位患者都一样(看 `ebrt_gy` 和 `ebrt_fx` 两列)。
+给 `df` 加三列: `d90_total`(HR-CTV D90,α/β = 10)、`rectum_total` 和 `bladder_total`(直肠和膀胱的 D2cc,α/β = 3)。每一列都是外照射的 EQD2 加上 4 次近距离各自的 EQD2(直肠和膀胱的外照射按处方剂量算,四次的 D2cc 直接相加,和练习 1 一样)。注意外照射的剂量和次数不是每位患者都一样(看 `ebrt_gy` 和 `ebrt_fx` 两列)。
 
 ```python
 # 在这里写你的代码。给 df 加上 d90_total、rectum_total、bladder_total 三列。

@@ -108,7 +108,7 @@ print(len(old), "位患者 75 岁及以上")
 old[["id", "age", "arm"]].head()
 ```
 
-这一句分两步看。里面的 `df["age"] >= 75` 对每位患者做一次比较,得到一串 True 和 False(和第 1 课的 `doses >= 68` 一样);外面的 `df[...]` 只留下 True 的那些行。最左边的 4、7、11……还是原来表里的行号。
+这一句分两步看。里面的 `df["age"] >= 75` 对每位患者做一次比较,得到一串 True 和 False(和第 1 课的 `doses > 68` 一样);外面的 `df[...]` 只留下 True 的那些行。最左边的 4、7、11……还是原来表里的行号。
 
 两个条件一起用时,**每个条件加括号**,"并且"写 `&`,"或者"写 `|`:
 
@@ -131,10 +131,10 @@ df["arm"].value_counts()
 
 **练习 1 · 轮到你: 筛出一组患者**
 
-外照射加近距离(`arm` 是 `"EBRT+VCB"`),并且 5 mm 计划的阴道 D2cc 达到 68 Gy 的患者有几位?把人数存进 `n_ebrt_high`。
+外照射加近距离(`arm` 是 `"EBRT+VCB"`),并且 5 mm 计划的阴道 D2cc 超过 68 Gy 的患者有几位?把人数存进 `n_ebrt_high`。
 
 ```python
-mask = (df["arm"] == ___) & (df["d2cc_5mm"] >= ___)
+mask = (df["arm"] == ___) & (df["d2cc_5mm"] > ___)
 n_ebrt_high = mask.sum()
 print(n_ebrt_high, "位")
 ```
@@ -142,7 +142,7 @@ print(n_ebrt_high, "位")
 ```pycheck
 need("n_ebrt_high")
 if n_ebrt_high == 90:
-    ok("对了: 109 位外照射加近距离的患者里,有 90 位的 5 mm 计划达到 68 Gy。")
+    ok("对了: 109 位外照射加近距离的患者里,有 90 位的 5 mm 计划超过 68 Gy。")
 if n_ebrt_high == 58:
     fail("这是单纯近距离的人数: 第一处要填 \"EBRT+VCB\"。")
 if n_ebrt_high == 167:
@@ -159,7 +159,7 @@ fail(f"现在是 {n_ebrt_high} 位,应该是 90 位。第一处填 \"EBRT+VCB\"(
 <details><summary>参考答案</summary>
 
 ```python
-mask = (df["arm"] == "EBRT+VCB") & (df["d2cc_5mm"] >= 68)
+mask = (df["arm"] == "EBRT+VCB") & (df["d2cc_5mm"] > 68)
 n_ebrt_high = mask.sum()
 print(n_ebrt_high, "位")
 ```
@@ -183,8 +183,8 @@ df[["id", "bmi", "d2cc_5mm", "d2cc_vol", "delta_vol"]].round(1).head()
 比较的结果也可以存成一列:
 
 ```python
-df["high_5mm"] = df["d2cc_5mm"] >= 68
-print(df["high_5mm"].sum(), "位患者的 5 mm 计划达到 68 Gy")
+df["high_5mm"] = df["d2cc_5mm"] > 68
+print(df["high_5mm"].sum(), "位患者的 5 mm 计划超过 68 Gy")
 ```
 
 <div class="quiz">
@@ -248,9 +248,9 @@ print(f"Graphical: Δ 的中位数 {median_gra:.1f} Gy")
 
 <div class="exercise">
 
-**练习 3 · 轮到你: 多少位患者降到了 68 Gy 以下**
+**练习 3 · 轮到你: 多少位患者降到了 68 Gy 及以下**
 
-5 mm 计划达到 68 Gy 的 148 位患者里,换成 Graphical 后降到 68 Gy 以下的有几位?把人数存进 `n_crossed`。
+5 mm 计划超过 68 Gy 的 148 位患者里,换成 Graphical 后降到 68 Gy 及以下的有几位?把人数存进 `n_crossed`。
 
 ```python
 crossed = df["high_5mm"] & (df["d2cc_gra"] ___ 68)
@@ -260,25 +260,27 @@ print(f"{n_crossed} 位,占这 148 位的 {n_crossed / df['high_5mm'].sum():.1%}
 
 ```pycheck
 need("n_crossed")
+if n_crossed == 56:
+    ok("对了: 148 位里有 56 位(37.8%)换成 Graphical 后降到了 68 Gy 及以下。Volume 是 36 位。")
 if n_crossed == 54:
-    ok("对了: 148 位里有 54 位(36.5%)换成 Graphical 后降到了 68 Gy 以下。Volume 是 36 位。")
-if n_crossed == 94:
-    fail("这是换了以后仍然达到 68 Gy 的人数: 要找的是降到 68 Gy 以下的,用 <。")
-if n_crossed == 104:
-    fail("这是全部 200 位里 Graphical 计划低于 68 Gy 的人数。别去掉前面的 df[\"high_5mm\"] &。")
-fail(f"现在是 {n_crossed} 位,应该是 54 位。空里填一个比较符号。")
+    fail("差两位: 有两位换成 Graphical 后正好是 68.0 Gy,它们也算降到了 68 Gy 及以下。用 <=。")
+if n_crossed == 92:
+    fail("这是换了以后仍然超过 68 Gy 的人数: 要找的是降到 68 Gy 及以下的,用 <=。")
+if n_crossed == 106:
+    fail("这是全部 200 位里 Graphical 计划在 68 Gy 及以下的人数。别去掉前面的 df[\"high_5mm\"] &。")
+fail(f"现在是 {n_crossed} 位,应该是 56 位。空里填一个比较符号。")
 ```
 
 <details><summary>提示</summary>
 
-"降到 68 Gy 以下"是 `< 68`。
+"降到 68 Gy 及以下"是 `<= 68`: 正好 68.0 也算。
 
 </details>
 
 <details><summary>参考答案</summary>
 
 ```python
-crossed = df["high_5mm"] & (df["d2cc_gra"] < 68)
+crossed = df["high_5mm"] & (df["d2cc_gra"] <= 68)
 n_crossed = crossed.sum()
 print(f"{n_crossed} 位,占这 148 位的 {n_crossed / df['high_5mm'].sum():.1%}")
 ```
