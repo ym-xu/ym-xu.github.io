@@ -26,6 +26,23 @@ const HEAVY = new Set(['numpy', 'pandas', 'scipy', 'sklearn', 'matplotlib', 'sta
 let pyPromise = null;
 const seenImports = new Set();
 
+// Completion and call hints in the code boxes are being tried out: on with ?try=complete in the address
+// (kept in this browser, for every lesson), off again with ?try=off.
+const TRY_KEY = 'course-try:complete';
+const ASSIST = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('try');
+    if (q === 'complete') localStorage.setItem(TRY_KEY, '1');
+    if (q === 'off') localStorage.removeItem(TRY_KEY);
+    return localStorage.getItem(TRY_KEY) === '1';
+  } catch (_) {
+    return false;
+  }
+})();
+let pyRunner = null;                              // the _runner module once Python is up (for completion)
+let busy = false;                                 // a block is running: completion does not call Python then
+let nsNames = [];                                 // [name, type] of the learner's variables, after each run
+
 // Runs once, after boot. Everything the runner needs lives in the _runner module,
 // so the learner's namespace stays clean.
 const SETUP = String.raw`
@@ -157,6 +174,84 @@ async def check(code):
     except Exception as e:
         found.append(["fail", f"检查没能完成({type(e).__name__}: {e})。对照题目看看结果的类型对不对。"])
     return found[0] if found else ["fail", "检查没有得到结果。"]
+
+# Completion and call hints for the code boxes (py-editor.js, opts.assist). Only plain expressions are
+# looked at (names, attributes, subscripts with a constant): nothing is called, nothing changes.
+def _expr(expr):
+    import ast
+    node = ast.parse(expr, mode="eval").body
+    def plain(n):
+        if isinstance(n, ast.Name):
+            return True
+        if isinstance(n, ast.Attribute):
+            return plain(n.value)
+        if isinstance(n, ast.Subscript):
+            return plain(n.value) and isinstance(n.slice, ast.Constant) and isinstance(n.slice.value, (str, int))
+        return False
+    if not plain(node):
+        raise ValueError("not a plain expression")
+    return eval(compile(ast.Expression(node), "<completion>", "eval"), ns)
+
+def names():
+    return [[k, type(v).__name__] for k, v in list(ns.items()) if not k.startswith("_")]
+
+def attrs(expr):
+    try:
+        obj = _expr(expr)
+    except Exception:
+        return None
+    return [n for n in dir(obj) if not n.startswith("_")][:500]
+
+def keys(expr):
+    try:
+        obj = _expr(expr)
+    except Exception:
+        return None
+    if isinstance(obj, dict):
+        return [k for k in obj if isinstance(k, str)][:300]
+    cols = getattr(obj, "columns", None)
+    if cols is not None:
+        return [str(c) for c in cols][:300]
+    return None
+
+def signature(expr):
+    import inspect
+    try:
+        obj = _expr(expr)
+    except Exception:
+        return None
+    if not callable(obj):
+        return None
+    name = getattr(obj, "__name__", expr.split(".")[-1])
+    lines = [l.strip() for l in (inspect.getdoc(obj) or "").splitlines() if l.strip()]
+    try:
+        sig = inspect.signature(obj)
+    except (TypeError, ValueError):
+        if lines and lines[0].startswith(name + "("):
+            return {"name": "", "parts": [[lines[0], -1]], "params": [], "doc": lines[1][:160] if len(lines) > 1 else ""}
+        return None
+    plist = list(sig.parameters.values())
+    has_star = any(p.kind == p.VAR_POSITIONAL for p in plist)
+    parts, params, starred = [], [], False
+    for i, p in enumerate(plist):
+        if p.kind == p.KEYWORD_ONLY and not has_star and not starred:
+            parts.append(["*", -1])
+            starred = True
+        if p.kind == p.VAR_POSITIONAL:
+            text = "*" + p.name
+        elif p.kind == p.VAR_KEYWORD:
+            text = "**" + p.name
+        elif p.default is p.empty:
+            text = p.name
+        else:
+            d = repr(p.default)
+            text = p.name + "=" + (d if len(d) <= 24 else d[:21] + "...")
+        parts.append([text, i])
+        params.append([p.name, p.kind.name])
+        if p.kind == p.POSITIONAL_ONLY and (i + 1 == len(plist) or plist[i + 1].kind != p.POSITIONAL_ONLY):
+            parts.append(["/", -1])
+    doc = lines[0] if lines and not lines[0].startswith(name + "(") else (lines[1] if len(lines) > 1 else "")
+    return {"name": name, "parts": parts, "params": params, "doc": doc[:160]}
 ''', _runner.__dict__)
 sys.modules["_runner"] = _runner
 `;
@@ -174,6 +269,7 @@ function boot(setStatus) {
         } catch (_) { /* the lesson will report the missing module */ }
       }
       await py.runPythonAsync(SETUP);
+      pyRunner = py.pyimport('_runner');
       return py;
     })().catch((err) => {
       pyPromise = null; // let the next click retry (e.g. after a network blip)
@@ -388,10 +484,59 @@ function addReset(card) {
   if (actions) actions.insertBefore(reset, actions.firstChild);
 }
 
+// ---- completion and call hints (py-editor.js, opts.assist), while ?try=complete is on ----
+const KEYWORDS = ('False None True and as assert async await break class continue def del elif else except finally for from '
+  + 'global if import in is lambda nonlocal not or pass raise return try while with yield').split(' ');
+const BUILTIN_NAMES = ('abs all any bool callable chr dict dir divmod enumerate filter float format getattr hasattr help id '
+  + 'input int isinstance issubclass iter len list map max min next object open ord pow print range repr reversed round '
+  + 'set setattr slice sorted str sum super tuple type vars zip').split(' ');
+let pageNameList = null;
+function pageNames() {                            // names written in this page's code boxes (not the folded answers)
+  if (!pageNameList) {
+    const seen = new Set();
+    document.querySelectorAll('.py-runnable').forEach((card) => {
+      if (card.closest('details')) return;
+      for (const m of (codeOf(card) || '').matchAll(/[A-Za-z_][A-Za-z0-9_]+/g)) seen.add(m[0]);
+    });
+    pageNameList = [...seen];
+  }
+  return pageNameList;
+}
+function fromPython(fn, ...args) {
+  if (!pyRunner || busy) return null;
+  try {
+    const r = pyRunner[fn](...args);
+    if (r == null) return null;
+    const js = typeof r.toJs === 'function' ? r.toJs({ dict_converter: Object.fromEntries }) : r;
+    if (typeof r.destroy === 'function') r.destroy();
+    return js;
+  } catch (_) {
+    return null;
+  }
+}
+function refreshNames() {
+  const r = fromPython('names');
+  if (r) nsNames = r;
+}
+const assist = {
+  names() {
+    const out = new Map();
+    for (const [n, t] of nsNames) out.set(n, { label: n, detail: t, boost: 2 });
+    for (const n of pageNames()) if (!out.has(n) && !KEYWORDS.includes(n)) out.set(n, { label: n, boost: 1 });
+    for (const n of BUILTIN_NAMES) if (!out.has(n)) out.set(n, { label: n, detail: 'builtin' });
+    for (const n of KEYWORDS) if (!out.has(n)) out.set(n, { label: n, detail: 'keyword', boost: -1 });
+    return [...out.values()];
+  },
+  attrs: (expr) => fromPython('attrs', expr),
+  keys: (expr) => fromPython('keys', expr),
+  signature: (expr) => fromPython('signature', expr),
+};
+
 // The code boxes become editors. What was typed into an exercise comes back as with the plain boxes
 // (same record, same hash of the starter code); an exercise box ends with an empty line, so a tap
 // below the starter comment lands where the code goes.
 function setupEditors() {
+  if (ASSIST) pageNames();                        // the names in the code as the page comes, before anything is typed
   const saved = readCode();
   const exercises = exerciseCards();
   document.querySelectorAll('.py-runnable').forEach((card) => {
@@ -414,6 +559,7 @@ function setupEditors() {
     try {
       editors.set(card, window.PyEditor.create(pre, text, {
         exercise: i >= 0,
+        assist: ASSIST ? assist : null,
         onRun: () => runCard(card),
         onChange: i >= 0 ? () => { clearTimeout(timer); timer = setTimeout(() => saveCode(card), 500); } : null,
       }));
@@ -460,6 +606,7 @@ async function runCard(card) {
   const paint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   const label = btn.textContent;
   btn.disabled = true;
+  busy = true;
   btn.textContent = '运行中…';
 
   try {
@@ -514,6 +661,8 @@ async function runCard(card) {
     pre.textContent = '没能运行: ' + String((err && err.message) || err) + '\n(检查网络后再点一次 Run;还不行就刷新页面。)';
     out.appendChild(pre);
   } finally {
+    busy = false;
+    if (ASSIST) refreshNames();
     btn.disabled = false;
     btn.textContent = label;
   }

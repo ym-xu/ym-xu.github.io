@@ -11,13 +11,18 @@
 // - brackets and quotes close themselves; undo and redo;
 // - Shift-Enter or Ctrl/Cmd-Enter runs the block;
 // - a curly quote from a phone keyboard or a Chinese input method becomes a straight quote
-//   (not inside a comment), since Python only accepts straight ones.
-import { EditorState, EditorSelection, RangeSetBuilder } from '@codemirror/state';
-import { EditorView, keymap, ViewPlugin, Decoration } from '@codemirror/view';
+//   (not inside a comment), since Python only accepts straight ones;
+// - with opts.assist (pyodide-run.js passes it): completion of names, attributes and column names,
+//   and a hint with the parameters of the function being called. On a computer Tab opens the list
+//   (as in JupyterLab); on a phone it opens by itself after "." or two letters, and Enter stays a new
+//   line. The answers come from the running Python, through the functions in opts.assist.
+import { EditorState, EditorSelection, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
+import { EditorView, keymap, ViewPlugin, Decoration, showTooltip, tooltips } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentMore, indentLess } from '@codemirror/commands';
 import { LanguageSupport, indentUnit, indentOnInput, bracketMatching, syntaxHighlighting, HighlightStyle, syntaxTree } from '@codemirror/language';
 import { pythonLanguage } from '@codemirror/lang-python';
-import { closeBrackets, closeBracketsKeymap, insertBracket } from '@codemirror/autocomplete';
+import { closeBrackets, closeBracketsKeymap, insertBracket, autocompletion, startCompletion, acceptCompletion, closeCompletion,
+  completionStatus, moveCompletionSelection } from '@codemirror/autocomplete';
 import { tags as t } from '@lezer/highlight';
 
 // Token -> Chroma class, as the static blocks have them (Hugo's highlighter, github / github-dark).
@@ -88,6 +93,197 @@ const straightQuotes = EditorView.inputHandler.of((view, from, to, text) => {
   return true;
 });
 
+// ---- completion and call hints (opts.assist) ----
+const TOUCH = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+const EXPR = String.raw`[A-Za-z_]\w*(?:\.[A-Za-z_]\w*|\[(?:"[^"\n]*"|'[^'\n]*'|-?\d+)\])*`;   // name, .attr, ["key"] or [0]
+const KEY_BEFORE = new RegExp('(' + EXPR + String.raw`)\[\s*(["'])([^"'\n]*)$`);
+const ATTR_BEFORE = new RegExp('(' + EXPR + String.raw`)\.(\w*)$`);
+
+function insideNode(state, pos, names) {
+  for (let n = syntaxTree(state).resolveInner(pos, -1); n; n = n.parent) if (names.includes(n.name)) return true;
+  return false;
+}
+
+function completionSource(assist) {
+  return (ctx) => {
+    const line = ctx.state.doc.lineAt(ctx.pos);
+    const before = line.text.slice(0, ctx.pos - line.from);
+    const key = KEY_BEFORE.exec(before);                            // df["wa|  a column name or a dict key
+    if (key) {
+      const keys = assist.keys(key[1]);
+      if (!keys || !keys.length) return null;
+      return { from: ctx.pos - key[3].length, options: keys.map((k) => ({ label: k, detail: '列', type: 'property' })), validFor: /^[^"'\n]*$/ };
+    }
+    if (insideNode(ctx.state, ctx.pos, ['Comment', 'String', 'FormatString'])) return null;
+    const attr = ATTR_BEFORE.exec(before);                          // np.me|  df["x"].me|
+    if (attr) {
+      const names = assist.attrs(attr[1]);
+      if (!names || !names.length) return null;
+      return { from: ctx.pos - attr[2].length, options: names.map((n) => ({ label: n })), validFor: /^\w*$/ };
+    }
+    const word = /(?:^|[^\w.])([A-Za-z_]\w*)$/.exec(before);       // pri|
+    if (!word && !ctx.explicit) return null;
+    if (word && !ctx.explicit && word[1].length < 2) return null;
+    const from = ctx.pos - (word ? word[1].length : 0);
+    const options = assist.names(), have = new Set(options.map((o) => o.label));
+    for (const m of ctx.state.doc.toString().matchAll(/[A-Za-z_]\w+/g)) {   // names written in this box, not yet run
+      if (m.index === from || have.has(m[0])) continue;
+      have.add(m[0]);
+      options.push({ label: m[0], boost: 1 });
+    }
+    return { from, options, validFor: /^\w*$/ };
+  };
+}
+
+// Tab right after a name, a "." or inside df["...: complete, as in JupyterLab; elsewhere: indent.
+function wantsCompletion(state) {
+  const pos = state.selection.main.head, line = state.doc.lineAt(pos);
+  const before = line.text.slice(0, pos - line.from);
+  return state.selection.main.empty && (/[\w.]$/.test(before) || KEY_BEFORE.test(before));
+}
+
+// The call the cursor is in: the innermost "(" not closed before pos, and the expression before it.
+function openCall(doc, pos) {
+  const from = Math.max(0, pos - 3000), text = doc.sliceString(from, pos);
+  let depth = 0;
+  for (let i = text.length - 1; i >= 0; i--) {
+    const ch = text[i];
+    if (ch === ')' || ch === ']' || ch === '}') depth++;
+    else if (ch === '(' || ch === '[' || ch === '{') {
+      if (depth > 0) { depth--; continue; }
+      if (ch !== '(') return null;
+      const m = new RegExp('(' + EXPR + String.raw`)\s*$`).exec(text.slice(Math.max(0, i - 300), i));
+      return m ? { open: from + i, callee: m[1] } : null;
+    }
+  }
+  return null;
+}
+
+// Which argument the cursor is in, from the text between "(" and the cursor; null once the call is closed.
+function currentArg(inside) {
+  let depth = 0, index = 0, start = 0, keywords = false, quote = null;
+  for (let i = 0; i < inside.length; i++) {
+    const ch = inside[i];
+    if (quote) { if (ch === quote) quote = null; continue; }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '(' || ch === '[' || ch === '{') depth++;
+    else if (ch === ')' || ch === ']' || ch === '}') { if (depth === 0) return null; depth--; }
+    else if (ch === ',' && depth === 0) {
+      if (/^\s*[A-Za-z_]\w*\s*=(?!=)/.test(inside.slice(start, i))) keywords = true;
+      index++; start = i + 1;
+    }
+  }
+  const kw = /^\s*([A-Za-z_]\w*)\s*=(?!=)/.exec(inside.slice(start));
+  return { index, keyword: kw ? kw[1] : null, keywordsBefore: keywords };
+}
+
+function currentParam(params, arg) {
+  if (arg.keyword) {
+    const i = params.findIndex((p) => p[0] === arg.keyword);
+    return i >= 0 ? i : params.findIndex((p) => p[1] === 'VAR_KEYWORD');
+  }
+  if (arg.keywordsBefore) return -1;
+  let k = arg.index;
+  for (let i = 0; i < params.length; i++) {
+    const kind = params[i][1];
+    if (kind === 'POSITIONAL_ONLY' || kind === 'POSITIONAL_OR_KEYWORD') { if (k === 0) return i; k--; }
+    else if (kind === 'VAR_POSITIONAL') return i;
+    else break;
+  }
+  return -1;
+}
+
+function sigTooltip(open, info, current) {
+  return {
+    pos: open, above: true, strictSide: false, arrow: false,
+    create: () => {
+      const dom = document.createElement('div');
+      dom.className = 'py-sig';
+      const head = document.createElement('div');
+      head.className = 'py-sig-call';
+      head.append(info.name + '(');
+      info.parts.forEach(([text, i], k) => {
+        if (k) head.append(', ');
+        if (i >= 0 && i === current) { const b = document.createElement('b'); b.textContent = text; head.append(b); }
+        else head.append(text);
+      });
+      head.append(info.name ? ')' : '');
+      dom.append(head);
+      if (info.doc) { const d = document.createElement('div'); d.className = 'py-sig-doc'; d.textContent = info.doc; dom.append(d); }
+      return { dom };
+    },
+  };
+}
+
+const setSig = StateEffect.define();
+const sigField = StateField.define({
+  create: () => null,
+  update(value, tr) {
+    let fresh = false;
+    for (const e of tr.effects) if (e.is(setSig)) { value = e.value; fresh = true; }
+    if (!value) return null;
+    let open = value.open;
+    if (tr.docChanged) open = tr.changes.mapPos(open, 1);
+    const head = tr.state.selection.main.head;
+    if (tr.state.doc.sliceString(open, open + 1) !== '(' || head <= open) return null;
+    const arg = currentArg(tr.state.doc.sliceString(open + 1, head));
+    if (!arg) return null;
+    const current = currentParam(value.info.params, arg);
+    if (!fresh && open === value.open && current === value.current) return value;
+    return { open, info: value.info, current, tooltip: sigTooltip(open, value.info, current) };
+  },
+  provide: (f) => showTooltip.from(f, (v) => (v ? v.tooltip : null)),
+});
+
+// After "(" or "," is typed, ask the running Python for the signature of the function being called.
+function sigTrigger(assist) {
+  return EditorView.updateListener.of((u) => {
+    if (!u.docChanged || !u.transactions.some((tr) => tr.isUserEvent('input'))) return;
+    let typed = '';
+    u.changes.iterChanges((fa, ta, fb, tb, text) => { typed += text.toString(); });
+    if (!/[(,]/.test(typed)) return;
+    const view = u.view, call = openCall(view.state.doc, view.state.selection.main.head);
+    if (!call) return;
+    const current = view.state.field(sigField, false);
+    if (current && current.open === call.open) return;               // already showing this call
+    const info = assist.signature(call.callee);
+    if (info) setTimeout(() => view.dispatch({ effects: setSig.of({ open: call.open, info, current: -2 }) }), 0);
+  });
+}
+
+function assistExtensions(assist) {
+  return [
+    keymap.of([
+      { key: 'Tab', run: (v) => (completionStatus(v.state) === 'active' ? acceptCompletion(v)
+        : wantsCompletion(v.state) ? startCompletion(v) : tabIndent(v)), shift: indentLess },
+      { key: 'Enter', run: (v) => !TOUCH && completionStatus(v.state) === 'active' && acceptCompletion(v) },
+      { key: 'ArrowDown', run: (v) => completionStatus(v.state) === 'active' && moveCompletionSelection(true)(v) },
+      { key: 'ArrowUp', run: (v) => completionStatus(v.state) === 'active' && moveCompletionSelection(false)(v) },
+      { key: 'Ctrl-Space', run: startCompletion },
+      { key: 'Escape', run: (v) => {
+        if (completionStatus(v.state)) return closeCompletion(v);
+        if (v.state.field(sigField, false)) { v.dispatch({ effects: setSig.of(null) }); return true; }
+        return false;
+      } },
+    ]),
+    autocompletion({
+      override: [completionSource(assist)], activateOnTyping: TOUCH, defaultKeymap: false, icons: false, filterStrict: true,
+      maxRenderedOptions: 60, closeOnBlur: true, tooltipClass: () => 'py-complete',
+    }),
+    sigField,
+    sigTrigger(assist),
+    // popups go on <body>, so the code card does not clip them; on a phone they stay above the keyboard
+    tooltips({
+      parent: document.body,
+      tooltipSpace: () => {
+        const vv = window.visualViewport;
+        return vv ? { top: vv.offsetTop, left: vv.offsetLeft, bottom: vv.offsetTop + vv.height, right: vv.offsetLeft + vv.width }
+          : { top: 0, left: 0, bottom: window.innerHeight, right: window.innerWidth };
+      },
+    }),
+  ];
+}
+
 function create(pre, text, opts) {
   opts = opts || {};
   const run = () => { if (opts.onRun) opts.onRun(); return true; };
@@ -95,7 +291,8 @@ function create(pre, text, opts) {
     state: EditorState.create({
       doc: text,
       extensions: [
-        keymap.of([{ key: 'Shift-Enter', run }, { key: 'Mod-Enter', run }, { key: 'Tab', run: tabIndent, shift: indentLess }]),
+        keymap.of([{ key: 'Shift-Enter', run }, { key: 'Mod-Enter', run }]),
+        opts.assist ? assistExtensions(opts.assist) : keymap.of([{ key: 'Tab', run: tabIndent, shift: indentLess }]),
         history(),
         closeBrackets(),
         indentOnInput(),

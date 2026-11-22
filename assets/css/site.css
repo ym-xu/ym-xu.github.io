@@ -449,6 +449,21 @@ body:is(.section-python, .section-stat-ml) .content table code { overflow-wrap: 
 /* an exercise: room for six lines, and a tap anywhere in it lands in the code */
 .content .code-card .py-editor-exercise .cm-content.chroma { min-height: calc(9em + 1.6rem); }
 .content .code-card .cm-editor.cm-focused .cm-matchingBracket { background: color-mix(in oklab, var(--link) 22%, transparent); }
+/* Completion list and call hint of the code boxes (py-editor.js, opts.assist). They hang on <body>,
+   so they use the page colours; the doubled classes outweigh CodeMirror's own theme. */
+.cm-tooltip.cm-tooltip-autocomplete.py-complete, div.cm-tooltip.py-sig {
+  font-family: var(--font-mono); font-size: .8rem; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); overflow: hidden;
+}
+.cm-tooltip.cm-tooltip-autocomplete.py-complete > ul { max-height: 14em; font-family: inherit; }
+.cm-tooltip.cm-tooltip-autocomplete.py-complete > ul > li { padding: .3rem .7rem; line-height: 1.4; }
+.cm-tooltip.cm-tooltip-autocomplete.py-complete > ul > li[aria-selected] { background: color-mix(in oklab, var(--link) 18%, var(--bg)); color: var(--fg); }
+.cm-tooltip.cm-tooltip-autocomplete.py-complete .cm-completionDetail { margin-left: .9em; font-style: normal; font-size: .72rem; color: var(--muted); }
+.cm-tooltip.cm-tooltip-autocomplete.py-complete .cm-completionMatchedText { text-decoration: none; font-weight: 700; }
+@media (pointer: coarse) { .cm-tooltip.cm-tooltip-autocomplete.py-complete > ul > li { padding: .5rem .8rem; } }
+div.cm-tooltip.py-sig { padding: .35rem .65rem; max-width: min(92vw, 560px); white-space: normal; line-height: 1.45; overflow-wrap: anywhere; }
+.py-sig b { color: var(--link); font-weight: 700; }
+.py-sig-doc { margin-top: .15rem; font-size: .72rem; color: var(--muted); }
 .content .code-output { border-top: 1px solid var(--code-border); padding: .6rem .9rem; background: color-mix(in oklab, var(--code-bar-bg) 60%, transparent); }
 .content .code-output > * { margin: 0; }
 .content .code-output > * + * { margin-top: .5rem; }
