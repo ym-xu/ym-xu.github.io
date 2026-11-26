@@ -23,7 +23,8 @@
   --border: #e2e2e2;
   --link: #1d4ed8;
   --link-hover: #1e3a8a;
-  --hl: rgba(96, 165, 250, .38);   /* the highlighter */
+  --hl: rgba(96, 165, 250, .38);   /* the rule beside a blockquote */
+  --marker: rgba(255, 208, 0, .42);   /* the highlighter on the home page */
   --surface: rgba(0, 0, 0, .025);
   --surface-hover: rgba(0, 0, 0, .05);
   --shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.07);
@@ -37,7 +38,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --desk: #101010; --bg: #1b1b1b; --fg: #ebebeb; --muted: #a9a9a9; --rule: #d6d6d6; --border: #333333;
-  --link: #8ab4f8; --link-hover: #c2d7fb; --hl: rgba(96, 165, 250, .34);
+  --link: #8ab4f8; --link-hover: #c2d7fb; --hl: rgba(96, 165, 250, .34); --marker: rgba(255, 190, 40, .26);
   --surface: rgba(255,255,255,.035); --surface-hover: rgba(255,255,255,.06);
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
 }
@@ -45,7 +46,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --desk: #101010; --bg: #1b1b1b; --fg: #ebebeb; --muted: #a9a9a9; --rule: #d6d6d6; --border: #333333;
-    --link: #8ab4f8; --link-hover: #c2d7fb; --hl: rgba(96, 165, 250, .34);
+    --link: #8ab4f8; --link-hover: #c2d7fb; --hl: rgba(96, 165, 250, .34); --marker: rgba(255, 190, 40, .26);
     --surface: rgba(255,255,255,.035); --surface-hover: rgba(255,255,255,.06);
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
   }
@@ -156,10 +157,27 @@ body.section-yao .card-title { text-wrap: balance; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--link); }
 
-/* ---------- the highlighter (home hero) ---------- */
-.hl { border-radius: 1px; padding: .04em .1em; margin: 0 -.1em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.hl.on { background: var(--hl); }
-.glitch .hl.on { box-shadow: -3px 0 0 var(--hl), 3px 0 0 var(--hl); }
+/* ---------- the highlighter (home hero) ----------
+   A marker stroke, as on a printed page, not a box: a box over the whole line
+   in pale blue is what selected text looks like. The band runs from just under
+   the baseline to above the x-height, with slanted ends like a chisel tip. It is
+   drawn left to right (a long phrase takes longer, see home.js) and lifts off to
+   the right when the next phrase starts. It is placed from the bottom of the
+   inline box, which in Pagella sits .281em under the baseline on every platform
+   (the font sets USE_TYPO_METRICS). A phrase that wraps is drawn line by line. */
+.home-bio .hl {
+  --mk-up: .58em; --mk-down: .12em;
+  padding: 0 .12em; margin: 0 -.12em;
+  background: linear-gradient(104deg, transparent .02em, var(--marker) .17em, var(--marker) calc(100% - .17em), transparent calc(100% - .02em))
+              no-repeat right 0 bottom calc(.281em - var(--mk-down)) / 0% calc(var(--mk-up) + var(--mk-down));
+  transition: background-size .3s cubic-bezier(.4, 0, .6, 1);
+}
+.home-bio .hl.on {
+  background-position: left 0 bottom calc(.281em - var(--mk-down));
+  background-size: 100% calc(var(--mk-up) + var(--mk-down));
+  transition: background-size var(--sweep, .32s) cubic-bezier(.35, .15, .25, 1);
+}
+@media (prefers-reduced-motion: reduce) { .home-bio .hl, .home-bio .hl.on { transition: none; } }
 
 /* ---------- home ---------- */
 /* One column while the portrait is hidden. With the photo back:

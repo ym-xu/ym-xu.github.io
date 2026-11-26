@@ -1,8 +1,9 @@
-// Home page: a translucent highlighter that snaps (never slides) between key
-// phrases of the bio, on a musical beat — a steady phrase, then a fast
-// "glitch" burst, then a rest. The text itself never moves.
-// Hovering a phrase pins the highlight there. Respects reduced motion, and
-// stops while the hero is off-screen or the tab is hidden.
+// Home page: a marker that goes through the key phrases of the bio in reading
+// order, one phrase per bar of the beat, then rests for a bar. Each phrase is
+// drawn left to right at a hand's pace (the look is in site.css). The text
+// itself never moves. Hovering a phrase pins the marker there, and it carries
+// on from that phrase. Respects reduced motion, and stops while the hero is
+// off-screen or the tab is hidden.
 (function () {
   // Email: the page only carries an encoded string (reversed, XOR 0x2a, hex);
   // it is decoded on a real click, never at load, so scrapers find nothing.
@@ -32,41 +33,34 @@
   if (!hls.length) return;
 
   var bpm = Math.min(200, Math.max(60, parseFloat(hero.getAttribute('data-beat')) || 128));
-  var quarter = 60000 / bpm / 4;          // one tick = a sixteenth note
+  var bar = 4 * 60000 / bpm;              // one tick = a bar of four beats
 
-  // ---- the score: [phrase index, length in ticks, glitch?] ----
-  var n = hls.length, seq = [], last = -1, seed = 7;
-  var lens = [8, 4, 4, 6, 4, 8, 6, 4, 8, 12];
-  for (var i = 0; i < n; i++) { seq.push([i, lens[i % lens.length], 0]); last = i; }
-  function rand(k) { seed = (seed * 16807) % 2147483647; return seed % k; }
-  function pick() { var j = rand(n); if (j === last) j = (j + 1) % n; last = j; return j; }
-  for (var g = 0; g < 14; g++) seq.push([pick(), 1, 1]);        // the burst
-  [2, 2, 2, 4].forEach(function (l) { seq.push([pick(), l, 1]); });
-  seq.push([-1, 4, 0]);                                         // a rest
-  var timeline = [];
-  seq.forEach(function (e) { for (var t = 0; t < e[1]; t++) timeline.push(e); });
+  // ---- the score: phrase 0, 1, … n-1, then a bar's rest (-1) ----
+  var n = hls.length, tick = 0, cur = -1, hover = -1, timer = null, onScreen = true;
 
-  var tick = 0, cur = -1, hover = -1, timer = null, onScreen = true;
-
+  // the stroke takes as long as a hand would: about 1.1 px per ms, within limits
+  function pace(el) {
+    var w = 0, r = el.getClientRects();
+    for (var i = 0; i < r.length; i++) w += r[i].width;
+    el.style.setProperty('--sweep', Math.round(Math.min(520, Math.max(220, w * 0.9))) + 'ms');
+  }
   function show(k) {
     if (k === cur) return;
     if (cur >= 0) hls[cur].classList.remove('on');
-    if (k >= 0) hls[k].classList.add('on');
+    if (k >= 0) { pace(hls[k]); hls[k].classList.add('on'); }
     cur = k;
   }
   function step() {
     if (hover >= 0) return;
-    var e = timeline[tick];
-    show(e[0]);
-    hero.classList.toggle('glitch', !!e[2]);
-    tick = (tick + 1) % timeline.length;
+    show(tick < n ? tick : -1);
+    tick = (tick + 1) % (n + 1);
   }
-  function start() { if (!timer && onScreen && !document.hidden) timer = setInterval(step, quarter); }
+  function start() { if (!timer && onScreen && !document.hidden) timer = setInterval(step, bar); }
   function stop() { if (timer) { clearInterval(timer); timer = null; } }
 
   hls.forEach(function (el, k) {
-    el.addEventListener('mouseenter', function () { hover = k; hero.classList.remove('glitch'); show(k); });
-    el.addEventListener('mouseleave', function () { hover = -1; });
+    el.addEventListener('mouseenter', function () { hover = k; show(k); });
+    el.addEventListener('mouseleave', function () { hover = -1; tick = k + 1; });
   });
 
   if (reduceMotion) { show(0); return; }
@@ -78,6 +72,7 @@
     }).observe(hero);
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
-  // let the name finish inking in before the highlighter starts playing
-  setTimeout(function () { step(); start(); }, 900);
+  // let the name finish inking in before the highlighter starts playing; the
+  // bar is counted from here, so the first phrase gets a whole bar too
+  setTimeout(function () { stop(); step(); start(); }, 900);
 })();
