@@ -31,7 +31,11 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: 'latest'
+          # Pinned, and kept the same as HUGO_VERSION in the Cloudflare Pages project
+          # that builds eming.io from this repo. Cloudflare's default (0.147.7) cannot
+          # build this site, and a failed build there leaves eming.io on the last good one.
+          # To upgrade Hugo, change both.
+          hugo-version: '0.170.1'
           extended: true
 
       - name: Build
